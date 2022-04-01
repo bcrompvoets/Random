@@ -68,4 +68,12 @@ def replicate_data(inputs, targets, output, amounts_train, amounts_val, seed):
     test_targets = test_df.pop('Label').to_numpy()
     test_inputs = test_df.to_numpy()
 
-    return train_inputs, train_targets, val_inputs, val_targets, test_inputs, test_targets
+    # since labels are technically ordered, shuffle before export
+    rng.shuffle(train_targets)
+    rng.shuffle(train_inputs)
+    rng.shuffle(val_targets)
+    rng.shuffle(val_inputs)
+    rng.shuffle(test_targets)
+    rng.shuffle(test_inputs)
+
+    return [train_inputs, train_targets, val_inputs, val_targets, test_inputs, test_targets]
