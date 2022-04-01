@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from sklearn.utils import shuffle
 
 def replicate_data(inputs, targets, output, amounts_train, amounts_val, seed):
     """Creates both training and testing datasets (targets and inputs), custom built to the
@@ -18,7 +19,7 @@ def replicate_data(inputs, targets, output, amounts_train, amounts_val, seed):
     amounts_val : list of ints
         How much of each label to grab for the validation set. Leftover amounts are passed to the testing set.
     seed : int
-        Value passed to rng.default_rng() call. 
+        Value passed to rng.default_rng() call, as well as shuffle() call.
     """    
 
     # setting default_rng with seed value
@@ -69,11 +70,9 @@ def replicate_data(inputs, targets, output, amounts_train, amounts_val, seed):
     test_inputs = test_df.to_numpy()
 
     # since labels are technically ordered, shuffle before export
-    rng.shuffle(train_targets)
-    rng.shuffle(train_inputs)
-    rng.shuffle(val_targets)
-    rng.shuffle(val_inputs)
-    rng.shuffle(test_targets)
-    rng.shuffle(test_inputs)
+    # SHUFFLE WHILE CONSERVING INPUT-LABEL PAIRS
+    train_inputs, train_targets = shuffle(train_inputs, train_targets, random_state=seed)
+    val_inputs, val_targets = shuffle(val_inputs, val_targets, random_state=seed)
+    test_inputs, test_targets = shuffle(test_inputs, test_targets, random_state=seed)
 
     return [train_inputs, train_targets, val_inputs, val_targets, test_inputs, test_targets]
