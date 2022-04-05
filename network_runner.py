@@ -52,9 +52,9 @@ val_data = data_utils.TensorDataset(inp_va, tar_va)
 test_data = data_utils.TensorDataset(inp_te, tar_te)
 
 # constructing data loaders for nn
-train_loader = torch.utils.data.DataLoader(train_data, batch_size=25, shuffle=True)
-val_loader = torch.utils.data.DataLoader(val_data, batch_size=25, shuffle=True)
-test_loader = torch.utils.data.DataLoader(test_data, batch_size=25, shuffle=True)
+train_loader = torch.utils.data.DataLoader(train_data, batch_size=50, shuffle=True)
+val_loader = torch.utils.data.DataLoader(val_data, batch_size=50, shuffle=True)
+test_loader = torch.utils.data.DataLoader(test_data, batch_size=50, shuffle=True)
 
 def main(epochs, NetInstance, OptInstance, outfile, ScheduleInstance=None):
 
@@ -116,18 +116,26 @@ if __name__ == '__main__':
     learning_rate_vals = [4e-3, 4e-2, 4e-4, 4e-5]
     batch_size = [25,100,200]
     epochs = 10000
+    
+    outfile = 'LR4e-3_B50_E10k_M09'
+    BaseNN = BaseMLP(8, 20, 3)
+    optimizer = optim.SGD(BaseNN.parameters(), lr=learning_rate_vals[0], momentum=momentum_vals[0])
+    main(epochs,BaseNN,optimizer,outfile)
 
     # file name for the following loop
-    outfile = ['LR4e-3_B25_E10k_M09', 'LR4e-2_B25_E10k_M09', 'LR4e-4_B25_E10k_M09', 'LR4e-5_B25_E10k_M09']
-    for i, learning_rate in enumerate(learning_rate_vals):
-        BaseNN = BaseMLP(8, 20, 3)
-        optimizer = optim.SGD(BaseNN.parameters(), lr=learning_rate, momentum=momentum_vals[0])
-        main(epochs,BaseNN,optimizer,outfile[i])
+    #outfile = [ 'CSplit_LR4e-3_B25_E5k_M09',
+                #'CSplit_LR4e-2_B25_E5k_M09',
+                #'CSplit_LR4e-4_B25_E5k_M09',
+                #'CSplit_LR4e-5_B25_E5k_M09']
+    #for i, learning_rate in enumerate(learning_rate_vals):
+        #BaseNN = BaseMLP(8, 20, 3)
+        #optimizer = optim.SGD(BaseNN.parameters(), lr=learning_rate, momentum=momentum_vals[0])
+        #main(epochs,BaseNN,optimizer,outfile[i])
 
     # file name for the following loop
-    outfile = ['LR4e-3_B25_E10k_M06', 'LR4e-3_B25_E10k_M075', 'LR4e-3_B25_E10k_M09']
-    for i, momentum in enumerate(momentum_vals):
-        BaseNN = BaseMLP(8, 20, 3)
-        optimizer = optim.SGD(BaseNN.parameters(), lr=learning_rate_vals[0], momentum=momentum)
-        main(epochs,BaseNN,optimizer,outfile[i])
+    #outfile = ['LR4e-3_B25_E10k_M06', 'LR4e-3_B25_E10k_M075', 'LR4e-3_B25_E10k_M09']
+    #for i, momentum in enumerate(momentum_vals):
+        #BaseNN = BaseMLP(8, 20, 3)
+        #optimizer = optim.SGD(BaseNN.parameters(), lr=learning_rate_vals[0], momentum=momentum)
+        #main(epochs,BaseNN,optimizer,outfile[i])
 
