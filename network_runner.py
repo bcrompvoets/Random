@@ -118,6 +118,13 @@ if __name__ == '__main__':
     epochs = 10000
 
     # file name for the following loop
+    outfile = ['LR4e-3_B25_E10k_M09', 'LR4e-2_B25_E10k_M09', 'LR4e-4_B25_E10k_M09', 'LR4e-5_B25_E10k_M09']
+    for i, learning_rate in enumerate(learning_rate_vals):
+        BaseNN = BaseMLP(8, 20, 3)
+        optimizer = optim.SGD(BaseNN.parameters(), lr=learning_rate, momentum=momentum_vals[0])
+        main(epochs,BaseNN,optimizer,outfile[i])
+
+    # file name for the following loop
     outfile = ['LR4e-3_B25_E10k_M06', 'LR4e-3_B25_E10k_M075', 'LR4e-3_B25_E10k_M09']
     for i, momentum in enumerate(momentum_vals):
         BaseNN = BaseMLP(8, 20, 3)
