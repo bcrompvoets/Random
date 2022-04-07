@@ -110,7 +110,8 @@ def validate(model, val_loader, device):
     return val_loss, accuracy, predictions, truth_values
 
 class BaseMLP(nn.Module):
-    """ Base NN MLP Class. Uses Weight Initialization."""  
+    """ Base NN MLP Class from Cornu Paper"""
+    
     def __init__(self, input_size, n_hidden, output_size, weight_initialize=True):
         super(BaseMLP, self).__init__()
         self.input_size = input_size
@@ -118,10 +119,13 @@ class BaseMLP(nn.Module):
         self.output_size = output_size
         self.fc1 = nn.Linear(self.input_size, self.n_hidden)
         self.fc2 = nn.Linear(self.n_hidden, self.output_size)
-
+        
         # weight initialization here
         if weight_initialize:
+            # for fc1 layer
             torch.nn.init.uniform_(self.fc1.weight, -1/np.sqrt(input_size), 1/np.sqrt(input_size))
+            # for fc2 layer
+            torch.nn.init.uniform_(self.fc2.weight, -1/np.sqrt(input_size), 1/np.sqrt(input_size))
         
     def forward(self, x):
         x = self.fc1(x)

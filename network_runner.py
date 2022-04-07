@@ -10,6 +10,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
 from sklearn.metrics import ConfusionMatrixDisplay
+from sklearn.metrics import classification_report
 
 from custom_dataloader import replicate_data
 from NN_Defs import get_n_params, train, validate, BaseMLP
@@ -25,11 +26,14 @@ custom_labs = ['Class 1', 'Class 2', 'Others']
 X = np.load("Data/Input_Class_AllClasses_Sep.npy") # Load input data
 Y = np.load("Data/Target_Class_AllClasses_Sep.npy") # Load target data
 
-
 seed_val = 1111
-#amounts_train = [331,1141,231,529,27,70,1257]
-amounts_train = [300,300,300,300,27,70,300]
+amounts_train = [331,1141,231,529,27,70,1257]
+#amounts_train = [300,300,300,300,27,70,300]
 amounts_val = [82, 531, 104, 278, 6, 17, 4359]
+
+# this have been played around with to make it work
+#amounts_train = [311,1994,391,1043,25,66,21700] #75/25 train
+#amounts_val = [102,664,129,347,8,21,5448] #75/25 val
 
 inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te = replicate_data(X, Y, 'three', amounts_train, amounts_val, seed_val)
 
@@ -52,9 +56,9 @@ val_data = data_utils.TensorDataset(inp_va, tar_va)
 test_data = data_utils.TensorDataset(inp_te, tar_te)
 
 # constructing data loaders for nn
-train_loader = torch.utils.data.DataLoader(train_data, batch_size=50, shuffle=True)
-val_loader = torch.utils.data.DataLoader(val_data, batch_size=50, shuffle=True)
-test_loader = torch.utils.data.DataLoader(test_data, batch_size=50, shuffle=True)
+train_loader = torch.utils.data.DataLoader(train_data, batch_size=25, shuffle=True)
+val_loader = torch.utils.data.DataLoader(val_data, batch_size=25, shuffle=True)
+test_loader = torch.utils.data.DataLoader(test_data, batch_size=25, shuffle=True)
 
 def main(epochs, NetInstance, OptInstance, outfile, ScheduleInstance=None):
 
@@ -99,13 +103,22 @@ def main(epochs, NetInstance, OptInstance, outfile, ScheduleInstance=None):
     ConfusionMatrixDisplay.from_predictions(train_truth_values, train_predictions, ax = ax[0], normalize='true', cmap=cm_blues, display_labels=custom_labs, colorbar=False)
     ConfusionMatrixDisplay.from_predictions(val_truth_values, val_predictions, ax = ax[1], normalize='true', cmap=cm_blues, display_labels=custom_labs, colorbar=False)
     ConfusionMatrixDisplay.from_predictions(test_truth_values, test_predictions, ax = ax[2], normalize='true', cmap=cm_blues, display_labels=custom_labs, colorbar=False)
-
+    
+    # setting plotting attributes here
     ax[0].set_title('Training Set')
     ax[1].set_title('Validation Set')
     ax[2].set_title('Testing Set')
     plt.tight_layout()
     plt.savefig(outfile+'_CM.png')
     plt.close()
+    
+    # printout for classifcation report for all sets
+    print('Target Set Report')
+    print(classification_report(train_truth_values, train_predictions, target_names=custom_labs, zero_division=0))
+    print('Validation Set Report')
+    print(classification_report(val_truth_values, val_predictions, target_names=custom_labs, zero_division=0))
+    print('Testing Set Report')
+    print(classification_report(test_truth_values, test_predictions, target_names=custom_labs, zero_division=0))
 
     # saving the network settings
     torch.save(NetInstance.state_dict(),outfile+'_Settings')
@@ -113,14 +126,24 @@ def main(epochs, NetInstance, OptInstance, outfile, ScheduleInstance=None):
 if __name__ == '__main__':
 
     momentum_vals = [0.6,0.75, 0.9]
-    learning_rate_vals = [4e-3, 4e-2, 4e-4, 4e-5]
+    learning_rate_vals = [4e-3, 4e-2, 4e-4, 4e-5, 4e-1]
     batch_size = [25,100,200]
     epochs = 10000
     
-    outfile = 'LR4e-3_B50_E10k_M09'
-    BaseNN = BaseMLP(8, 20, 3)
-    optimizer = optim.SGD(BaseNN.parameters(), lr=learning_rate_vals[0], momentum=momentum_vals[0])
-    main(epochs,BaseNN,optimizer,outfile)
+    #outfile = 'CSplit_LR4e-2_B25_E5k_M09_Continuation_to_20k'
+    #outfile = 'test_CSplit_4e-1_reduce0.04_10kmore'
+    BaseNN = BaseMLP(8, 20, 3, weight_initialize=True)
+    np = get_n_params(BaseNN)
+    print(np)
+    # load settings in
+    #loadpath = 'test_CSplit_4e-1_Settings'
+    #BaseNN.load_state_dict(torch.load(loadpath, map_location=device))
+    #optimizer = optim.SGD(BaseNN.parameters(), lr=learning_rate_vals[1], momentum=momentum_vals[0])
+    
+    # setting scheduler
+    #scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[5000], gamma=0.1, verbose=False)
+    
+    #main(epochs,BaseNN,optimizer,outfile)
 
     # file name for the following loop
     #outfile = [ 'CSplit_LR4e-3_B25_E5k_M09',
@@ -138,4 +161,3 @@ if __name__ == '__main__':
         #BaseNN = BaseMLP(8, 20, 3)
         #optimizer = optim.SGD(BaseNN.parameters(), lr=learning_rate_vals[0], momentum=momentum)
         #main(epochs,BaseNN,optimizer,outfile[i])
-
