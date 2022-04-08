@@ -23,8 +23,8 @@ cm_blues = plt.cm.Blues
 custom_labs = ['Class 1', 'Class 2', 'Others']
 
 # data load
-X = np.load("Data/Input_Class_AllClasses_Sep.npy") # Load input data
-Y = np.load("Data/Target_Class_AllClasses_Sep.npy") # Load target data
+X = np.load("Input_Class_AllClasses_Sep.npy") # Load input data
+Y = np.load("Target_Class_AllClasses_Sep.npy") # Load target data
 
 seed_val = 1111
 amounts_train = [331,1141,231,529,27,70,1257]
@@ -128,22 +128,22 @@ if __name__ == '__main__':
     momentum_vals = [0.6,0.75, 0.9]
     learning_rate_vals = [4e-3, 4e-2, 4e-4, 4e-5, 4e-1]
     batch_size = [25,100,200]
-    epochs = 10000
+    epochs = 1
     
     #outfile = 'CSplit_LR4e-2_B25_E5k_M09_Continuation_to_20k'
-    #outfile = 'test_CSplit_4e-1_reduce0.04_10kmore'
+    outfile = 'test'
     BaseNN = BaseMLP(8, 20, 3, weight_initialize=True)
-    np = get_n_params(BaseNN)
-    print(np)
+    #np = get_n_params(BaseNN)
+    #print(np)
     # load settings in
     #loadpath = 'test_CSplit_4e-1_Settings'
     #BaseNN.load_state_dict(torch.load(loadpath, map_location=device))
-    #optimizer = optim.SGD(BaseNN.parameters(), lr=learning_rate_vals[1], momentum=momentum_vals[0])
+    optimizer = optim.SGD(BaseNN.parameters(), lr=learning_rate_vals[3], momentum=momentum_vals[0])
     
     # setting scheduler
     #scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[5000], gamma=0.1, verbose=False)
     
-    #main(epochs,BaseNN,optimizer,outfile)
+    main(epochs,BaseNN,optimizer,outfile)
 
     # file name for the following loop
     #outfile = [ 'CSplit_LR4e-3_B25_E5k_M09',
