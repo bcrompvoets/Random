@@ -4,7 +4,7 @@ Each `.ipynb` notebook specifies what ML classification algorithm is being teste
 
 The targets and four IRAC bands as pulled from Cornu and Montillaud (2021) (https://cdsarc.cds.unistra.fr/viz-bin/cat/J/A+A/647/A116).
 
-**The final project report for PHYS 555 is located in `Final_Project.ipynb`. This report summarizes the work and includes example runs of all algorithms and the MLP, and can be run with only `custom_dataloader.py` and the data files `Input_Class_AllClasses_Sep.npy` and `Target_Class_AllClasses_Sep.npy`.**
+**The final project report for PHYS 555 is located in `Final_Project.ipynb`. This report summarizes the work and includes example runs of all algorithms and the MLP, and can be run with only `custom_dataloader.py`, `NN_Defs.py`, and the data files `Input_Class_AllClasses_Sep.npy` and `Target_Class_AllClasses_Sep.npy`.**
 
 ## custom_dataloader.py
 
