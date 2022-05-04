@@ -24,16 +24,17 @@ custom_labs = ['Class 1', 'Class 2', 'Others']
 
 # data load
 X = np.load("Input_Class_AllClasses_Sep.npy") # Load input data
-Y = np.load("Target_Class_AllClasses_Sep.npy") # Load target data
+# Y = np.load("Target_Class_AllClasses_Sep.npy") # Load target data
+Y = np.load("Pred_Class_AllClasses_Sep.npy") # Load predictions from CM21 as targets
 
 seed_val = 1111
-amounts_train = [331,1141,231,529,27,70,1257]
-#amounts_train = [300,300,300,300,27,70,300]
-amounts_val = [82, 531, 104, 278, 6, 17, 4359]
+# amounts_train = [331,1141,231,529,27,70,1257]
+# amounts_train = [300,300,300,300,27,70,300]
+# amounts_val = [82, 531, 104, 278, 6, 17, 4359]
 
 # this have been played around with to make it work
-#amounts_train = [311,1994,391,1043,25,66,21700] #75/25 train
-#amounts_val = [102,664,129,347,8,21,5448] #75/25 val
+amounts_train = [311,1994,391,1043,25,66,21700] #75/25 train
+amounts_val = [102,664,129,347,8,21,5448] #75/25 val
 
 inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te = replicate_data(X, Y, 'three', amounts_train, amounts_val, seed_val)
 
@@ -128,7 +129,7 @@ if __name__ == '__main__':
     momentum_vals = [0.6,0.75, 0.9]
     learning_rate_vals = [4e-3, 4e-2, 4e-4, 4e-5, 4e-1]
     batch_size = [25,100,200]
-    epochs = 1
+    epochs = 10000
     
     #outfile = 'CSplit_LR4e-2_B25_E5k_M09_Continuation_to_20k'
     outfile = 'test'
@@ -138,11 +139,11 @@ if __name__ == '__main__':
     # load settings in
     #loadpath = 'test_CSplit_4e-1_Settings'
     #BaseNN.load_state_dict(torch.load(loadpath, map_location=device))
-    optimizer = optim.SGD(BaseNN.parameters(), lr=learning_rate_vals[3], momentum=momentum_vals[0])
+    optimizer = optim.SGD(BaseNN.parameters(), lr=learning_rate_vals[1], momentum=momentum_vals[0])
     
     # setting scheduler
     #scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[5000], gamma=0.1, verbose=False)
-    
+    outfile = "./Saved_Final_Data/Final_7525Split_CM21Pred_Settings"
     main(epochs,BaseNN,optimizer,outfile)
 
     # file name for the following loop
