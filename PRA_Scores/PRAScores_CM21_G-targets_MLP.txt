@@ -1,4 +1,4 @@
-C-targets, CM21 data-split
+G-targets, CM21 data-split
 RF Recall
 0.910 _{0.866}^{0.979} , 0.049//
 0.926 _{0.870}^{0.979} , 0.042//
