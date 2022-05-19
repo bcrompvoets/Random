@@ -33,13 +33,15 @@ seed_val = 1111
 # amounts_val = [82, 531, 104, 278, 6, 17, 4359]
 
 # For use with CM21 predictions as targets
-# amounts_train = [331,1141,231+529+27+70+1257]
-amounts_train = [300,300,300+300+27+70+300] 
+amounts_train = [331,1141,231+529+27+70+1257]
+# amounts_train = [300,300,300+300+27+70+300] 
 amounts_val = [82, 531, 104+278+6+17+4359]
 
 # this have been played around with to make it work
 # amounts_train = [311,1994,391,1043,25,66,21700] #75/25 train
 # amounts_val = [102,664,129,347,8,21,5448] #75/25 val
+# amounts_train = [311,1994,391+1043+25+66+21700] #75/25 train
+# amounts_val = [102,664,129+347+8+21+5448] #75/25 val
 
 inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te = replicate_data(X, Y, 'three', amounts_train, amounts_val, seed_val)
 
@@ -148,7 +150,7 @@ if __name__ == '__main__':
     
     # setting scheduler
     #scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[5000], gamma=0.1, verbose=False)
-    outfile = "./Saved_Final_Data/Final_300sSplit_CM21Pred"
+    outfile = "./Saved_Final_Data/Final_CSplit_CM21Pred"
     main(epochs,BaseNN,optimizer,outfile)
 
     # file name for the following loop
