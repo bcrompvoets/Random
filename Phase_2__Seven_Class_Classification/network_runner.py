@@ -18,9 +18,10 @@ from sklearn.metrics import ConfusionMatrixDisplay
 from sklearn.metrics import classification_report
 
 from custom_dataloader import replicate_data
-from NN_Defs import get_n_params, train, validate, BaseMLP
+from NN_Defs import get_n_params, train, validate, BaseMLP, TwoLayerMLP
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 print(f'Running on : {device}')
 
 # settings for plotting in this section
@@ -29,7 +30,9 @@ custom_labs = ['Class 1', 'Class 2', 'Gals','AGNs','Shocks','PAHs','Stars']
 
 # data load
 X = np.load("Input_Class_AllClasses_Sep.npy") # Load input data
+X = np.float32(X)
 Y = np.load("Target_Class_AllClasses_Sep.npy") # Load target data
+Y = np.float32(Y)
 
 seed_val = 1111
 # amounts_train = [331,1141,231,529,27,70,1257]
@@ -65,11 +68,11 @@ def main(epochs, NetInstance, OptInstance, outfile, ScheduleInstance=None):
 
     train_loss_all = []
     val_loss_all = []
-
+    
     for epoch in range(0, epochs):
         train_loss, train_predictions, train_truth_values = train(epoch, NetInstance, OptInstance, train_loader, device)
-        val_loss, val_accuracy, val_predictions, val_truth_values = validate(NetInstance, val_loader, device)
-
+        val_loss, val_predictions, val_truth_values = validate(NetInstance, val_loader, device)
+        
         # store loss in an array to plot
         train_loss_all.append(train_loss)
         val_loss_all.append(val_loss)
@@ -84,9 +87,9 @@ def main(epochs, NetInstance, OptInstance, outfile, ScheduleInstance=None):
 
             if ScheduleInstance is not None:
                 print(f'Learning Rate : {ScheduleInstance.get_last_lr()}')
-
+    print("good2")
     # running testing set through network
-    test_loss, test_accuracy, test_predictions, test_truth_values = validate(NetInstance, test_loader, device)
+    test_loss, test_predictions, test_truth_values = validate(NetInstance, test_loader, device)
 
     # plotting losses and saving fig
     fig, ax = plt.subplots(figsize=(10,6))
@@ -129,22 +132,40 @@ if __name__ == '__main__':
     momentum_vals = [0.6,0.75, 0.9]
     learning_rate_vals = [4e-3, 4e-2, 4e-4, 4e-5, 4e-1]
     batch_size = [25,100,200]
-    epochs = 20000
-    
-    #outfile = 'CSplit_LR4e-2_B25_E5k_M09_Continuation_to_20k'
-    # outfile = 'test'
-    BaseNN = BaseMLP(8, 20, 7, weight_initialize=True)
-    #np = get_n_params(BaseNN)
-    #print(np)
-    # load settings in
-    loadpath = "300s_Split_Mo09_30kepochs_lr4e2_Settings"
-    BaseNN.load_state_dict(torch.load(loadpath, map_location=device))
-    optimizer = optim.SGD(BaseNN.parameters(), lr=learning_rate_vals[0], momentum=momentum_vals[1])
+    epochs = 1000
+    filepath = "MLP_Runs_Results/"  
+    # outfile = filepath+"TwoLayers_300s_Mo09_20kepochs_lr4e2"
+    outfile = "test"
+
+
+    # Two Layer MLP
+    TwoNN = TwoLayerMLP(8, 20, 7, weight_initialize=True)
+    ## load settings in
+    # loadpath = filepath+"TwoLayers_300s_Mo09_10kepochs_lr4e2_Settings"
+    # TwoNN.load_state_dict(torch.load(loadpath, map_location=device))
+    optimizer = optim.SGD(TwoNN.parameters(), lr=learning_rate_vals[2], momentum=momentum_vals[1])
+    main(epochs,TwoNN,optimizer,outfile)
+
+
+
+    # Single Layer MLP
+    # BaseNN = BaseMLP(8, 20, 7, weight_initialize=True)
+
+    ## load settings in
+    # loadpath = filepath+"300s_Split_Mo09_30kepochs_lr4e2_Settings"
+    # BaseNN.load_state_dict(torch.load(loadpath, map_location=device))
+
+    # optimizer = optim.SGD(BaseNN.parameters(), lr=learning_rate_vals[0], momentum=momentum_vals[1])
     
     # setting scheduler
     # scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[5000], gamma=0.1, verbose=False)
-    outfile = "300s_Split_Mo09_50kepochs_lr4e2"
-    main(epochs,BaseNN,optimizer,outfile)
+  
+    # main(epochs,BaseNN,optimizer,outfile)
+
+
+
+
+
 
     # file name for the following loop
     # outfile = [ '300s_Split_Mo09_10kepochs_lr4e3',
