@@ -71,6 +71,8 @@ def train(epoch, model, optimizer, train_loader, device):
 def validate(model, val_loader, device):
     """Validation loop for network.""" 
     
+    model.to(device) # send to device
+    
     # setting in evaluation mode will iterate through entire dataloader according to batch size
     model.eval() # set network into evaluation mode
     

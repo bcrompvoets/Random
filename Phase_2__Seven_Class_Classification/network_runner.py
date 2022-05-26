@@ -87,7 +87,7 @@ def main(epochs, NetInstance, OptInstance, outfile, ScheduleInstance=None):
 
             if ScheduleInstance is not None:
                 print(f'Learning Rate : {ScheduleInstance.get_last_lr()}')
-    print("good2")
+    
     # running testing set through network
     test_loss, test_predictions, test_truth_values = validate(NetInstance, test_loader, device)
 
@@ -101,7 +101,7 @@ def main(epochs, NetInstance, OptInstance, outfile, ScheduleInstance=None):
     plt.tight_layout()
     plt.savefig(outfile+'_loss.png')
     plt.close()
-
+    
     # plotting Confusion Matrix and saving
     fig, ax = plt.subplots(3,1, figsize=(12,20))
     ConfusionMatrixDisplay.from_predictions(train_truth_values, train_predictions, ax = ax[0], normalize='true', cmap=cm_blues, display_labels=custom_labs, colorbar=False)
@@ -132,19 +132,32 @@ if __name__ == '__main__':
     momentum_vals = [0.6,0.75, 0.9]
     learning_rate_vals = [4e-3, 4e-2, 4e-4, 4e-5, 4e-1]
     batch_size = [25,100,200]
-    epochs = 1000
+    epochs = 10000
     filepath = "MLP_Runs_Results/"  
-    # outfile = filepath+"TwoLayers_300s_Mo09_20kepochs_lr4e2"
-    outfile = "test"
+    # outfile = filepath+"TwoLayers_300s_Mo09_10kepochs_lr4e2"
+    # outfile = "test"
 
 
     # Two Layer MLP
-    TwoNN = TwoLayerMLP(8, 20, 7, weight_initialize=True)
+    # TwoNN = TwoLayerMLP(8, 20, 7, weight_initialize=True)
     ## load settings in
     # loadpath = filepath+"TwoLayers_300s_Mo09_10kepochs_lr4e2_Settings"
     # TwoNN.load_state_dict(torch.load(loadpath, map_location=device))
-    optimizer = optim.SGD(TwoNN.parameters(), lr=learning_rate_vals[2], momentum=momentum_vals[1])
-    main(epochs,TwoNN,optimizer,outfile)
+    # optimizer = optim.SGD(TwoNN.parameters(), lr=learning_rate_vals[2], momentum=momentum_vals[1])
+    # main(epochs,TwoNN,optimizer,outfile)
+
+    # file name for the following loop
+    outfile = [ filepath+'TwoLayers_300s_Mo09_10kepochs_lr4e3',
+                filepath+'TwoLayers_300s_Mo09_10kepochs_lr4e2',
+                filepath+'TwoLayers_300s_Mo09_10kepochs_lr4e4',
+                filepath+'TwoLayers_300s_Mo09_10kepochs_lr4e5',
+                filepath+'TwoLayers_300s_Mo09_10kepochs_lr4e1']
+    for i, learning_rate in enumerate(learning_rate_vals):
+        TwoNN = TwoLayerMLP(8, 20, 7, weight_initialize=True)
+        optimizer = optim.SGD(TwoNN.parameters(), lr=learning_rate, momentum=momentum_vals[2])
+        main(epochs,TwoNN,optimizer,outfile[i])
+
+
 
 
 
