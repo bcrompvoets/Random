@@ -1,3 +1,9 @@
+import time
+tic = time.perf_counter()
+# Check to make sure running on M1, will say 'arm'
+import platform
+print(platform.processor())
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -5,11 +11,9 @@ import torch.optim as optim
 import torch.utils.data as data_utils
 from torchvision import datasets, transforms
 
+
 import matplotlib.pyplot as plt
 import numpy as np
-
-from sklearnex import patch_sklearn
-patch_sklearn()
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -20,8 +24,10 @@ from sklearn.metrics import classification_report
 from custom_dataloader import replicate_data
 from NN_Defs import get_n_params, train, validate, BaseMLP, TwoLayerMLP
 
+
 # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+# device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+device = torch.device("cpu")
 print(f'Running on : {device}')
 
 # settings for plotting in this section
@@ -48,21 +54,21 @@ inp_va = scaler_S.transform(inp_va)
 inp_te = scaler_S.transform(inp_te)
 
 # concatenate the labels onto the inputs for both training and validation
-inp_tr = torch.tensor(inp_tr)
-tar_tr = torch.tensor(tar_tr)
-inp_va = torch.tensor(inp_va)
-tar_va = torch.tensor(tar_va)
-inp_te = torch.tensor(inp_te)
-tar_te = torch.tensor(tar_te)
+inp_tr = torch.as_tensor(inp_tr)
+tar_tr = torch.as_tensor(tar_tr)
+inp_va = torch.as_tensor(inp_va)
+tar_va = torch.as_tensor(tar_va)
+inp_te = torch.as_tensor(inp_te)
+tar_te = torch.as_tensor(tar_te)
 
 train_data = data_utils.TensorDataset(inp_tr, tar_tr)
 val_data = data_utils.TensorDataset(inp_va, tar_va)
 test_data = data_utils.TensorDataset(inp_te, tar_te)
 
 # constructing data loaders for nn
-train_loader = torch.utils.data.DataLoader(train_data, batch_size=25, shuffle=True)
-val_loader = torch.utils.data.DataLoader(val_data, batch_size=25, shuffle=True)
-test_loader = torch.utils.data.DataLoader(test_data, batch_size=25, shuffle=True)
+train_loader = torch.utils.data.DataLoader(train_data, batch_size=25, shuffle=True,pin_memory=True,num_workers=0)
+val_loader = torch.utils.data.DataLoader(val_data, batch_size=25, shuffle=True,pin_memory=True,num_workers=0)
+test_loader = torch.utils.data.DataLoader(test_data, batch_size=25, shuffle=True,pin_memory=True,num_workers=0)
 
 def main(epochs, NetInstance, OptInstance, outfile, ScheduleInstance=None):
 
@@ -132,30 +138,41 @@ if __name__ == '__main__':
     momentum_vals = [0.6,0.75, 0.9]
     learning_rate_vals = [4e-3, 4e-2, 4e-4, 4e-5, 4e-1]
     batch_size = [25,100,200]
-    epochs = 10000
-    filepath = "MLP_Runs_Results/"  
-    # outfile = filepath+"TwoLayers_300s_Mo09_10kepochs_lr4e2"
+    epochs = 20000
+    filepath = "MLP_Runs_Results/Two_Layer/"  
+    outfile = filepath+"TwoLayers_300s_Mo09_30kepochs_lr4e1"
     # outfile = "test"
 
 
     # Two Layer MLP
-    # TwoNN = TwoLayerMLP(8, 20, 7, weight_initialize=True)
+    TwoNN = TwoLayerMLP(8, 20, 7, weight_initialize=True)
     ## load settings in
-    # loadpath = filepath+"TwoLayers_300s_Mo09_10kepochs_lr4e2_Settings"
-    # TwoNN.load_state_dict(torch.load(loadpath, map_location=device))
-    # optimizer = optim.SGD(TwoNN.parameters(), lr=learning_rate_vals[2], momentum=momentum_vals[1])
-    # main(epochs,TwoNN,optimizer,outfile)
+    loadpath = filepath+"test_Settings"
+    TwoNN.load_state_dict(torch.load(loadpath, map_location=device))
+    optimizer = optim.SGD(TwoNN.parameters(), lr=learning_rate_vals[4], momentum=momentum_vals[2])
+    main(epochs,TwoNN,optimizer,outfile)
 
     # file name for the following loop
-    outfile = [ filepath+'TwoLayers_300s_Mo09_10kepochs_lr4e3',
-                filepath+'TwoLayers_300s_Mo09_10kepochs_lr4e2',
-                filepath+'TwoLayers_300s_Mo09_10kepochs_lr4e4',
-                filepath+'TwoLayers_300s_Mo09_10kepochs_lr4e5',
-                filepath+'TwoLayers_300s_Mo09_10kepochs_lr4e1']
-    for i, learning_rate in enumerate(learning_rate_vals):
-        TwoNN = TwoLayerMLP(8, 20, 7, weight_initialize=True)
-        optimizer = optim.SGD(TwoNN.parameters(), lr=learning_rate, momentum=momentum_vals[2])
-        main(epochs,TwoNN,optimizer,outfile[i])
+    # outfile = [ filepath+'TwoLayers_300s_Mo09_10kepochs_lr4e3',
+    #             filepath+'TwoLayers_300s_Mo09_10kepochs_lr4e2',
+    #             filepath+'TwoLayers_300s_Mo09_10kepochs_lr4e4',
+    #             filepath+'TwoLayers_300s_Mo09_10kepochs_lr4e5',
+    #             filepath+'TwoLayers_300s_Mo09_10kepochs_lr4e1']
+    # for i, learning_rate in enumerate(learning_rate_vals):
+    #     TwoNN = TwoLayerMLP(8, 20, 7, weight_initialize=True)
+    #     optimizer = optim.SGD(TwoNN.parameters(), lr=learning_rate, momentum=momentum_vals[2])
+    #     main(epochs,TwoNN,optimizer,outfile[i])
+
+    # file name for the following loop
+    # outfile = [filepath+'TwoLayers_300s_Mo06_10kepochs_lr4e1',\
+    #     filepath+'TwoLayers_300s_Mo075_10kepochs_lr4e1', filepath+'TwoLayers_300s_Mo09_10kepochs_lr4e1']
+    # for i, momentum in enumerate(momentum_vals):
+    #     TwoNN = TwoLayerMLP(8, 20, 7)
+    #     optimizer = optim.SGD(TwoNN.parameters(), lr=learning_rate_vals[4], momentum=momentum)
+    #     main(epochs,TwoNN,optimizer,outfile[i])
+
+
+
 
 
 
@@ -196,3 +213,6 @@ if __name__ == '__main__':
         #BaseNN = BaseMLP(8, 20, 3)
         #optimizer = optim.SGD(BaseNN.parameters(), lr=learning_rate_vals[0], momentum=momentum)
         #main(epochs,BaseNN,optimizer,outfile[i])
+
+toc = time.perf_counter()
+print(f"Completed in {toc - tic:0.1f} seconds")
