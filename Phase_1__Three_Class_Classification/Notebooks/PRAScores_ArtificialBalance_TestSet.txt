@@ -1,5 +1,25 @@
 Artificially balanced dataset provided by Hossen Teimoorinia 
+LR Recall & Precision & Accuracy
+Class I& $0.5\pm6.8$ & $99.5\pm5.0$&// 
+Class II& $99.9\pm1.2$ & $10.1\pm3.0$ & $10.3\pm5.5$ // 
+Contaminants& $0.4\pm6.2$ & $100.0\pm0.1$&// 
+SVC Recall & Precision & Accuracy
+Class I& $0.5\pm6.9$ & $99.8\pm3.4$&// 
+Class II& $0.4\pm6.3$ & $99.9\pm1.1$ & $88.4\pm0.5$ // 
+Contaminants& $100.0\pm0.2$ & $88.4\pm0.8$&// 
+Stack Recall & Precision & Accuracy
+Class I& $0.5\pm6.8$ & $99.3\pm7.7$&// 
+Class II& $0.4\pm6.3$ & $99.9\pm1.2$ & $88.4\pm0.6$ // 
+Contaminants& $100.0\pm0.2$ & $88.4\pm0.8$&// 
+RF Recall & Precision & Accuracy
+Class I& $99.9\pm1.0$ & $2.0\pm4.4$&// 
+Class II& $0.5\pm6.5$ & $99.9\pm1.5$ & $2.2\pm6.7$ // 
+Contaminants& $0.5\pm6.8$ & $100.0\pm0.0$&// 
+GB Recall & Precision & Accuracy
+Class I& $99.9\pm0.8$ & $2.0\pm4.5$&// 
+Class II& $0.5\pm6.5$ & $99.9\pm1.6$ & $2.2\pm6.7$ // 
+Contaminants& $0.5\pm6.8$ & $100.0\pm0.0$&// 
 XGB Recall & Precision & Accuracy
-Class I& $0.5\pm6.8$ & $99.5\pm4.9$&// 
-Class II& $99.9\pm1.3$ & $10.1\pm2.9$ & $10.3\pm5.5$ // 
-Contaminants& $0.4\pm6.3$ & $100.0\pm0.1$&// 
+Class I& $99.9\pm1.2$ & $2.0\pm4.2$&// 
+Class II& $0.5\pm6.5$ & $99.9\pm1.7$ & $2.2\pm6.6$ // 
+Contaminants& $0.5\pm6.8$ & $100.0\pm0.0$&// 

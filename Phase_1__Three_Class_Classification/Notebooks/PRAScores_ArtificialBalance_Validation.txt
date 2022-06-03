@@ -1,9 +1,9 @@
 Artificially balanced dataset provided by Hossen Teimoorinia 
-XGB Recall & Precision & Accuracy
+LR Recall & Precision & Accuracy
 Class I& $96.0\pm0.4$ & $93.0\pm0.4$&// 
 Class II& $81.4\pm0.8$ & $86.1\pm0.7$ & $88.4\pm0.3$ // 
 Contaminants& $87.7\pm0.6$ & $85.8\pm0.7$&// 
-LR Recall & Precision & Accuracy
+SVC Recall & Precision & Accuracy
 Class I& $97.8\pm0.3$ & $93.7\pm0.4$&// 
 Class II& $88.2\pm0.6$ & $95.7\pm0.4$ & $94.1\pm0.2$ // 
 Contaminants& $96.2\pm0.4$ & $93.0\pm0.5$&// 
