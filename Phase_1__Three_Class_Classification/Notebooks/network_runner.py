@@ -23,9 +23,12 @@ cm_blues = plt.cm.Blues
 custom_labs = ['Class 1', 'Class 2', 'Others']
 
 # data load
-X = np.load("Input_Class_AllClasses_Sep.npy") # Load input data
-# Y = np.load("Target_Class_AllClasses_Sep.npy") # Load target data
-Y = np.load("Pred_Class_AllClasses_Sep.npy") # Load predictions from CM21 as targets
+# X = np.load("Input_Class_AllClasses_Sep.npy") # Load input data
+# # Y = np.load("Target_Class_AllClasses_Sep.npy") # Load target data
+# Y = np.load("Pred_Class_AllClasses_Sep.npy") # Load predictions from CM21 as targets
+
+X = np.load("../inp.npy")
+Y = np.load("../tar.npy") 
 
 seed_val = 1111
 # amounts_train = [331,1141,231,529,27,70,1257]
@@ -44,6 +47,15 @@ amounts_val = [82, 531, 104+278+6+17+4359]
 # amounts_val = [102,664,129+347+8+21+5448] #75/25 val
 
 inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te = replicate_data(X, Y, 'three', amounts_train, amounts_val, seed_val)
+
+# Artificial data split
+
+X = np.load("../inp.npy")
+Y = np.load("../tar.npy") 
+inp_te = np.load("../inp_test.npy")
+tar_te = np.load("../tar_test.npy")
+inp_tr, inp_va, tar_tr, tar_va = train_test_split(X,Y)
+
 
 # scaling data according to training inputs
 scaler_S = StandardScaler().fit(inp_tr)
@@ -136,13 +148,12 @@ if __name__ == '__main__':
     momentum_vals = [0.6,0.75, 0.9]
     learning_rate_vals = [4e-3, 4e-2, 4e-4, 4e-5, 4e-1]
     batch_size = [25,100,200]
-    epochs = 10000
+    epochs = 1000
     
-    #outfile = 'CSplit_LR4e-2_B25_E5k_M09_Continuation_to_20k'
     outfile = 'test'
-    BaseNN = BaseMLP(8, 20, 3, weight_initialize=True)
-    #np = get_n_params(BaseNN)
-    #print(np)
+    # BaseNN = BaseMLP(8, 20, 3, weight_initialize=True)
+    BaseNN = BaseMLP(4, 20, 3, weight_initialize=True) # Artifical data split
+    
     # load settings in
     #loadpath = 'test_CSplit_4e-1_Settings'
     #BaseNN.load_state_dict(torch.load(loadpath, map_location=device))
@@ -150,7 +161,7 @@ if __name__ == '__main__':
     
     # setting scheduler
     #scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[5000], gamma=0.1, verbose=False)
-    outfile = "./Saved_Final_Data/Final_CSplit_CM21Pred"
+    # outfile = "./Saved_Final_Data/Final_CSplit_CM21Pred"
     main(epochs,BaseNN,optimizer,outfile)
 
     # file name for the following loop

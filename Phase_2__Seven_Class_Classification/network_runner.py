@@ -138,17 +138,17 @@ if __name__ == '__main__':
     momentum_vals = [0.6,0.75, 0.9]
     learning_rate_vals = [4e-3, 4e-2, 4e-4, 4e-5, 4e-1]
     batch_size = [25,100,200]
-    epochs = 20000
+    epochs = 3000
     filepath = "MLP_Runs_Results/Two_Layer/"  
-    outfile = filepath+"TwoLayers_300s_Mo09_30kepochs_lr4e1"
-    # outfile = "test"
+    # outfile = filepath+"TwoLayers_300s_Mo09_30kepochs_lr4e1"
+    outfile = "test"
 
 
     # Two Layer MLP
     TwoNN = TwoLayerMLP(8, 20, 7, weight_initialize=True)
     ## load settings in
-    loadpath = filepath+"test_Settings"
-    TwoNN.load_state_dict(torch.load(loadpath, map_location=device))
+    # loadpath = filepath+"test_Settings"
+    # TwoNN.load_state_dict(torch.load(loadpath, map_location=device))
     optimizer = optim.SGD(TwoNN.parameters(), lr=learning_rate_vals[4], momentum=momentum_vals[2])
     main(epochs,TwoNN,optimizer,outfile)
 
