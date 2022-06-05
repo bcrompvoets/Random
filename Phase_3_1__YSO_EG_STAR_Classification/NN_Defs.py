@@ -6,9 +6,11 @@ import torch.optim as optim
 import torch.utils.data as data_utils
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score, precision_score, recall_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, ConfusionMatrixDisplay
 from custom_dataloader import replicate_data
 import random
+import time
+import matplotlib.pyplot as plt
 
 
 # to get number of parameters in network
@@ -258,3 +260,85 @@ def bootstrap(NN, epochs, OptInstance, X, Y, num_train, num_val, device, Schedul
     ScoresP = precision_score(tar_va,pred_va,average=None,zero_division=1)
 
     return ScoresR, ScoresP, ScoresA
+
+def find_best_MLP(MLP, filepath_to_MLPdir, learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, device):
+    f1Max = 0.5
+    tic1 = time.perf_counter()
+    for lr in learning_rate_vals:
+        for mo in momentum_vals:
+            for n in [10,20]:
+                outfile = filepath_to_MLPdir + "LR_" + str(lr) + "_MO_" + str(mo) + "_NEUR_" + str(n)
+                NN = MLP(8,n,3)
+                optimizer = optim.SGD(NN.parameters(), lr=lr, momentum=mo)
+                f1score = main(3000, NN, optimizer, outfile, train_loader, val_loader, test_loader, device)
+                if f1score[0] > f1Max and f1score[1] != 0 and f1score[2] != 0:
+                    f1Max = f1score[0]
+                    bestfile = outfile
+    toc1 = time.perf_counter()
+    print(f"Completed full MLP in {(toc1 - tic1)/60:0.1f} minutes")
+    return bestfile
+
+def main(epochs, NetInstance, OptInstance, outfile, train_loader, val_loader, test_loader, device, ScheduleInstance=None):
+
+    train_loss_all = []
+    val_loss_all = []
+    
+    for epoch in range(0, epochs):
+        train_loss, train_predictions, train_truth_values = train(epoch, NetInstance, OptInstance, train_loader, device)
+        val_loss, val_predictions, val_truth_values = validate(NetInstance, val_loader, device)
+        
+        # store loss in an array to plot
+        train_loss_all.append(train_loss)
+        val_loss_all.append(val_loss)
+
+        if ScheduleInstance is not None:
+            ScheduleInstance.step()
+
+        # print outs
+        # if epoch % 1000 == 0:
+        #     print(f'Train Epoch: {epoch} ----- Train Loss: {train_loss.item():.6f}')
+        #     print(f'Validation Loss: {val_loss:.4f}')
+
+            if ScheduleInstance is not None:
+                print(f'Learning Rate : {ScheduleInstance.get_last_lr()}')
+    
+    # running testing set through network
+    test_loss, test_predictions, test_truth_values = validate(NetInstance, test_loader, device)
+
+    # plotting losses and saving fig
+    # fig, ax = plt.subplots(figsize=(10,6))
+    # ax.plot(train_loss_all, label='Train Loss')
+    # ax.plot(val_loss_all, label='Validation Loss')
+    # ax.set_xlabel('Epoch')
+    # ax.legend()
+    # ax.grid()
+    # plt.tight_layout()
+    # plt.savefig(outfile+'_loss.png')
+    # plt.close()
+    
+    # plotting Confusion Matrix and saving
+    fig, ax = plt.subplots(3,1, figsize=(12,20))
+    ConfusionMatrixDisplay.from_predictions(train_truth_values, train_predictions, ax = ax[0], normalize='true', cmap=cm_blues, display_labels=custom_labs, colorbar=False)
+    ConfusionMatrixDisplay.from_predictions(val_truth_values, val_predictions, ax = ax[1], normalize='true', cmap=cm_blues, display_labels=custom_labs, colorbar=False)
+    ConfusionMatrixDisplay.from_predictions(test_truth_values, test_predictions, ax = ax[2], normalize='true', cmap=cm_blues, display_labels=custom_labs, colorbar=False)
+    
+    # setting plotting attributes here
+    ax[0].set_title('Training Set')
+    ax[1].set_title('Validation Set')
+    ax[2].set_title('Testing Set')
+    plt.tight_layout()
+    plt.savefig(outfile+'_CM.png')
+    plt.close()
+    
+    # printout for classifcation report for all sets
+    # print('Target Set Report')
+    # print(classification_report(train_truth_values, train_predictions, target_names=custom_labs, zero_division=0))
+    # print('Validation Set Report')
+    # print(classification_report(val_truth_values, val_predictions, target_names=custom_labs, zero_division=0))
+    # print('Testing Set Report')
+    # print(classification_report(test_truth_values, test_predictions, target_names=custom_labs, zero_division=0))
+
+    # saving the network settings
+    torch.save(NetInstance.state_dict(),outfile+'_Settings')
+
+    return f1_score(val_truth_values,val_predictions,average=None,zero_division=1)
