@@ -218,13 +218,13 @@ class FiveLayerMLP(nn.Module):
 
 
 def MLP_data_setup(X,Y, amounts_train, amounts_val):
-    inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te = replicate_data(X, Y, 'seven', amounts_train, amounts_val,random.randint(0,1000))
+    inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te = replicate_data(X, Y, amounts_train, amounts_val)
             
     # scaling data according to training inputs
     scaler_S = StandardScaler().fit(inp_tr)
     inp_tr = scaler_S.transform(inp_tr)
     inp_va = scaler_S.transform(inp_va)
-    # inp_te = scaler_S.transform(inp_te) 
+    inp_te = scaler_S.transform(inp_te) 
 
     # creation of tensor instances
 
@@ -232,19 +232,19 @@ def MLP_data_setup(X,Y, amounts_train, amounts_val):
     tar_tr = torch.as_tensor(tar_tr)
     inp_va = torch.as_tensor(inp_va)
     tar_va = torch.as_tensor(tar_va)
-    # inp_te = torch.as_tensor(inp_te)
-    # tar_te = torch.as_tensor(tar_te)
+    inp_te = torch.as_tensor(inp_te)
+    tar_te = torch.as_tensor(tar_te)
 
     # pass tensors into TensorDataset instances
     train_data = data_utils.TensorDataset(inp_tr, tar_tr)
     val_data = data_utils.TensorDataset(inp_va, tar_va)
-    # test_data = data_utils.TensorDataset(inp_te, tar_te)
+    test_data = data_utils.TensorDataset(inp_te, tar_te)
 
     # constructing data loaders
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=25, shuffle=True)
     val_loader = torch.utils.data.DataLoader(val_data, batch_size=25, shuffle=True)
-    # test_loader = torch.utils.data.DataLoader(test_data, batch_size=25, shuffle=True)
-    return train_loader, val_loader
+    test_loader = torch.utils.data.DataLoader(test_data, batch_size=25, shuffle=True)
+    return train_loader, val_loader, test_loader
 
 def bootstrap(NN, epochs, OptInstance, X, Y, num_train, num_val, device, ScheduleInstance=None):
     train_loader, val_loader = MLP_data_setup(X, Y, num_train, num_val)
@@ -267,8 +267,11 @@ def find_best_MLP(MLP, filepath_to_MLPdir, learning_rate_vals, momentum_vals, tr
     for lr in learning_rate_vals:
         for mo in momentum_vals:
             for n in [10,20]:
-                outfile = filepath_to_MLPdir + "LR_" + str(lr) + "_MO_" + str(mo) + "_NEUR_" + str(n)
+                outfile = filepath_to_MLPdir + "6k_LR_" + str(lr) + "_MO_" + str(mo) + "_NEUR_" + str(n)
                 NN = MLP(8,n,3)
+                # load path
+                loadpath = filepath_to_MLPdir + "LR_" + str(lr) + "_MO_" + str(mo) + "_NEUR_" + str(n) +"_Settings"
+                NN.load_state_dict(torch.load(loadpath, map_location=device))
                 optimizer = optim.SGD(NN.parameters(), lr=lr, momentum=mo)
                 f1score = main(3000, NN, optimizer, outfile, train_loader, val_loader, test_loader, device)
                 if f1score[0] > f1Max and f1score[1] != 0 and f1score[2] != 0:
@@ -316,23 +319,7 @@ def main(epochs, NetInstance, OptInstance, outfile, train_loader, val_loader, te
     plt.savefig(outfile+'_loss.png')
     plt.close()
     
-
-    cm_blues = plt.cm.Blues
     custom_labs = ['YSO','EG','Star']
-
-    # # plotting Confusion Matrix and saving
-    # fig, ax = plt.subplots(3,1, figsize=(12,20))
-    # ConfusionMatrixDisplay.from_predictions(train_truth_values, train_predictions, ax = ax[0], normalize='true', cmap=cm_blues, display_labels=custom_labs, colorbar=False)
-    # ConfusionMatrixDisplay.from_predictions(val_truth_values, val_predictions, ax = ax[1], normalize='true', cmap=cm_blues, display_labels=custom_labs, colorbar=False)
-    # ConfusionMatrixDisplay.from_predictions(test_truth_values, test_predictions, ax = ax[2], normalize='true', cmap=cm_blues, display_labels=custom_labs, colorbar=False)
-    
-    # # setting plotting attributes here
-    # ax[0].set_title('Training Set')
-    # ax[1].set_title('Validation Set')
-    # ax[2].set_title('Testing Set')
-    # plt.tight_layout()
-    # plt.savefig(outfile+'_CM.png')
-    # plt.close()
     
     with open(outfile+'_Classification_Reports.txt','w') as f:
         f.write('Target Set Report\n')
@@ -341,13 +328,7 @@ def main(epochs, NetInstance, OptInstance, outfile, train_loader, val_loader, te
         f.write(classification_report(val_truth_values, val_predictions, target_names=custom_labs, zero_division=0))
         f.write('\nTesting Set Report\n')
         f.write(classification_report(test_truth_values, test_predictions, target_names=custom_labs, zero_division=0))
-    # printout for classifcation report for all sets
-    # print('Target Set Report')
-    # print(classification_report(train_truth_values, train_predictions, target_names=custom_labs, zero_division=0))
-    # print('Validation Set Report')
-    # print(classification_report(val_truth_values, val_predictions, target_names=custom_labs, zero_division=0))
-    # print('Testing Set Report')
-    # print(classification_report(test_truth_values, test_predictions, target_names=custom_labs, zero_division=0))
+        
 
     # saving the network settings
     torch.save(NetInstance.state_dict(),outfile+'_Settings')
