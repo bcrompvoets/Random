@@ -320,25 +320,32 @@ def main(epochs, NetInstance, OptInstance, outfile, train_loader, val_loader, te
     cm_blues = plt.cm.Blues
     custom_labs = ['YSO','EG','Star']
 
-    # plotting Confusion Matrix and saving
-    fig, ax = plt.subplots(3,1, figsize=(12,20))
-    ConfusionMatrixDisplay.from_predictions(train_truth_values, train_predictions, ax = ax[0], normalize='true', cmap=cm_blues, display_labels=custom_labs, colorbar=False)
-    ConfusionMatrixDisplay.from_predictions(val_truth_values, val_predictions, ax = ax[1], normalize='true', cmap=cm_blues, display_labels=custom_labs, colorbar=False)
-    ConfusionMatrixDisplay.from_predictions(test_truth_values, test_predictions, ax = ax[2], normalize='true', cmap=cm_blues, display_labels=custom_labs, colorbar=False)
+    # # plotting Confusion Matrix and saving
+    # fig, ax = plt.subplots(3,1, figsize=(12,20))
+    # ConfusionMatrixDisplay.from_predictions(train_truth_values, train_predictions, ax = ax[0], normalize='true', cmap=cm_blues, display_labels=custom_labs, colorbar=False)
+    # ConfusionMatrixDisplay.from_predictions(val_truth_values, val_predictions, ax = ax[1], normalize='true', cmap=cm_blues, display_labels=custom_labs, colorbar=False)
+    # ConfusionMatrixDisplay.from_predictions(test_truth_values, test_predictions, ax = ax[2], normalize='true', cmap=cm_blues, display_labels=custom_labs, colorbar=False)
     
-    # setting plotting attributes here
-    ax[0].set_title('Training Set')
-    ax[1].set_title('Validation Set')
-    ax[2].set_title('Testing Set')
-    plt.tight_layout()
-    plt.savefig(outfile+'_CM.png')
-    plt.close()
+    # # setting plotting attributes here
+    # ax[0].set_title('Training Set')
+    # ax[1].set_title('Validation Set')
+    # ax[2].set_title('Testing Set')
+    # plt.tight_layout()
+    # plt.savefig(outfile+'_CM.png')
+    # plt.close()
     
+    with open(outfile+'_Classification_Reports.txt','w') as f:
+        f.write('Target Set Report\n')
+        f.write(classification_report(train_truth_values, train_predictions, target_names=custom_labs, zero_division=0))
+        f.write('\nValidation Set Report\n')
+        f.write(classification_report(val_truth_values, val_predictions, target_names=custom_labs, zero_division=0))
+        f.write('\nTesting Set Report\n')
+        f.write(classification_report(test_truth_values, test_predictions, target_names=custom_labs, zero_division=0))
     # printout for classifcation report for all sets
     # print('Target Set Report')
     # print(classification_report(train_truth_values, train_predictions, target_names=custom_labs, zero_division=0))
-    print('Validation Set Report')
-    print(classification_report(val_truth_values, val_predictions, target_names=custom_labs, zero_division=0))
+    # print('Validation Set Report')
+    # print(classification_report(val_truth_values, val_predictions, target_names=custom_labs, zero_division=0))
     # print('Testing Set Report')
     # print(classification_report(test_truth_values, test_predictions, target_names=custom_labs, zero_division=0))
 

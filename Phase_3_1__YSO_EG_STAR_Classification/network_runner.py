@@ -5,24 +5,13 @@ import platform
 print(platform.processor())
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 import torch.utils.data as data_utils
-from torchvision import datasets, transforms
-
-
 import matplotlib.pyplot as plt
 import numpy as np
-
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-import pandas as pd
-from sklearn.metrics import ConfusionMatrixDisplay
-from sklearn.metrics import classification_report, recall_score, f1_score
 
 from custom_dataloader import replicate_data
-from NN_Defs import get_n_params, train, validate, BaseMLP, TwoLayerMLP, FiveLayerMLP, find_best_MLP
+from NN_Defs import BaseMLP, TwoLayerMLP, FiveLayerMLP, find_best_MLP
 import multiprocessing as mp
 
 # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -41,8 +30,9 @@ Y = np.load("Data_and_Results/Targets_YSO_EG_Stars.npy") # Load target data
 Y = np.float32(Y)
 
 seed_val = 1111
-train_amount = [1472,857,1257]
-valid_amount = [613,405,4359]
+# train_amount = [1472,857,1257]
+train_amount = [1000,1000,1000]
+valid_amount = [6970,405,3095]
 
 inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te = replicate_data(X, Y, train_amount, valid_amount)
 
@@ -73,20 +63,17 @@ test_loader = torch.utils.data.DataLoader(test_data, batch_size=25, shuffle=True
 if __name__ == '__main__':
 
     momentum_vals = [0.6,0.75, 0.9]
-    learning_rate_vals = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5]
-    batch_size = [25,100,200]
+    learning_rate_vals = [1e-1, 1e-2, 1e-3, 1e-4]
     epochs = 3000
-    filepath = "MLP_Runs_Results/UnEvenSplit/"
+    filepath = "MLP_Runs_Results/EvenSplit/"
     filepaths = [filepath+"OneLayer/", filepath+"TwoLayer/", filepath+"FiveLayer/"]
 
     # We want to run a loop over the momentum and learning rate values, and use the
     # validation f1 score for YSOs as the metric at which to determine the best 
-
-
     iters = [(BaseMLP, filepaths[0], learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, device),\
         (TwoLayerMLP, filepaths[1], learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, device),\
         (FiveLayerMLP,filepaths[2],learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, device)]
-    with mp.Pool(4) as pool:
+    with mp.Pool(5) as pool:
         bestfiles = pool.starmap(find_best_MLP, iters)
 
     print(bestfiles) 
