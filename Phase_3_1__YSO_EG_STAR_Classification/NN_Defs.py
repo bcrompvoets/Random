@@ -6,7 +6,7 @@ import torch.optim as optim
 import torch.utils.data as data_utils
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, ConfusionMatrixDisplay
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, ConfusionMatrixDisplay, classification_report
 from custom_dataloader import replicate_data
 import random
 import time
@@ -306,16 +306,20 @@ def main(epochs, NetInstance, OptInstance, outfile, train_loader, val_loader, te
     test_loss, test_predictions, test_truth_values = validate(NetInstance, test_loader, device)
 
     # plotting losses and saving fig
-    # fig, ax = plt.subplots(figsize=(10,6))
-    # ax.plot(train_loss_all, label='Train Loss')
-    # ax.plot(val_loss_all, label='Validation Loss')
-    # ax.set_xlabel('Epoch')
-    # ax.legend()
-    # ax.grid()
-    # plt.tight_layout()
-    # plt.savefig(outfile+'_loss.png')
-    # plt.close()
+    fig, ax = plt.subplots(figsize=(10,6))
+    ax.plot(train_loss_all, label='Train Loss')
+    ax.plot(val_loss_all, label='Validation Loss')
+    ax.set_xlabel('Epoch')
+    ax.legend()
+    ax.grid()
+    plt.tight_layout()
+    plt.savefig(outfile+'_loss.png')
+    plt.close()
     
+
+    cm_blues = plt.cm.Blues
+    custom_labs = ['YSO','EG','Star']
+
     # plotting Confusion Matrix and saving
     fig, ax = plt.subplots(3,1, figsize=(12,20))
     ConfusionMatrixDisplay.from_predictions(train_truth_values, train_predictions, ax = ax[0], normalize='true', cmap=cm_blues, display_labels=custom_labs, colorbar=False)
@@ -333,8 +337,8 @@ def main(epochs, NetInstance, OptInstance, outfile, train_loader, val_loader, te
     # printout for classifcation report for all sets
     # print('Target Set Report')
     # print(classification_report(train_truth_values, train_predictions, target_names=custom_labs, zero_division=0))
-    # print('Validation Set Report')
-    # print(classification_report(val_truth_values, val_predictions, target_names=custom_labs, zero_division=0))
+    print('Validation Set Report')
+    print(classification_report(val_truth_values, val_predictions, target_names=custom_labs, zero_division=0))
     # print('Testing Set Report')
     # print(classification_report(test_truth_values, test_predictions, target_names=custom_labs, zero_division=0))
 
