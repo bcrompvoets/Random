@@ -1,6 +1,5 @@
 import time
 
-from Phase_3_1__YSO_EG_STAR_Classification.NN_Defs import MLP_data_setup
 tic = time.perf_counter()
 # Check to make sure running on M1, will say 'arm'
 import platform
