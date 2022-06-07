@@ -1,32 +1,32 @@
 Target Set Report
               precision    recall  f1-score   support
 
-         YSO       0.74      0.32      0.45      1500
-          EG       0.93      0.95      0.94      1500
-        Star       0.58      0.90      0.71      1500
+         YSO       0.77      0.34      0.47      1500
+          EG       0.94      0.95      0.95      1500
+        Star       0.58      0.89      0.70      1500
 
-    accuracy                           0.72      4500
-   macro avg       0.75      0.72      0.70      4500
-weighted avg       0.75      0.72      0.70      4500
+    accuracy                           0.73      4500
+   macro avg       0.76      0.73      0.71      4500
+weighted avg       0.76      0.73      0.71      4500
 
 Validation Set Report
               precision    recall  f1-score   support
 
-         YSO       0.73      0.33      0.45      2317
-          EG       0.73      0.94      0.82       448
-        Star       0.68      0.91      0.78      3430
+         YSO       0.70      0.33      0.45      2270
+          EG       0.69      0.94      0.80       439
+        Star       0.67      0.88      0.76      3361
 
-    accuracy                           0.69      6195
-   macro avg       0.71      0.72      0.68      6195
-weighted avg       0.70      0.69      0.66      6195
+    accuracy                           0.68      6070
+   macro avg       0.69      0.72      0.67      6070
+weighted avg       0.69      0.68      0.65      6070
 
 Testing Set Report
               precision    recall  f1-score   support
 
-         YSO       0.74      0.34      0.46      6242
-          EG       0.00      0.00      0.00         0
-        Star       0.70      0.90      0.79      9961
+         YSO       0.71      0.34      0.46      6289
+          EG       0.01      0.88      0.03         8
+        Star       0.70      0.89      0.78     10030
 
-    accuracy                           0.68     16203
-   macro avg       0.48      0.41      0.42     16203
-weighted avg       0.72      0.68      0.66     16203
+    accuracy                           0.68     16327
+   macro avg       0.47      0.70      0.42     16327
+weighted avg       0.70      0.68      0.66     16327

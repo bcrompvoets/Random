@@ -29,7 +29,7 @@ Y = np.float32(Y)
 seed_val = 1111
 # train_amount = [1472,857,1257] (Uneven)
 train_amount = [1500,1500,1500]
-valid_amount = [2318,449,3431]
+valid_amount = [2271,440,3362]
 
 
 if __name__ == '__main__':
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     iters = [(BaseMLP, filepaths[0], learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, device),\
         (TwoLayerMLP, filepaths[1], learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, device),\
         (FiveLayerMLP,filepaths[2],learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, device)]
-    with mp.Pool(5) as pool:
+    with mp.Pool(6) as pool:
         bestfiles = pool.starmap(find_best_MLP, iters)
 
     print(bestfiles) 

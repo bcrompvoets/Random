@@ -1,9 +1,9 @@
 Target Set Report
               precision    recall  f1-score   support
 
-         YSO       0.81      0.78      0.79      1500
-          EG       0.97      0.97      0.97      1500
-        Star       0.79      0.82      0.81      1500
+         YSO       0.82      0.79      0.80      1500
+          EG       0.96      0.96      0.96      1500
+        Star       0.80      0.83      0.81      1500
 
     accuracy                           0.86      4500
    macro avg       0.86      0.86      0.86      4500
@@ -12,21 +12,21 @@ weighted avg       0.86      0.86      0.86      4500
 Validation Set Report
               precision    recall  f1-score   support
 
-         YSO       0.72      0.77      0.74      2317
-          EG       0.84      0.96      0.89       448
-        Star       0.84      0.79      0.82      3430
+         YSO       0.77      0.74      0.75      2270
+          EG       0.83      0.94      0.88       439
+        Star       0.83      0.84      0.84      3361
 
-    accuracy                           0.79      6195
-   macro avg       0.80      0.84      0.82      6195
-weighted avg       0.80      0.79      0.79      6195
+    accuracy                           0.81      6070
+   macro avg       0.81      0.84      0.82      6070
+weighted avg       0.81      0.81      0.81      6070
 
 Testing Set Report
               precision    recall  f1-score   support
 
-         YSO       0.72      0.77      0.74      6242
-          EG       0.00      0.00      0.00         0
-        Star       0.86      0.80      0.83      9961
+         YSO       0.77      0.75      0.76      6289
+          EG       0.02      0.88      0.05         8
+        Star       0.86      0.85      0.85     10030
 
-    accuracy                           0.79     16203
-   macro avg       0.53      0.52      0.52     16203
-weighted avg       0.81      0.79      0.80     16203
+    accuracy                           0.81     16327
+   macro avg       0.55      0.82      0.55     16327
+weighted avg       0.82      0.81      0.81     16327
