@@ -1,5 +1,7 @@
 import time
 
+from zmq import int_sockopt_names
+
 tic = time.perf_counter()
 # Check to make sure running on M1, will say 'arm'
 import platform
@@ -20,16 +22,41 @@ import multiprocessing as mp
 device = torch.device("cpu")
 print(f'Running on : {device}')
 
-# data load
-X = np.load("Data_and_Results/Inputs_YSO_EG_Stars.npy") # Load input data
+# YSO_EG_Stars
+# X = np.load("Data_and_Results/Inputs_YSO_EG_Stars.npy") # Load input data
+# Y = np.load("Data_and_Results/Targets_YSO_EG_Stars.npy") # Load target data
+
+# YSO 
+X = np.load("Data_and_Results/Inputs_YSO_Train.npy") # Load input data
+Y = np.load("Data_and_Results/Targets_YSO_Train.npy") # Load target data
+
+
 X = np.float32(X)
-Y = np.load("Data_and_Results/Targets_YSO_EG_Stars.npy") # Load target data
 Y = np.float32(Y)
 
-seed_val = 1111
-# train_amount = [1472,857,1257] (Uneven)
-train_amount = [1500,1500,1500]
+# YSO only vals
+train_amount = [3000,3000,3000,3000]
 valid_amount = [2271,440,3362]
+
+inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te = replicate_data(X, Y, train_amount, valid_amount)
+
+# Test
+inp_te = np.load("Data_and_Results/Inputs_YSO_Test.npy") # Load input data
+tar_te = np.load("Data_and_Results/Targets_YSO_Test.npy") # Load target data
+
+# scaling data according to training inputs
+scaler_S = StandardScaler().fit(inp_tr)
+inp_tr = scaler_S.transform(inp_tr)
+inp_te = scaler_S.transform(inp_te) 
+
+inp_te = torch.as_tensor(inp_te)
+tar_te = torch.as_tensor(tar_te)
+
+# pass tensors into TensorDataset instances
+test_data = data_utils.TensorDataset(inp_te, tar_te)
+
+# constructing data loaders
+test_loader = torch.utils.data.DataLoader(test_data, batch_size=25, shuffle=True)
 
 
 if __name__ == '__main__':
@@ -39,7 +66,7 @@ if __name__ == '__main__':
     momentum_vals = [0.6,0.75, 0.9]
     learning_rate_vals = [1e-1, 1e-2, 1e-3, 1e-4]
     epochs = 3000
-    filepath = "MLP_Runs_Results/1500Split/"
+    filepath = "MLP_Runs_Results/YSO/"
     filepaths = [filepath+"OneLayer/", filepath+"TwoLayer/", filepath+"FiveLayer/"]
 
     # We want to run a loop over the momentum and learning rate values, and use the
