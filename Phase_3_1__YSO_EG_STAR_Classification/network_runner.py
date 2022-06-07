@@ -20,10 +20,6 @@ import multiprocessing as mp
 device = torch.device("cpu")
 print(f'Running on : {device}')
 
-# settings for plotting in this section
-# cm_blues = plt.cm.Blues
-# custom_labs = ['YSO','EG','Star']
-
 # data load
 X = np.load("Data_and_Results/Inputs_YSO_EG_Stars.npy") # Load input data
 X = np.float32(X)
@@ -32,33 +28,8 @@ Y = np.float32(Y)
 
 seed_val = 1111
 # train_amount = [1472,857,1257] (Uneven)
-train_amount = [1000,1000,1000]
-valid_amount = [6970,405,3095]
-
-# inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te = replicate_data(X, Y, train_amount, valid_amount)
-
-# # scaling data according to training inputs
-# scaler_S = StandardScaler().fit(inp_tr)
-# inp_tr = scaler_S.transform(inp_tr)
-# inp_va = scaler_S.transform(inp_va)
-# inp_te = scaler_S.transform(inp_te)
-
-# # concatenate the labels onto the inputs for both training and validation
-# inp_tr = torch.as_tensor(inp_tr)
-# tar_tr = torch.as_tensor(tar_tr)
-# inp_va = torch.as_tensor(inp_va)
-# tar_va = torch.as_tensor(tar_va)
-# inp_te = torch.as_tensor(inp_te)
-# tar_te = torch.as_tensor(tar_te)
-
-# train_data = data_utils.TensorDataset(inp_tr, tar_tr)
-# val_data = data_utils.TensorDataset(inp_va, tar_va)
-# test_data = data_utils.TensorDataset(inp_te, tar_te)
-
-# # constructing data loaders for nn
-# train_loader = torch.utils.data.DataLoader(train_data, batch_size=25, shuffle=True,pin_memory=True,num_workers=0)
-# val_loader = torch.utils.data.DataLoader(val_data, batch_size=25, shuffle=True,pin_memory=True,num_workers=0)
-# test_loader = torch.utils.data.DataLoader(test_data, batch_size=25, shuffle=True,pin_memory=True,num_workers=0)
+train_amount = [1500,1500,1500]
+valid_amount = [2318,449,3431]
 
 
 if __name__ == '__main__':
@@ -68,7 +39,7 @@ if __name__ == '__main__':
     momentum_vals = [0.6,0.75, 0.9]
     learning_rate_vals = [1e-1, 1e-2, 1e-3, 1e-4]
     epochs = 3000
-    filepath = "MLP_Runs_Results/EvenSplit/"
+    filepath = "MLP_Runs_Results/1500Split/"
     filepaths = [filepath+"OneLayer/", filepath+"TwoLayer/", filepath+"FiveLayer/"]
 
     # We want to run a loop over the momentum and learning rate values, and use the

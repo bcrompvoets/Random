@@ -267,11 +267,11 @@ def find_best_MLP(MLP, filepath_to_MLPdir, learning_rate_vals, momentum_vals, tr
     for lr in learning_rate_vals:
         for mo in momentum_vals:
             for n in [10,20]:
-                outfile = filepath_to_MLPdir + "6k_LR_" + str(lr) + "_MO_" + str(mo) + "_NEUR_" + str(n)
+                outfile = filepath_to_MLPdir + "LR_" + str(lr) + "_MO_" + str(mo) + "_NEUR_" + str(n)
                 NN = MLP(8,n,3)
                 # load path
-                loadpath = filepath_to_MLPdir + "LR_" + str(lr) + "_MO_" + str(mo) + "_NEUR_" + str(n) +"_Settings"
-                NN.load_state_dict(torch.load(loadpath, map_location=device))
+                # loadpath = filepath_to_MLPdir + "LR_" + str(lr) + "_MO_" + str(mo) + "_NEUR_" + str(n) +"_Settings"
+                # NN.load_state_dict(torch.load(loadpath, map_location=device))
                 optimizer = optim.SGD(NN.parameters(), lr=lr, momentum=mo)
                 f1score = main(3000, NN, optimizer, outfile, train_loader, val_loader, test_loader, device)
                 if f1score[0] > f1Max and f1score[1] != 0 and f1score[2] != 0:
