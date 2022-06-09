@@ -1,0 +1,35 @@
+Target Set Report
+               precision    recall  f1-score   support
+
+      Class I       0.85      0.81      0.83      3000
+     Class II       0.77      0.84      0.81      3000
+Flat-Spectrum       0.76      0.70      0.73      3000
+    Class III       0.93      0.96      0.95      3000
+
+     accuracy                           0.83     12000
+    macro avg       0.83      0.83      0.83     12000
+ weighted avg       0.83      0.83      0.83     12000
+
+Validation Set Report
+               precision    recall  f1-score   support
+
+      Class I       0.78      0.82      0.80      6725
+     Class II       0.91      0.84      0.87     25686
+Flat-Spectrum       0.68      0.70      0.69     10161
+    Class III       0.58      0.95      0.72      2299
+
+     accuracy                           0.81     44871
+    macro avg       0.74      0.83      0.77     44871
+ weighted avg       0.82      0.81      0.81     44871
+
+Testing Set Report
+               precision    recall  f1-score   support
+
+      Class I       0.77      0.38      0.51       399
+     Class II       0.93      0.65      0.76      2679
+Flat-Spectrum       0.00      0.00      0.00         0
+    Class III       0.91      0.99      0.95      6893
+
+     accuracy                           0.87      9971
+    macro avg       0.65      0.50      0.56      9971
+ weighted avg       0.91      0.87      0.88      9971

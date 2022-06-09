@@ -59,7 +59,7 @@ def train(epoch, model, optimizer, train_loader, device):
         # store training loss
         train_loss.append(loss.item())
 
-        # storing traning predictions and truth values
+        # storing training predictions and truth values
         pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
         predictions.append(pred.squeeze(-1).cpu().numpy())
         truth_values.append(target.squeeze(-1).cpu().numpy())
@@ -261,27 +261,28 @@ def bootstrap(NN, epochs, OptInstance, X, Y, num_train, num_val, device, Schedul
 
     return ScoresR, ScoresP, ScoresA
 
-def find_best_MLP(MLP, filepath_to_MLPdir, learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, device):
+def find_best_MLP(MLP, filepath_to_MLPdir, learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, custom_labs, device):
     f1Max = 0.5
     tic1 = time.perf_counter()
     for lr in learning_rate_vals:
         for mo in momentum_vals:
             for n in [10,20]:
                 outfile = filepath_to_MLPdir + "LR_" + str(lr) + "_MO_" + str(mo) + "_NEUR_" + str(n)
-                NN = MLP(8,n,3)
+                NN = MLP(8,n,4)
                 # load path
                 # loadpath = filepath_to_MLPdir + "LR_" + str(lr) + "_MO_" + str(mo) + "_NEUR_" + str(n) +"_Settings"
                 # NN.load_state_dict(torch.load(loadpath, map_location=device))
                 optimizer = optim.SGD(NN.parameters(), lr=lr, momentum=mo)
-                f1score = main(3000, NN, optimizer, outfile, train_loader, val_loader, test_loader, device)
+                f1score = main(3000, NN, optimizer, outfile, train_loader, val_loader, test_loader, custom_labs, device)
                 if f1score[0] > f1Max and f1score[1] != 0 and f1score[2] != 0:
                     f1Max = f1score[0]
                     bestfile = outfile
     toc1 = time.perf_counter()
     print(f"Completed full MLP in {(toc1 - tic1)/60:0.1f} minutes")
+    print(f'{bestfile}\n')
     return bestfile
 
-def main(epochs, NetInstance, OptInstance, outfile, train_loader, val_loader, test_loader, device, ScheduleInstance=None):
+def main(epochs, NetInstance, OptInstance, outfile, train_loader, val_loader, test_loader, custom_labs, device, ScheduleInstance=None):
 
     train_loss_all = []
     val_loss_all = []
@@ -296,11 +297,6 @@ def main(epochs, NetInstance, OptInstance, outfile, train_loader, val_loader, te
 
         if ScheduleInstance is not None:
             ScheduleInstance.step()
-
-        # print outs
-        # if epoch % 1000 == 0:
-        #     print(f'Train Epoch: {epoch} ----- Train Loss: {train_loss.item():.6f}')
-        #     print(f'Validation Loss: {val_loss:.4f}')
 
             if ScheduleInstance is not None:
                 print(f'Learning Rate : {ScheduleInstance.get_last_lr()}')
@@ -319,15 +315,17 @@ def main(epochs, NetInstance, OptInstance, outfile, train_loader, val_loader, te
     plt.savefig(outfile+'_loss.png')
     plt.close()
     
-    custom_labs = ['YSO','EG','Star']
     
     with open(outfile+'_Classification_Reports.txt','w') as f:
         f.write('Target Set Report\n')
         f.write(classification_report(train_truth_values, train_predictions, target_names=custom_labs, zero_division=0))
         f.write('\nValidation Set Report\n')
         f.write(classification_report(val_truth_values, val_predictions, target_names=custom_labs, zero_division=0))
-        f.write('\nTesting Set Report\n')
-        f.write(classification_report(test_truth_values, test_predictions, target_names=custom_labs, zero_division=0))
+        if len(np.unique(test_predictions))!=len(custom_labs):
+            print(f'\n Testing failed for {outfile} \n')
+        else:
+            f.write('\nTesting Set Report\n')
+            f.write(classification_report(test_truth_values, test_predictions, target_names=custom_labs, zero_division=0))
         
 
     # saving the network settings
