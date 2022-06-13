@@ -27,19 +27,6 @@ def replicate_data(inputs, targets, ogtargets, amounts_train, amounts_valid):
     class_indices = []
     for i in np.unique(targets):
         class_indices.append(np.where(targets==i)[0])
-    # if len(np.unique(targets))==3:
-    #     # Fetch indices of each class
-    #     YSO_index = np.where(targets==0)[0]
-    #     EG_index = np.where(targets==1)[0]
-    #     Sta_index = np.where(targets==2)[0]
-    #     class_indices = [YSO_index, EG_index, Sta_index]
-    # elif len(np.unique(targets))==4:
-    #     # Fetch indices of each class
-    #     CI_index = np.where(targets==0)[0]
-    #     CII_index = np.where(targets==1)[0]
-    #     CFS_index = np.where(targets==2)[0]
-    #     CIII_index = np.where(targets==3)[0]
-    #     class_indices = [CI_index, CII_index, CFS_index, CIII_index]
 
     # These arrays will hold the indices of the shuffled indices
     train_indices = []
