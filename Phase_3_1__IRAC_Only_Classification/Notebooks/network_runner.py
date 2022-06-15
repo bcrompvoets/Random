@@ -22,8 +22,8 @@ device = torch.device("cpu")
 print(f'Running on : {device}')
 
 # YSO_EG_Stars
-X = np.load("Data_and_Results/Inputs_YSO_EG_Stars.npy") # Load input data
-Y = np.load("Data_and_Results/Targets_YSO_EG_Stars.npy") # Load target data
+X = np.load("../Data_and_Results/Inputs_YSO_EG_Stars.npy") # Load input data
+Y = np.load("../Data_and_Results/Targets_YSO_EG_Stars.npy") # Load target data
 
 # YSO 
 # X = np.load("Data_and_Results/Inputs_YSO_Train.npy") # Load input data
@@ -51,9 +51,9 @@ custom_labs = ['YSO','EG','Star']
 
 if __name__ == '__main__':
     momentum_vals = [0.6,0.75, 0.9]
-    learning_rate_vals = [1e-1, 1e-2, 1e-3]
+    learning_rate_vals = [1e-1, 1e-2]
     epochs = 3000
-    filepath = "MLP_Runs_Results/YSO/"
+    filepath = "../MLP_Runs_Results/YSO_EG_Stars/"
     filepaths = [filepath+"OneLayer/", filepath+"TwoLayer/", filepath+"FiveLayer/"]
 
     # We want to run a loop over the momentum and learning rate values, and use the
