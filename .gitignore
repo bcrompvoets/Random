@@ -1,2 +1,5 @@
 Phase_3_1__IRAC_Only_Classification/Notebooks/SEDs/
 __MACOSX/
+Phase_3_1__IRAC_Only_Classification/MLP_Runs_Results/YSO/OneLayer
+Phase_3_1__IRAC_Only_Classification/MLP_Runs_Results/YSO/TwoLayer
+Phase_3_1__IRAC_Only_Classification/MLP_Runs_Results/YSO/FiveLayer

@@ -268,7 +268,7 @@ def find_best_MLP(MLP, filepath_to_MLPdir, learning_rate_vals, momentum_vals, tr
         for mo in momentum_vals:
             for n in [50]:
                 outfile = filepath_to_MLPdir + "LR_" + str(lr) + "_MO_" + str(mo) + "_NEUR_" + str(n)
-                NN = MLP(8,n,3)
+                NN = MLP(8,n,len(custom_labs))
                 # load path
                 # loadpath = filepath_to_MLPdir + "LR_" + str(lr) + "_MO_" + str(mo) + "_NEUR_" + str(n) +"_Settings"
                 # NN.load_state_dict(torch.load(loadpath, map_location=device))
