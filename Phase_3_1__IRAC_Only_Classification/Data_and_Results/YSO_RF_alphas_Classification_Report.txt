@@ -10,9 +10,9 @@ Flat-Spectrum       1.00      1.00      1.00      3000
  weighted avg       1.00      1.00      1.00     12000
 Validation Set Report               precision    recall  f1-score   support
 
-      Class I       0.67      0.83      0.74      6725
-Flat-Spectrum       0.90      0.70      0.78     20562
-     Class II       0.69      0.87      0.77     10161
+      Class I       0.67      0.82      0.74      6725
+Flat-Spectrum       0.89      0.71      0.79     20562
+     Class II       0.70      0.86      0.78     10161
     Class III       0.82      0.96      0.89      2299
 
      accuracy                           0.78     39747
@@ -20,11 +20,11 @@ Flat-Spectrum       0.90      0.70      0.78     20562
  weighted avg       0.80      0.78      0.78     39747
 Test Set Report               precision    recall  f1-score   support
 
-      Class I       0.78      0.38      0.52       399
+      Class I       0.77      0.38      0.51       399
 Flat-Spectrum       0.00      0.00      0.00         0
-     Class II       0.96      0.63      0.76      2679
+     Class II       0.97      0.70      0.81      2679
     Class III       0.00      0.00      0.00         0
 
-     accuracy                           0.60      3078
-    macro avg       0.44      0.25      0.32      3078
- weighted avg       0.94      0.60      0.73      3078
+     accuracy                           0.66      3078
+    macro avg       0.44      0.27      0.33      3078
+ weighted avg       0.94      0.66      0.77      3078

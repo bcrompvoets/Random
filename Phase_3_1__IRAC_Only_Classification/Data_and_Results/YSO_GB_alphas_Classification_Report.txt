@@ -1,30 +1,30 @@
 Training Set Report               precision    recall  f1-score   support
 
-      Class I       0.88      0.87      0.87      3000
-Flat-Spectrum       0.84      0.74      0.78      3000
-     Class II       0.81      0.92      0.86      3000
-    Class III       0.97      0.97      0.97      3000
+      Class I       0.91      0.89      0.90      3000
+Flat-Spectrum       0.87      0.79      0.82      3000
+     Class II       0.83      0.93      0.88      3000
+    Class III       0.98      0.98      0.98      3000
 
-     accuracy                           0.87     12000
-    macro avg       0.87      0.87      0.87     12000
- weighted avg       0.87      0.87      0.87     12000
+     accuracy                           0.90     12000
+    macro avg       0.90      0.90      0.90     12000
+ weighted avg       0.90      0.90      0.90     12000
 Validation Set Report               precision    recall  f1-score   support
 
-      Class I       0.68      0.83      0.75      6725
-Flat-Spectrum       0.91      0.69      0.79     20562
-     Class II       0.69      0.88      0.77     10161
+      Class I       0.67      0.82      0.74      6725
+Flat-Spectrum       0.90      0.70      0.79     20562
+     Class II       0.69      0.88      0.78     10161
     Class III       0.83      0.96      0.89      2299
 
      accuracy                           0.78     39747
     macro avg       0.77      0.84      0.80     39747
- weighted avg       0.81      0.78      0.78     39747
+ weighted avg       0.80      0.78      0.78     39747
 Test Set Report               precision    recall  f1-score   support
 
-      Class I       0.79      0.39      0.52       399
+      Class I       0.76      0.27      0.40       399
 Flat-Spectrum       0.00      0.00      0.00         0
-     Class II       0.97      0.55      0.71      2679
+     Class II       0.97      0.68      0.80      2679
     Class III       0.00      0.00      0.00         0
 
-     accuracy                           0.53      3078
-    macro avg       0.44      0.24      0.31      3078
- weighted avg       0.95      0.53      0.68      3078
+     accuracy                           0.63      3078
+    macro avg       0.43      0.24      0.30      3078
+ weighted avg       0.95      0.63      0.75      3078

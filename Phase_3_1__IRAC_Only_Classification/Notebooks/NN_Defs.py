@@ -116,6 +116,36 @@ def validate(model, val_loader, device):
     # returning statement with all needed quantities
     return val_loss, predictions, truth_values
 
+            
+def test(model, test_tensor, device):
+    """Validation loop for network.""" 
+    
+    model.to(device) # send to device
+    
+    # setting in evaluation mode will iterate through entire dataloader according to batch size
+    model.eval() # set network into evaluation mode
+    val_loss = 0
+    predictions = []
+
+    # start looping through the batches
+    for i, (data,target) in enumerate(test_tensor):
+        # send to device
+        data = data.to(device)
+        target = target.to(device)
+
+        output = model(data.float())
+        val_loss += F.cross_entropy(output, target.squeeze(-1).long(), reduction='sum').item() # sum up batch loss                                                               
+        pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability    
+        
+        # storing predictions and truth values
+        predictions.append(pred.squeeze(-1).cpu().numpy())
+    
+    # changing the predictions and truth values to flat arrays
+    predictions = np.concatenate(predictions, axis=0)
+
+    # returning statement with all needed quantities
+    return predictions
+
 class BaseMLP(nn.Module):
     """ Base NN MLP Class from Cornu Paper"""
     
@@ -168,7 +198,7 @@ class TwoLayerMLP(nn.Module):
         x = self.fc2(x)
         x = torch.sigmoid(x)
         x = self.fc3(x)
-        x = F.softmax(x, dim=1)
+        x = F.softmax(x, dim=1) 
         return x
 
 class FiveLayerMLP(nn.Module):
@@ -266,9 +296,9 @@ def find_best_MLP(MLP, filepath_to_MLPdir, learning_rate_vals, momentum_vals, tr
     tic1 = time.perf_counter()
     for lr in learning_rate_vals:
         for mo in momentum_vals:
-            for n in [50]:
+            for n in [10,20,50]:
                 outfile = filepath_to_MLPdir + "LR_" + str(lr) + "_MO_" + str(mo) + "_NEUR_" + str(n)
-                NN = MLP(8,n,len(custom_labs))
+                NN = MLP(9,n,len(custom_labs))
                 # load path
                 # loadpath = filepath_to_MLPdir + "LR_" + str(lr) + "_MO_" + str(mo) + "_NEUR_" + str(n) +"_Settings"
                 # NN.load_state_dict(torch.load(loadpath, map_location=device))

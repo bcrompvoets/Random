@@ -22,8 +22,8 @@ device = torch.device("cpu")
 print(f'Running on : {device}')
 
 # YSO_EG_Stars
-# X = np.load("../Data_and_Results/Inputs_YSO_EG_Stars.npy") # Load input data
-# Y = np.load("../Data_and_Results/Targets_YSO_EG_Stars.npy") # Load target data
+# X = np.load("../Data_and_Results/Inputs_YSO_EG_Stars_alpha.npy") # Load input data
+# Y = np.load("../Data_and_Results/Targets_YSO_EG_Stars_alpha.npy") # Load target data
 
 # YSO 
 X = np.load("../Data_and_Results/Inputs_YSO_Train.npy") # Load input data
@@ -42,7 +42,7 @@ Y = np.float32(Y)
 train_amount = [3000,3000,3000,3000]
 valid_amount = [6726,25687,10162,2300]
 
-inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te = replicate_data(X, Y, train_amount, valid_amount)
+# inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te = replicate_data(X, Y, train_amount, valid_amount)
 
 train_loader, val_loader, test_loader = MLP_data_setup(X, Y, train_amount,valid_amount)
 
@@ -51,10 +51,10 @@ custom_labs = ['Class I', 'Class II', 'Flat-Spectrum', 'Class III']
 
 if __name__ == '__main__':
     momentum_vals = [0.6,0.75, 0.9]
-    learning_rate_vals = [1e-1, 1e-2]
+    learning_rate_vals = [1e-1, 1e-2, 1e-3]
     epochs = 3000
-    filepath = "../MLP_Runs_Results/YSO/"
-    filepaths = [filepath+"OneLayer/", filepath+"TwoLayer/", filepath+"FiveLayer/"]
+    filepath = "../MLP_Runs_Results/YSO/Alpha/"
+    filepaths = [filepath+"OneLayer_", filepath+"TwoLayer_", filepath+"FiveLayer_"]
 
     # We want to run a loop over the momentum and learning rate values, and use the
     # validation f1 score for YSOs as the metric at which to determine the best 

@@ -1,0 +1,12 @@
+Predictions for Megeath/Rapson 
+ 
+ YSO EG Stars 
+              precision    recall  f1-score   support
+
+         YSO       0.12      0.67      0.20      3078
+          EG       0.08      0.31      0.12      1949
+       Stars       0.81      0.05      0.09     21786
+
+    accuracy                           0.14     26813
+   macro avg       0.33      0.34      0.14     26813
+weighted avg       0.68      0.14      0.11     26813
