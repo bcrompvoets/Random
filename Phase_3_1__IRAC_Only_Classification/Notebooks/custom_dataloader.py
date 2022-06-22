@@ -153,3 +153,44 @@ def replicate_data_ind(targets, amounts_train, amounts_valid):
         test_indices = np.append(test_indices,type_in[amounts_train[i]+amounts_valid[i]:-1]).astype(int)
 
     return train_indices, valid_indices, test_indices
+
+
+def replicate_data_single(inputs, targets, amounts):
+    """Creates custom dataset (targets and inputs), custom built to the
+    amounts needed, given some input dataset.
+
+    Parameters
+    ----------
+    inputs : np.ndarray
+        Input dataset
+    targets : np.ndarray
+        Targets associated with the inputs
+    amounts: list of ints
+        How much of each label to grab for the set. 
+    """ 
+    
+    if len(amounts) != len(np.unique(targets)):
+        print(f"Number of classes in targets is {len(np.unique(targets))}")
+        print("Length of amounts_train does not match number of classes in targets.")
+        raise ValueError
+    
+    class_indices = []
+    for i in np.unique(targets):
+        class_indices.append(np.where(targets==i)[0])
+
+    # These arrays will hold the indices of the shuffled indices
+    train_indices = []
+
+    #Randomly choose amounts_train and amounts_valid amounts from these three classes
+    for i, type_in in enumerate(class_indices):
+        # Shuffle the array of indices 
+        type_in = shuffle(type_in,random_state=random.randint(0,1000))
+        
+        # Take the first amount of this shuffled set as the training set, the next amount for validation
+        train_indices = np.append(train_indices,type_in[0:amounts[i]]).astype(int)
+  
+    # Create arrays that will hold the actual values for each case
+    train_input = inputs[train_indices]
+    train_target = targets[train_indices]
+
+    return train_input, train_target

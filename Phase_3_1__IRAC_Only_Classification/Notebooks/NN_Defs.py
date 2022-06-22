@@ -247,8 +247,7 @@ class FiveLayerMLP(nn.Module):
         return x
 
 
-def MLP_data_setup(X,Y, amounts_train, amounts_val):
-    inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te = replicate_data(X, Y, amounts_train, amounts_val)
+def MLP_data_setup(inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te):
             
     # scaling data according to training inputs
     scaler_S = StandardScaler().fit(inp_tr)
