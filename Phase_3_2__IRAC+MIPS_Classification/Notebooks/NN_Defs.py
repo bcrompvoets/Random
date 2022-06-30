@@ -11,7 +11,9 @@ from custom_dataloader import replicate_data
 import random
 import time
 import matplotlib.pyplot as plt
-
+from numba import jit
+import warnings
+warnings.filterwarnings('ignore')
 
 # to get number of parameters in network
 def get_n_params(model):
@@ -290,6 +292,7 @@ def bootstrap(NN, epochs, OptInstance, X, Y, num_train, num_val, device, Schedul
 
     return ScoresR, ScoresP, ScoresA
 
+@jit
 def find_best_MLP(MLP, filepath_to_MLPdir, learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, custom_labs, device):
     f1Max = 0.5
     tic1 = time.perf_counter()
@@ -307,7 +310,8 @@ def find_best_MLP(MLP, filepath_to_MLPdir, learning_rate_vals, momentum_vals, tr
                     f1Max = f1score[0]
                     bestfile = outfile
     toc1 = time.perf_counter()
-    print(f"Completed full MLP in {(toc1 - tic1)/60:0.1f} minutes")
+    timed = (toc1 - tic1)/60
+    print(f"Completed full MLP in {timed} minutes")
     print(f'{bestfile}\n')
     return bestfile
 

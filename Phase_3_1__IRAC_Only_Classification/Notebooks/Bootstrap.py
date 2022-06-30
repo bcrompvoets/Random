@@ -14,23 +14,32 @@ from NN_Defs import TwoLayerMLP, BaseMLP, bootstrap
 
 device = torch.device("cpu")
 
-# # data load
-# X = np.load("Input_Class_AllClasses_Sep.npy")
-# Y = np.load("Target_Class_AllClasses_Sep.npy")
+# YSO_EG_Stars Train
+X_tr = np.load("../Data_and_Results/c2d_Inputs_CLOUDS_Train.npy") # Load input data
+Y_tr = np.load("../Data_and_Results/c2d_Targets_CLOUDS_Train.npy") # Load target data
+inp_tr = np.float32(X_tr)
+tar_tr = np.float32(Y_tr)
 
-# # CM21 Split
-# amounts_train = [1000,1000,1000]
-# amounts_val = [755,500]
+# YSO_EG_Stars Valid
+X_va = np.load("../Data_and_Results/c2d_Inputs_CORES_Valid.npy") # Load input data
+Y_va = np.load("../Data_and_Results/c2d_Targets_CORES_Valid.npy") # Load target data
+inp_va = np.float32(X_va)
+tar_va = np.float32(Y_va)
 
+# YSO_EG_Stars Test
+X_te = np.load("../Data_and_Results/Rap_Inputs_Test.npy") # Load input data
+Y_te = np.load("../Data_and_Results/Rap_Targets_Test.npy") # Load target data
+inp_te = np.float32(X_te)
+tar_te = np.float32(Y_te)
 
 
 if __name__=="__main__":
 
-    BaseNN = BaseMLP(8, 20, 7, weight_initialize=True)
-    optimizer = optim.SGD(BaseNN.parameters(), lr=4e-1, momentum=0.9)
+    BaseNN = TwoLayerMLP(9, 20, 3, weight_initialize=True)
+    optimizer = optim.SGD(BaseNN.parameters(), lr=0.01, momentum=0.9)
 
-    iters = [(BaseNN, 10000, optimizer, X, Y, amounts_train, amounts_val, device)] * 100
-    with mp.Pool(4) as pool:
+    iters = [(BaseNN, 3000, optimizer, inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te, device)] * 100
+    with mp.Pool(6) as pool:
         ans = pool.starmap(bootstrap, iters)
 
     scoresR = list(map(list, zip(*ans)))[0]
@@ -45,15 +54,15 @@ if __name__=="__main__":
     estA = np.mean(scoresA)*100.
     stderrA = np.std(scoresA)*100.
 
-    estR = [np.mean(scoresR[0])*100.,np.mean(scoresR[1])*100.,np.mean(scoresR[2])*100.,np.mean(scoresR[3])*100.,np.mean(scoresR[4])*100.,np.mean(scoresR[5])*100.,np.mean(scoresR[6])*100.]
-    stderrR = [np.std(scoresR[0])*100.,np.std(scoresR[1])*100.,np.std(scoresR[2])*100.,np.std(scoresR[3])*100.,np.std(scoresR[4])*100.,np.std(scoresR[5])*100.,np.std(scoresR[6])*100.]
+    estR = [np.mean(scoresR[0])*100.,np.mean(scoresR[1])*100.,np.mean(scoresR[2])*100.]
+    stderrR = [np.std(scoresR[0])*100.,np.std(scoresR[1])*100.,np.std(scoresR[2])*100.]
 
-    estP = [np.mean(scoresP[0])*100.,np.mean(scoresP[1])*100.,np.mean(scoresP[2])*100.,np.mean(scoresP[3])*100.,np.mean(scoresP[4])*100.,np.mean(scoresP[5])*100.,np.mean(scoresP[6])*100.]
-    stderrP = [np.std(scoresP[0])*100.,np.std(scoresP[1])*100.,np.std(scoresP[2])*100.,np.std(scoresP[3])*100.,np.std(scoresP[4])*100.,np.std(scoresP[5])*100.,np.std(scoresP[6])*100.]
+    estP = [np.mean(scoresP[0])*100.,np.mean(scoresP[1])*100.,np.mean(scoresP[2])*100.]
+    stderrP = [np.std(scoresP[0])*100.,np.std(scoresP[1])*100.,np.std(scoresP[2])*100.]
     
-    classes = ["Class I", "Class II", "Galaxies", "AGNs", "Shocks", "PAHs", "Stars"]
-    f = open("PRAScores_1LayerMLP_7Classes.txt", "w")
-    f.write("OneLayerMLP & Recall & Precision & Accuracy//\n")
+    classes = ["YSO", "EG", "Star"]
+    f = open("PRAScores_2LayerMLP.txt", "w")
+    f.write("TwoLayerMLP & Recall & Precision & Accuracy//\n")
     for i, cl in enumerate(classes):
         if i==3:
             f.write(cl+"& $"+"{:.1f}".format(estR[i])+"\pm"+"{:.1f}".format(stderrR[i])+"$ & $"+

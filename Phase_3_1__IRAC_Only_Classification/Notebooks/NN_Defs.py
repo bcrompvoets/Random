@@ -7,12 +7,14 @@ import torch.utils.data as data_utils
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, ConfusionMatrixDisplay, classification_report
-from custom_dataloader import replicate_data
+from custom_dataloader import replicate_data, replicate_data_single
 import random
 import time
 import matplotlib.pyplot as plt
+from numba import jit
 
 
+@jit
 # to get number of parameters in network
 def get_n_params(model):
     """Function to compute the number of free parameters in a model.
@@ -126,6 +128,7 @@ def test(model, test_tensor, device):
     model.eval() # set network into evaluation mode
     val_loss = 0
     predictions = []
+    truth_values = []
 
     # start looping through the batches
     for i, (data,target) in enumerate(test_tensor):
@@ -139,12 +142,14 @@ def test(model, test_tensor, device):
         
         # storing predictions and truth values
         predictions.append(pred.squeeze(-1).cpu().numpy())
+        truth_values.append(target.squeeze(-1).cpu().numpy())
     
     # changing the predictions and truth values to flat arrays
     predictions = np.concatenate(predictions, axis=0)
+    truth_values = np.concatenate(truth_values, axis=0)
 
     # returning statement with all needed quantities
-    return predictions
+    return predictions, truth_values
 
 class BaseMLP(nn.Module):
     """ Base NN MLP Class from Cornu Paper"""
@@ -275,11 +280,13 @@ def MLP_data_setup(inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te):
     test_loader = torch.utils.data.DataLoader(test_data, batch_size=25, shuffle=True)
     return train_loader, val_loader, test_loader
 
-def bootstrap(NN, epochs, OptInstance, X, Y, num_train, num_val, device, ScheduleInstance=None):
-    train_loader, val_loader = MLP_data_setup(X, Y, num_train, num_val)
+def bootstrap(NN, epochs, OptInstance, inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te, device, ScheduleInstance=None):
+    inp_tr, tar_tr = replicate_data_single(inp_tr, tar_tr, [1082,1082,1082])
+    inp_va, tar_va = replicate_data_single(inp_va, tar_va, [314,212,4269])
+    train_loader, val_loader, test_loader = MLP_data_setup(inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te)
     for epoch in range(0, epochs):
         train_loss, pred_tar, tar_tr = train(epoch, NN, OptInstance, train_loader, device)
-        val_loss, pred_va, tar_va = validate(NN, val_loader, device)
+        val_loss, pred_va, tar_va = validate(NN, test_loader, device)
         
         if ScheduleInstance is not None:
             ScheduleInstance.step()
@@ -290,6 +297,7 @@ def bootstrap(NN, epochs, OptInstance, X, Y, num_train, num_val, device, Schedul
 
     return ScoresR, ScoresP, ScoresA
 
+@jit(forceobj=True)
 def find_best_MLP(MLP, filepath_to_MLPdir, learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, custom_labs, device):
     f1Max = 0.5
     tic1 = time.perf_counter()
