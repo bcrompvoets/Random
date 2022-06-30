@@ -17,8 +17,8 @@ device = torch.device("cpu")
 print(f'Running on : {device}')
 
 # YSO_EG_Stars Train
-X_tr = np.load("../Data_and_Results/c2d_Inputs_CLOUDS_SYNTH.npy") # Load input data
-Y_tr = np.load("../Data_and_Results/c2d_Targets_CLOUDS_SYNTH.npy") # Load target data
+X_tr = np.load("../Data_and_Results/c2d_Inputs_ALL_SYNTH.npy") # Load input data
+Y_tr = np.load("../Data_and_Results/c2d_Targets_ALL_SYNTH.npy") # Load target data
 X_tr = np.float32(X_tr)
 Y_tr = np.float32(Y_tr)
 inp_tr, tar_tr = replicate_data_single(X_tr, Y_tr, [15000,15000,15000])
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     momentum_vals = np.array([0.6, 0.75, 0.9])
     learning_rate_vals = np.array([1e-1, 1e-2, 1e-3])
     epochs = 3000
-    filepath = "../MLP_Runs_Results/YSO_EG_Stars/c2d_Synth_15000/"
+    filepath = "../MLP_Runs_Results/YSO_EG_Stars/c2d_ALL_Synth_15000/"
     filepaths = [filepath+"OneLayer_", filepath+"TwoLayer_", filepath+"FiveLayer_"]
 
     # We want to run a loop over the momentum and learning rate values, and use the
