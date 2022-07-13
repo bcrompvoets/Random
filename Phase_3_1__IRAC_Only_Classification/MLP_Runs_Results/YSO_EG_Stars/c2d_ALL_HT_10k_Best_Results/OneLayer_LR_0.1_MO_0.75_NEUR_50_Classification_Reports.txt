@@ -1,0 +1,32 @@
+Target Set Report
+              precision    recall  f1-score   support
+
+         YSO       0.94      0.95      0.94     10000
+          EG       0.94      0.90      0.92     10000
+        Star       0.89      0.92      0.91     10000
+
+    accuracy                           0.92     30000
+   macro avg       0.92      0.92      0.92     30000
+weighted avg       0.92      0.92      0.92     30000
+
+Validation Set Report
+              precision    recall  f1-score   support
+
+         YSO       0.38      0.79      0.51       553
+          EG       0.80      0.74      0.77       373
+        Star       0.98      0.90      0.94      7518
+
+    accuracy                           0.89      8444
+   macro avg       0.72      0.81      0.74      8444
+weighted avg       0.93      0.89      0.91      8444
+
+Testing Set Report
+              precision    recall  f1-score   support
+
+         YSO       0.12      0.92      0.21       314
+          EG       0.38      0.81      0.52       515
+        Star       1.00      0.96      0.98     76456
+
+    accuracy                           0.96     77285
+   macro avg       0.50      0.90      0.57     77285
+weighted avg       0.99      0.96      0.97     77285

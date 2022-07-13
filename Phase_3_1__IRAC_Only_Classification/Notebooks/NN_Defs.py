@@ -130,6 +130,7 @@ def test(model, test_tensor, device):
     val_loss = 0
     predictions = []
     truth_values = []
+    data_values = []
 
     # start looping through the batches
     for i, (data,target) in enumerate(test_tensor):
@@ -144,13 +145,15 @@ def test(model, test_tensor, device):
         # storing predictions and truth values
         predictions.append(pred.squeeze(-1).cpu().numpy())
         truth_values.append(target.squeeze(-1).cpu().numpy())
+        data_values.append(data.squeeze(-1).cpu().numpy())
     
     # changing the predictions and truth values to flat arrays
     predictions = np.concatenate(predictions, axis=0)
     truth_values = np.concatenate(truth_values, axis=0)
+    data_values = np.concatenate(data_values, axis=0)
 
     # returning statement with all needed quantities
-    return predictions, truth_values
+    return predictions, truth_values, data_values
 
 class BaseMLP(nn.Module):
     """ Base NN MLP Class from Cornu Paper"""
@@ -299,14 +302,14 @@ def bootstrap(NN, epochs, OptInstance, inp_tr, tar_tr, inp_va, tar_va, inp_te, t
     return ScoresR, ScoresP, ScoresA
 
 @jit(forceobj=True)
-def find_best_MLP(MLP, filepath_to_MLPdir, learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, custom_labs, device):
+def find_best_MLP(MLP, filepath_to_MLPdir, learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, cols, custom_labs, device):
     f1Max = 0.5
     tic1 = time.perf_counter()
     for lr in learning_rate_vals:
         for mo in momentum_vals:
             for n in [10,20,50]:
                 outfile = filepath_to_MLPdir + "LR_" + str(lr) + "_MO_" + str(mo) + "_NEUR_" + str(n)
-                NN = MLP(9,n,len(custom_labs))
+                NN = MLP(cols,n,len(custom_labs))
                 # load path
                 # loadpath = filepath_to_MLPdir + "LR_" + str(lr) + "_MO_" + str(mo) + "_NEUR_" + str(n) +"_Settings"
                 # NN.load_state_dict(torch.load(loadpath, map_location=device))

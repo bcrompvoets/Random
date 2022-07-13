@@ -47,20 +47,55 @@ tar_te = torch.as_tensor(tar_te)
 train_data = data_utils.TensorDataset(inp_tr, tar_tr)
 test_data = data_utils.TensorDataset(inp_te, tar_te)
 # constructing data loaders
-train_loader = torch.utils.data.DataLoader(train_data, batch_size=25, shuffle=True)
-test_loader = torch.utils.data.DataLoader(test_data, batch_size=25, shuffle=True)
+train_loader = torch.utils.data.DataLoader(train_data, batch_size=32, shuffle=True)
+test_loader = torch.utils.data.DataLoader(test_data, batch_size=32, shuffle=True)
 
 # create nn instance
 NN = TwoLayerMLP(9, 20, 3)
 # load in saved state of network
-loadpath = '../MLP_Runs_Results/YSO_EG_Stars/c2d_Best_Results/TwoLayer_LR_0.01_MO_0.9_NEUR_20_Settings'
+loadpath = '../MLP_Runs_Results/YSO_EG_Stars/c2d_ALL_Synth_10k_Best_Results/TwoLayer_LR_0.001_MO_0.9_NEUR_20_Settings'
 NN.load_state_dict(torch.load(loadpath, map_location=device))
 
 # compute predictions from what the network was trained on
-preds, targets = test(NN, train_loader, device)
+preds, targets, inputs = test(NN, train_loader, device)
 # compute predictions for test
-preds_te, targets_te = test(NN, test_loader, device)
+preds_te, targets_te, inputs_te = test(NN, test_loader, device)
 
+# # print(inputs_te.shape)
+
+# inp_tr_2 = inp_tr[np.where(preds==0)[0]].cpu().detach().numpy()
+# tar_tr_2 = targets[np.where(preds==0)[0]]
+# inp_te_2 = inp_te[np.where(preds_te==0)[0]].cpu().detach().numpy()
+# tar_te_2 = targets_te[np.where(preds_te==0)[0]]
+
+# # creation of tensor instances
+# inp_tr_2 = torch.as_tensor(inp_tr_2)
+# tar_tr_2 = torch.as_tensor(tar_tr_2)
+# inp_te_2 = torch.as_tensor(inp_te_2)
+# tar_te_2 = torch.as_tensor(tar_te_2)
+# # pass tensors into TensorDataset instances
+# train_data_2 = data_utils.TensorDataset(inp_tr_2, tar_tr_2)
+# test_data_2 = data_utils.TensorDataset(inp_te_2, tar_te_2)
+# # constructing data loaders
+# train_loader = torch.utils.data.DataLoader(train_data_2, batch_size=32, shuffle=True)
+# test_loader = torch.utils.data.DataLoader(test_data_2, batch_size=32, shuffle=True)
+
+# # compute predictions from what the network was trained on
+# preds_2, targets_2, inputs_2 = test(NN, train_loader, device)
+# # compute predictions for test
+# preds_te_2, targets_te_2, inputs_te_2 = test(NN, test_loader, device)
+
+# ii=0
+# for i in np.where(preds==0)[0]:
+#     preds[i] = preds_2[ii]
+#     inputs[i] = inputs_2[ii]
+#     ii += 1
+
+# ii=0
+# for i in np.where(preds_te==0)[0]:
+#     preds_te[i] = preds_te_2[ii]
+#     inputs_te[i] = inputs_te_2[ii]
+#     ii += 1
 
 
 with open("Program_Results_Trial1", "w") as f1:
@@ -71,51 +106,53 @@ with open("Program_Results_Trial1", "w") as f1:
 
 # Compute for which YSO it is
 # inp_va = inp_te
-inputs_YSO = inp_te[np.where(preds==0)[0]].cpu().detach().numpy()
-targets_YSO = targets_te[np.where(preds==0)[0]]
+inputs_YSO = inputs_te[np.where(preds_te==0)[0]]
+targets_YSO = targets_te[np.where(preds_te==0)[0]]
 # Categorize by alphas
-alphas_YSO = inputs_YSO.transpose()[-1]
+alphas_YSO = inputs_YSO[:,-1]
 
-inputs_YSO = inputs_YSO.transpose()[:-1].transpose()
-print(inputs_YSO.shape)
+# inputs_YSO = inputs_YSO[:,:-1]
 
-aSTc = np.where(alphas_YSO<-2.1)
-aIII = np.where((alphas_YSO<=-1.6) & (alphas_YSO>=-2.1))
-aII = np.where((alphas_YSO>-1.6) & (alphas_YSO<=-0.3))
-aFS = np.where((alphas_YSO<=0.3) & (alphas_YSO>-0.3))
-aI = np.where((alphas_YSO>0.3) & (alphas_YSO<1.5))
-aEGc = np.where(alphas_YSO>=1.5)
-custom_labs = ['Class I', 'Flat-Spectrum', 'Class II', 'Class III', 'Star can', 'EG can']
-inds = [aI, aFS, aII, aIII, aSTc, aEGc]
-
+aSTc = np.where(targets_YSO==2)
+aIII = np.where((alphas_YSO<=-1.6) & (targets_YSO==0))
+aII = np.where((alphas_YSO>-1.6) & (alphas_YSO<=-0.3)& (targets_YSO==0))
+aFS = np.where((alphas_YSO<=0.3) & (alphas_YSO>-0.3)& (targets_YSO==0))
+aI = np.where((alphas_YSO>0.3) & (targets_YSO==0))
+aEGc = np.where(targets_YSO==1)
+custom_labs = ['Class I', 'Flat-Spectrum', 'Class II',  'Star can', 'EG can']
+inds = [aI, aFS, aII, aSTc, aEGc]
 bins = np.linspace(-3, 6, 45)
 
 for i, a in enumerate(inds):
     targets_YSO[a] = i
-    plt.hist(alphas_YSO[a],bins,histtype='bar',label=custom_labs[i])
+    if i!=3:
+        plt.hist(alphas_YSO[a],bins,histtype='step',label=custom_labs[i])
 
 
-boostcl = GradientBoostingClassifier(criterion='friedman_mse',max_depth=5,max_features='log2',
-                n_estimators=150,n_iter_no_change=5,subsample=1.0,warm_start=False)
-boostcl.fit(inputs_YSO,targets_YSO.ravel())
-YSO_preds = boostcl.predict(inputs_YSO)
+# boostcl = GradientBoostingClassifier(criterion='friedman_mse',max_depth=5,max_features='log2',
+#                 n_estimators=150,n_iter_no_change=5,subsample=1.0,warm_start=False)
+# boostcl.fit(inputs_YSO,targets_YSO.ravel())
+# YSO_preds = boostcl.predict(inputs_YSO)
 # rfcl = RandomForestClassifier(class_weight='balanced',criterion='entropy',max_features='log2',n_estimators=50,oob_score=False)
+rfcl = joblib.load("../Data_and_Results/YSO_RF_alpha_Settings.joblib")
 # rfcl.fit(inputs_YSO,targets_YSO.ravel())
-# YSO_preds = rfcl.predict(inputs_YSO)
+YSO_preds = rfcl.predict(inputs_YSO) #WARNING CHECK WHAT THE NUMBERS MATCH UP TO
+print(np.unique(YSO_preds))
 
 # Plot alpha separation for YSOs
 # bins = np.linspace(-3, 6, 45)
-pEGc = np.where(YSO_preds==5.)
-pSTc = np.where(YSO_preds==4.)
-pIII = np.where(YSO_preds==3.)
+# pEGc = np.where(YSO_preds==5.)
+pEGc = np.where(YSO_preds==4.)
+pSTc = np.where(YSO_preds==3.)
 pII = np.where(YSO_preds==2.)
 pFS = np.where(YSO_preds==1.)
 pI = np.where(YSO_preds==0.)
 
-p_inds = [pI, pFS, pII, pIII, pSTc, pEGc]
-pred_labs = ['Class I Pred', 'Flat-Spectrum Pred', 'Class II Pred', 'Class III Pred', 'Star can Pred', 'EG can Pred']
+p_inds = [pI, pFS, pII, pSTc, pEGc]
+pred_labs = ['Class I Pred', 'Flat-Spectrum Pred', 'Class II Pred', 'Star can Pred', 'EG can Pred']
 for i, p in enumerate(p_inds):
-    plt.hist(alphas_YSO[p],bins,histtype='step',label=custom_labs[i])
+    if i!=3:
+        plt.hist(alphas_YSO[p],bins,histtype='bar',label=pred_labs[i])
 
 plt.axvline(x=-1.6,color='k', linestyle='--')
 plt.axvline(x=-0.3,color='k', linestyle='--')
@@ -125,5 +162,6 @@ plt.xlabel('Spectral Index α')
 plt.title('YSO Spectral Index Histogram')
 plt.savefig("Trial1.png")
 
+
 print(classification_report(targets_YSO,YSO_preds,target_names=custom_labs))
-print(f"Feature importances: {rfcl.feature_importances_}")
+# print(f"Feature importances: {rfcl.feature_importances_}")
