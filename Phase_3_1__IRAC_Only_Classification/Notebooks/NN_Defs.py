@@ -279,9 +279,9 @@ def MLP_data_setup(inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te):
     test_data = data_utils.TensorDataset(inp_te, tar_te)
 
     # constructing data loaders
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=25, shuffle=True)
-    val_loader = torch.utils.data.DataLoader(val_data, batch_size=25, shuffle=True)
-    test_loader = torch.utils.data.DataLoader(test_data, batch_size=25, shuffle=True)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=32, shuffle=True)
+    val_loader = torch.utils.data.DataLoader(val_data, batch_size=32, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_data, batch_size=32, shuffle=True)
     return train_loader, val_loader, test_loader
 
 def bootstrap(NN, epochs, OptInstance, inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te, device, ScheduleInstance=None):

@@ -120,7 +120,7 @@ def validate(model, val_loader, device):
 
             
 def test(model, test_tensor, device):
-    """Validation loop for network.""" 
+    """Test loop for network.""" 
     
     model.to(device) # send to device
     
@@ -149,7 +149,7 @@ def test(model, test_tensor, device):
     return predictions
 
 class BaseMLP(nn.Module):
-    """ Base NN MLP Class from Cornu Paper"""
+    """MLP with only one hidden layer"""
     
     def __init__(self, input_size, n_hidden, output_size, weight_initialize=True):
         super(BaseMLP, self).__init__()
@@ -272,9 +272,9 @@ def MLP_data_setup(inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te):
     test_data = data_utils.TensorDataset(inp_te, tar_te)
 
     # constructing data loaders
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=25, shuffle=True)
-    val_loader = torch.utils.data.DataLoader(val_data, batch_size=25, shuffle=True)
-    test_loader = torch.utils.data.DataLoader(test_data, batch_size=25, shuffle=True)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=32, shuffle=False) # Changed shuffle to false to see if we can retrieve the original set after predicting
+    val_loader = torch.utils.data.DataLoader(val_data, batch_size=32, shuffle=False)
+    test_loader = torch.utils.data.DataLoader(test_data, batch_size=32, shuffle=False)
     return train_loader, val_loader, test_loader
 
 def bootstrap(NN, epochs, OptInstance, X, Y, num_train, num_val, device, ScheduleInstance=None):
@@ -350,14 +350,14 @@ def main(epochs, NetInstance, OptInstance, outfile, train_loader, val_loader, te
     
     
     with open(outfile+'_Classification_Reports.txt','w') as f:
-        f.write('Target Set Report\n')
+        f.write('Target Set Report (c2d CLOUDS)\n')
         f.write(classification_report(train_truth_values, train_predictions, target_names=custom_labs, zero_division=0))
-        f.write('\nValidation Set Report\n')
+        f.write('\nValidation Set Report (NGC 2264)\n')
         f.write(classification_report(val_truth_values, val_predictions, target_names=custom_labs, zero_division=0))
         if len(np.unique(test_predictions))!=len(custom_labs):
             print(f'\n Testing failed for {outfile} \n')
         else:
-            f.write('\nTesting Set Report\n')
+            f.write('\nTesting Set Report (c2d CLOUDS)\n')
             f.write(classification_report(test_truth_values, test_predictions, target_names=custom_labs, zero_division=0))
         
 

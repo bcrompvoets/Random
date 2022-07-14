@@ -189,6 +189,8 @@ def replicate_data_single(inputs, targets, amounts):
         # Take the first amount of this shuffled set as the training set, the next amount for validation
         train_indices = np.append(train_indices,type_in[0:amounts[i]]).astype(int)
   
+    train_indices = shuffle(train_indices,random_state=random.randint(0,1000))
+
     # Create arrays that will hold the actual values for each case
     train_input = inputs[train_indices]
     train_target = targets[train_indices]
