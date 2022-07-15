@@ -1,8 +1,0 @@
-XGB Recall & Precision & Accuracy
-Class I& $89.0\pm3.7$ & $54.3\pm3.9$&// 
-Class II& $85.1\pm1.3$ & $69.5\pm2.6$&// 
-Galaxies& $92.4\pm2.3$ & $81.9\pm6.2$&// 
-AGNs& $94.2\pm1.5$ & $70.8\pm3.1$ & $91.9\pm0.6$ // 
-Shocks& $20.0\pm18.0$ & $77.5\pm32.5$&// 
-PAHs& $25.9\pm8.4$ & $33.0\pm13.7$&// 
-Stars& $93.0\pm0.8$ & $99.3\pm0.2$&// 

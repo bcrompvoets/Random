@@ -9,7 +9,7 @@ Target Set Report
    macro avg       0.97      0.97      0.97     30000
 weighted avg       0.97      0.97      0.97     30000
 
-Validation Set Report
+Validation Set Report (NGC 2264)
               precision    recall  f1-score   support
 
          YSO       0.70      0.90      0.78       553

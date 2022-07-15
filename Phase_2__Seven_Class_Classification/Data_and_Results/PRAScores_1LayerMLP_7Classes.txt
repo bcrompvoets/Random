@@ -1,8 +1,0 @@
-OneLayerMLP & Recall & Precision & Accuracy//
-Class I& $92.8\pm3.4$ & $65.4\pm3.2$&// 
-Class II& $90.7\pm1.8$ & $82.2\pm3.7$&// 
-Galaxies& $97.3\pm2.0$ & $85.2\pm3.4$&// 
-AGNs& $94.2\pm1.9$ & $77.9\pm5.3$ & $95.1\pm0.5$ // 
-Shocks& $5.0\pm15.0$ & $89.0\pm27.4$&// 
-PAHs& $0.0\pm0.0$ & $100.0\pm0.0$&// 
-Stars& $96.2\pm0.6$ & $99.5\pm0.1$&// 
