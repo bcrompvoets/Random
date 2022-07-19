@@ -287,19 +287,21 @@ def bootstrap(NN, inp_tr, tar_tr, inp_te, tar_te, device):
     return ScoresR, ScoresP, ScoresA
 
 @jit
-def find_best_MLP(MLP, filepath_to_MLPdir, learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, custom_labs, device):
+def find_best_MLP(MLP, filepath_to_MLPdir, learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, cols, custom_labs, device):
     f1Max = 0.5
     tic1 = time.perf_counter()
     for lr in learning_rate_vals:
         for mo in momentum_vals:
             for n in [10,20,50]:
                 outfile = filepath_to_MLPdir + "LR_" + str(lr) + "_MO_" + str(mo) + "_NEUR_" + str(n)
-                NN = MLP(11,n,len(custom_labs))
+                NN = MLP(cols,n,len(custom_labs))
                 optimizer = optim.SGD(NN.parameters(), lr=lr, momentum=mo)
                 f1score = main(3000, NN, optimizer, outfile, train_loader, val_loader, test_loader, custom_labs, device)
-                if f1score[0] > f1Max and f1score[1] != 0 and f1score[2] != 0:
-                    f1Max = f1score[0]
+                if f1score > f1Max:
+                    f1Max = f1score
                     bestfile = outfile
+    if f1Max == 0.5:
+        bestfile = "Failed to find better F1-Score than 50%"
     toc1 = time.perf_counter()
     timed = (toc1 - tic1)/60
     print(f"Completed full MLP in {timed} minutes")
@@ -355,7 +357,7 @@ def main(epochs, NetInstance, OptInstance, outfile, train_loader, val_loader, te
     # saving the network settings
     torch.save(NetInstance.state_dict(),outfile+'_Settings')
 
-    return f1_score(val_truth_values,val_predictions,average=None,zero_division=1)
+    return f1_score(val_truth_values,val_predictions,average='macro',zero_division=1)
 
 def preproc_yso(alph,tar):
     """Pre-processing for training/validation of the different YSO kinds

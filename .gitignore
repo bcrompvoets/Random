@@ -31,6 +31,7 @@ Phase_3__SPITZER_Classification/Scripts/Data_Preparation.ipynb
 Phase_3__SPITZER_Classification/Scripts/FindBest10kStars.py
 Phase_3__SPITZER_Classification/Scripts/CheckTest.ipynb
 Phase_3__SPITZER_Classification/Results/MLP
+Phase_3__SPITZER_Classification/Results/MLP_YSO_145_Best
 Phase_3__SPITZER_Classification/Data/c2d_ALL_*
 Archive
 Archive/.DS_Store

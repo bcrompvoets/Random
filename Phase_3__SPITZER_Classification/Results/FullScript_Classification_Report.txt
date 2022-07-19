@@ -29,7 +29,7 @@ CM Results
                 precision    recall  f1-score   support
 
  YSO - Class I       1.00      1.00      1.00       145
-YSO - Class FS       1.00      1.00      1.00       166
+YSO - Class FS       0.99      1.00      1.00       166
 YSO - Class II       1.00      1.00      1.00      1152
             EG       1.00      1.00      1.00      1463
          Stars       1.00      1.00      1.00      1463
@@ -40,38 +40,38 @@ YSO - Class II       1.00      1.00      1.00      1152
 Testing data (NGC 2264)
                 precision    recall  f1-score   support
 
- YSO - Class I       1.00      0.74      0.85        54
-YSO - Class FS       0.97      0.85      0.90        67
-YSO - Class II       0.30      0.77      0.44       432
-            EG       0.54      0.84      0.65       373
-         Stars       0.99      0.88      0.93      7518
+ YSO - Class I       1.00      0.78      0.88        54
+YSO - Class FS       0.97      0.88      0.92        67
+YSO - Class II       0.30      0.81      0.44       432
+            EG       0.57      0.87      0.69       373
+         Stars       0.99      0.87      0.93      7518
 
       accuracy                           0.87      8444
-     macro avg       0.76      0.82      0.75      8444
-  weighted avg       0.93      0.87      0.89      8444
+     macro avg       0.77      0.84      0.77      8444
+  weighted avg       0.94      0.87      0.89      8444
 
 Flagging and with best classifications 
  Training data (c2d Survey)
                 precision    recall  f1-score   support
 
- YSO - Class I       1.00      1.00      1.00       145
-YSO - Class FS       1.00      1.00      1.00       166
-YSO - Class II       1.00      1.00      1.00      1152
-            EG       1.00      1.00      1.00      1463
-         Stars       1.00      1.00      1.00      1463
+ YSO - Class I       0.99      0.90      0.94       145
+YSO - Class FS       0.99      0.98      0.98       166
+YSO - Class II       0.97      0.93      0.95      1152
+            EG       0.97      0.93      0.95      1463
+         Stars       0.92      1.00      0.95      1463
 
-      accuracy                           1.00      4389
-     macro avg       1.00      1.00      1.00      4389
-  weighted avg       1.00      1.00      1.00      4389
+      accuracy                           0.95      4389
+     macro avg       0.97      0.95      0.96      4389
+  weighted avg       0.95      0.95      0.95      4389
 Testing data (NGC 2264)
                 precision    recall  f1-score   support
 
- YSO - Class I       1.00      0.74      0.85        54
-YSO - Class FS       0.97      0.87      0.91        67
-YSO - Class II       0.34      0.80      0.48       432
-            EG       0.61      0.84      0.71       373
-         Stars       0.99      0.90      0.94      7518
+ YSO - Class I       1.00      0.76      0.86        54
+YSO - Class FS       0.94      0.90      0.92        67
+YSO - Class II       0.79      0.87      0.83       432
+            EG       0.89      0.79      0.83       373
+         Stars       0.99      0.99      0.99      7518
 
-      accuracy                           0.89      8444
-     macro avg       0.78      0.83      0.78      8444
-  weighted avg       0.94      0.89      0.91      8444
+      accuracy                           0.97      8444
+     macro avg       0.92      0.86      0.88      8444
+  weighted avg       0.97      0.97      0.97      8444
