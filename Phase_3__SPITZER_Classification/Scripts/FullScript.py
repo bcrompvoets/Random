@@ -3,7 +3,7 @@ import pandas as pd
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report
-
+from sklearn.ensemble import RandomForestClassifier
 import torch
 import torch.utils.data as data_utils
 
@@ -53,59 +53,67 @@ MLP_preds_tr = test(NN_IR, IR_train, device)
 MLP_preds_te = test(NN_IR, IR_test, device)
 
 #IRAC CM
-rfcl = joblib.load("../CM_Settings/YSE_RF_Settings.joblib")
+# rfcl = joblib.load("../CM_Settings/YSE_RF_Settings.joblib")
+rfcl = RandomForestClassifier(class_weight='balanced',criterion='entropy',max_features='log2',n_estimators=50,oob_score=False)
+rfcl.fit(inp_TR,tar_tr.ravel())
 RF_preds_tr = rfcl.predict(inp_TR)
 RF_preds_te = rfcl.predict(inp_TE)
 
 #Combination
-def flag_All(pred1,pred2):
-    flag = []
-    for i, p1 in enumerate(pred1):
-        if p1 == pred2[i]:
-            flag.append(0)
-        else:
-            flag.append(1)
-    return flag
+# def flag_All(pred1,pred2):
+#     flag = []
+#     for i, p1 in enumerate(pred1):
+#         if p1 == pred2[i]:
+#             flag.append(0)
+#         else:
+#             flag.append(1)
+#     return flag
 
-flags_YSE_tr = flag_All(MLP_preds_tr,RF_preds_tr)
-flags_YSE_te = flag_All(MLP_preds_te,RF_preds_te)
+# flags_YSE_tr = flag_All(MLP_preds_tr,RF_preds_tr)
+# flags_YSE_te = flag_All(MLP_preds_te,RF_preds_te)
 
 
 # Entering YSO classification
-df_tr = pd.DataFrame({"3.6mag": inp_tr[:,0],"e_3.6mag": inp_tr[:,1],"4.5mag": inp_tr[:,2],"e_4.5mag": inp_tr[:,3],\
-    "5.8mag": inp_tr[:,4],"e_5.8mag": inp_tr[:,5],"8mag": inp_tr[:,6],"e_8mag": inp_tr[:,7],\
-        "3.6mag": inp_tr[:,8],"e_3.6mag": inp_tr[:,9], "alpha":inp_tr[:,10], "Target": tar_tr.ravel(), \
-            "MLP Pred": MLP_preds_tr, "RF Pred": RF_preds_tr, "Flag": flags_YSE_tr}, index=ind_tr)
+# df_tr = pd.DataFrame({"3.6mag": inp_tr[:,0],"e_3.6mag": inp_tr[:,1],"4.5mag": inp_tr[:,2],"e_4.5mag": inp_tr[:,3],\
+#     "5.8mag": inp_tr[:,4],"e_5.8mag": inp_tr[:,5],"8mag": inp_tr[:,6],"e_8mag": inp_tr[:,7],\
+#         "3.6mag": inp_tr[:,8],"e_3.6mag": inp_tr[:,9], "alpha":inp_tr[:,10], "Target": tar_tr.ravel(), \
+#             "MLP Pred": MLP_preds_tr, "RF Pred": RF_preds_tr, "Flag": flags_YSE_tr}, index=ind_tr)
 
-df_tr_flagged = df_tr[(df_tr["Flag"]==1) | (df_tr["Target"]==0)]
-inp_tr_flagged = df_tr_flagged[["3.6mag","e_3.6mag","4.5mag","e_4.5mag","5.8mag","e_5.8mag","8mag","e_8mag","alpha"]].values.astype(float)
-MLP_preds_TR = df_tr_flagged[["MLP Pred"]].values.astype(int)
-RF_preds_TR = df_tr_flagged[["RF Pred"]].values.astype(int)
-tar_TR = df_tr_flagged[["Target"]].values.astype(int)
+# df_tr_flagged = df_tr[(df_tr["Flag"]==1) | (df_tr["Target"]==0)]
+# inp_tr_flagged = df_tr_flagged[["3.6mag","e_3.6mag","4.5mag","e_4.5mag","5.8mag","e_5.8mag","8mag","e_8mag","alpha"]].values.astype(float)
+# MLP_preds_TR = df_tr_flagged[["MLP Pred"]].values.astype(int)
+# RF_preds_TR = df_tr_flagged[["RF Pred"]].values.astype(int)
+# tar_TR = df_tr_flagged[["Target"]].values.astype(int)
 
-df_te = pd.DataFrame({"3.6mag": inp_te[:,0],"e_3.6mag": inp_te[:,1],"4.5mag": inp_te[:,2],"e_4.5mag": inp_te[:,3],\
-    "5.8mag": inp_te[:,4],"e_5.8mag": inp_te[:,5],"8mag": inp_te[:,6],"e_8mag": inp_te[:,7],\
-        "3.6mag": inp_te[:,8],"e_3.6mag": inp_te[:,9], "alpha":inp_te[:,10],"Target": tar_te.ravel(),\
-             "MLP Pred": MLP_preds_te, "RF Pred": RF_preds_te, "Flag": flags_YSE_te}, index=ind_te)
+# df_te = pd.DataFrame({"3.6mag": inp_te[:,0],"e_3.6mag": inp_te[:,1],"4.5mag": inp_te[:,2],"e_4.5mag": inp_te[:,3],\
+#     "5.8mag": inp_te[:,4],"e_5.8mag": inp_te[:,5],"8mag": inp_te[:,6],"e_8mag": inp_te[:,7],\
+#         "3.6mag": inp_te[:,8],"e_3.6mag": inp_te[:,9], "alpha":inp_te[:,10],"Target": tar_te.ravel(),\
+#              "MLP Pred": MLP_preds_te, "RF Pred": RF_preds_te, "Flag": flags_YSE_te}, index=ind_te)
 
-df_te_flagged = df_te[(df_te["Flag"]==1) | (df_te["Target"]==0)]
-inp_te_flagged = df_te_flagged[["3.6mag","e_3.6mag","4.5mag","e_4.5mag","5.8mag","e_5.8mag","8mag","e_8mag","alpha"]].values.astype(float)
-MLP_preds_TE = df_te_flagged[["MLP Pred"]].values.astype(int)
-RF_preds_TE = df_te_flagged[["RF Pred"]].values.astype(int)
-tar_TE = df_te_flagged[["Target"]].values.astype(int)
+# df_te_flagged = df_te[(df_te["Flag"]==1) | (df_te["Target"]==0)]
+# inp_te_flagged = df_te_flagged[["3.6mag","e_3.6mag","4.5mag","e_4.5mag","5.8mag","e_5.8mag","8mag","e_8mag","alpha"]].values.astype(float)
+# MLP_preds_TE = df_te_flagged[["MLP Pred"]].values.astype(int)
+# RF_preds_TE = df_te_flagged[["RF Pred"]].values.astype(int)
+# tar_TE = df_te_flagged[["Target"]].values.astype(int)
 
-# Change preds to match up with new scheme
-MLP_preds_TR = preproc_yso(inp_tr_flagged[:,-1],MLP_preds_TR)
-MLP_preds_TE = preproc_yso(inp_te_flagged[:,-1],MLP_preds_TE)
+# # Change preds to match up with new scheme
+preproc_yso(inp_tr[:,-1],MLP_preds_tr)
+preproc_yso(inp_te[:,-1],MLP_preds_te)
 
-RF_preds_TR = preproc_yso(inp_tr_flagged[:,-1],RF_preds_TR)
-RF_preds_TE = preproc_yso(inp_te_flagged[:,-1],RF_preds_TE)
+preproc_yso(inp_tr[:,-1],RF_preds_tr)
+preproc_yso(inp_te[:,-1],RF_preds_te)
+
+preproc_yso(inp_tr[:,-1],tar_tr)
+preproc_yso(inp_te[:,-1],tar_te)
 
 # Classify into YSO types
-rfcl_YSO = joblib.load("../CM_Settings/YSO_RF_Settings.joblib")
-YSO_preds_tr = rfcl.predict(inp_tr_flagged)
-YSO_preds_te = rfcl.predict(inp_te_flagged)
-
+# rfcl_YSO = joblib.load("../CM_Settings/YSO_RF_Settings.joblib")
+rfcl_YSO = RandomForestClassifier(class_weight='balanced',criterion='entropy',max_features='log2',n_estimators=50,oob_score=False)
+rfcl_YSO.fit(inp_TR,tar_tr.ravel())
+YSO_preds_tr = rfcl_YSO.predict(inp_TR)
+YSO_preds_te = rfcl_YSO.predict(inp_TE)
+print(np.unique(YSO_preds_tr))
+print(np.unique(YSO_preds_te))
 def flag_YSO(pred1,pred2,pred3):
     flag = []
     for i, p3 in enumerate(pred3):
@@ -119,43 +127,45 @@ def flag_YSO(pred1,pred2,pred3):
             flag.append(3)
     return flag
 
-flags_YSO_tr = np.array(flag_YSO(MLP_preds_TR,RF_preds_TR,YSO_preds_tr))
-flags_YSO_te = np.array(flag_YSO(MLP_preds_TE,RF_preds_TE,YSO_preds_te))
+flags_YSO_tr = np.array(flag_YSO(MLP_preds_tr,RF_preds_tr,YSO_preds_tr))
+flags_YSO_te = np.array(flag_YSO(MLP_preds_te,RF_preds_te,YSO_preds_te))
 
 pred_tr = []
 for i, flag in enumerate(flags_YSO_tr):
     if flag == 0:
-        pred_tr.append(MLP_preds_TR[i])
+        pred_tr.append(MLP_preds_tr[i])
     elif flag == 1:
-        pred_tr.append(MLP_preds_TR[i])
+        pred_tr.append(MLP_preds_tr[i])
     elif flag == 2:
-        pred_tr.append(RF_preds_TR[i])
+        pred_tr.append(RF_preds_tr[i])
     elif flag == 3:
-        pred_tr.append(MLP_preds_TR[i])
+        pred_tr.append(MLP_preds_tr[i])
 
 
 pred_te = []
 for i, flag in enumerate(flags_YSO_te):
     if flag == 0:
-        pred_te.append(MLP_preds_TE[i])
+        pred_te.append(MLP_preds_te[i])
     elif flag == 1:
-        pred_te.append(MLP_preds_TE[i])
+        pred_te.append(MLP_preds_te[i])
     elif flag == 2:
-        pred_te.append(RF_preds_TE[i])
+        pred_te.append(RF_preds_te[i])
     elif flag == 3:
-        pred_te.append(MLP_preds_TE[i])
+        pred_te.append(MLP_preds_te[i])
 
+YSE_labels = ["YSO","EG","Stars"]
+YSO_labels = ["YSO - Class I","YSO - Class FS","YSO - Class II","EG","Stars"]
 
 with open("../Results/"+outfile,"w") as f:
     f.write("MLP Results \n Training data (c2d Survey)\n")
-    f.write(classification_report(tar_tr,MLP_preds_tr))
+    f.write(classification_report(tar_tr,MLP_preds_tr,target_names=YSO_labels))
     f.write("Testing data (NGC 2264)\n")
-    f.write(classification_report(tar_te,MLP_preds_te))
+    f.write(classification_report(tar_te,MLP_preds_te,target_names=YSO_labels))
     f.write("\nCM Results\n Training data (c2d Survey)\n")
-    f.write(classification_report(tar_tr,RF_preds_tr))
+    f.write(classification_report(tar_tr,RF_preds_tr,target_names=YSO_labels))
     f.write("Testing data (NGC 2264)\n")
-    f.write(classification_report(tar_te,RF_preds_te))
+    f.write(classification_report(tar_te,RF_preds_te,target_names=YSO_labels))
     f.write("\nFlagging and with best classifications \n Training data (c2d Survey)\n")
-    f.write(classification_report(tar_TR,pred_tr))
+    f.write(classification_report(tar_tr,pred_tr,target_names=YSO_labels))
     f.write("Testing data (NGC 2264)\n")
-    f.write(classification_report(tar_TE,pred_te))
+    f.write(classification_report(tar_te,pred_te,target_names=YSO_labels))

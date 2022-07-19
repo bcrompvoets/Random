@@ -76,4 +76,4 @@ f.write("\nXGB NGC 2264 Results\n")
 f.write(classification_report(tar_te,xgb_preds_te,target_names=target_names))
 f.close()
 
-joblib.dump(rfcl,"../CM_Settings/YSO_RF_Settings.joblib") 
+joblib.dump(rfcl,"../CM_Settings/YSE_RF_Settings.joblib") 
