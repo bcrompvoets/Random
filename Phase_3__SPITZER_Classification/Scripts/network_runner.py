@@ -42,6 +42,12 @@ Y_te = np.float32(Y_te)
 inp_te, tar_te = replicate_data_single(X_te, Y_te, [len(np.where(Y_te==0.)[0]),len(np.where(Y_te==1.)[0]),len(np.where(Y_te==2.)[0])])
 tar_te = preproc_yso(alph=inp_te[:,-1],tar=tar_te)
 
+inp_tr = inp_tr[np.where(inp_tr[:,9]!=-99)[0]]
+tar_tr = tar_tr[np.where(inp_tr[:,9]!=-99)[0]]
+inp_va = inp_va[np.where(inp_va[:,9]!=-99)[0]]
+tar_va = tar_va[np.where(inp_va[:,9]!=-99)[0]]
+inp_te = inp_te[np.where(inp_te[:,9]!=-99)[0]]
+tar_te = tar_te[np.where(inp_te[:,9]!=-99)[0]]
 
 train_loader, val_loader, test_loader = MLP_data_setup(inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te)
 

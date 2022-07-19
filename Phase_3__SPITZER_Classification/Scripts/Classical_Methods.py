@@ -1,3 +1,5 @@
+import warnings
+warnings.filterwarnings('ignore')
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report
@@ -7,10 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from custom_dataloader import replicate_data_single
 from NN_Defs import preproc_yso
-
-import warnings
-warnings.filterwarnings('ignore')
-
+import joblib
 
 X_tr = np.load("../Data/c2d_1k_INP.npy") # Load input data
 Y_tr = np.load("../Data/c2d_1k_TAR.npy") # Load target data
@@ -36,14 +35,13 @@ inp_tr = scaler_S.transform(inp_tr)
 inp_te = scaler_S.transform(inp_te) 
 
 
+tar_tr = preproc_yso(inp_tr[:,-1],tar_tr)
+tar_te = preproc_yso(inp_te[:,-1],tar_te)
+target_names = ["YSO - Class I","YSO - Class FS","YSO - Class II","EG", "Stars"]
+# target_names = ["YSO","EG", "Stars"]
 
-# tar_tr = preproc_yso(inp_tr[:,-1],tar_tr)
-# tar_te = preproc_yso(inp_te[:,-1],tar_te)
-# target_names = ["YSO - Class I","YSO - Class FS","YSO - Class II","EG", "Stars"]
-target_names = ["YSO","EG", "Stars"]
 
-
-f = open("../Results/Classical_Methods_All.txt", "w")
+f = open("../Results/Classical_Methods_YSO_All.txt", "w")
 # Initiate, fit, and predict targets with a gradient boosting classifier
 gbcl = GradientBoostingClassifier(criterion='friedman_mse',max_depth=5,max_features='log2',\
      n_estimators=150,n_iter_no_change=5,subsample=1.0,warm_start=False)
@@ -76,3 +74,6 @@ f.write("\n \nXGB c2d Results\n")
 f.write(classification_report(tar_tr,xgb_preds_tr,target_names=target_names))
 f.write("\nXGB NGC 2264 Results\n")
 f.write(classification_report(tar_te,xgb_preds_te,target_names=target_names))
+f.close()
+
+joblib.dump(rfcl,"../CM_Settings/YSO_RF_Settings.joblib") 
