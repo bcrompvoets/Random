@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from sklearn.metrics import classification_report
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.manifold import TSNE
 
 import torch
@@ -50,77 +51,89 @@ NN_IR.load_state_dict(torch.load("../MLP_Settings/IRAC_TwoLayer_LR_0.001_MO_0.9_
 MLP_preds_tr = test(NN_IR, IR_train, device)
 MLP_preds_te = test(NN_IR, IR_test, device)
 
+#IRAC CM
+rfcl = RandomForestClassifier(class_weight='balanced',criterion='entropy',max_features='log2',n_estimators=50,oob_score=False)
+rfcl.fit(inp_TR,tar_tr.ravel())
+RF_preds_tr = rfcl.predict(inp_TR)
+RF_preds_te = rfcl.predict(inp_TE)
+
 # # Change preds to match up with new scheme
 preproc_yso(inp_tr[:,-1],MLP_preds_tr)
 preproc_yso(inp_te[:,-1],MLP_preds_te)
+
+preproc_yso(inp_tr[:,-1],RF_preds_tr)
+preproc_yso(inp_te[:,-1],RF_preds_te)
 
 preproc_yso(inp_tr[:,-1],tar_tr)
 preproc_yso(inp_te[:,-1],tar_te)
 
 # Classify into YSO types
-def to_loader(inp,tar):
-    inp = torch.as_tensor(inp)
-    tar = torch.as_tensor(tar)
+X_tr = np.load("../Data/c2d_YSO_INP.npy") # Load input data
+Y_tr = np.load("../Data/c2d_YSO_TAR.npy") # Load target data
+X_tr = np.float32(X_tr)
+Y_tr = np.float32(Y_tr)
+inp_tr_YSO, tar_tr_YSO = replicate_data_single(X_tr, Y_tr, [len(np.where(Y_tr==0.)[0])]*5)
+inp_tr_YSO = np.delete(inp_tr_YSO,np.s_[8:10],axis=1)
+YSO_forscale, YSO_train, YSO_test = MLP_data_setup(inp_tr_YSO, tar_tr_YSO,inp_TR, tar_tr, inp_TE, tar_te)
 
-    # pass tensors into TensorDataset instances
-    tensor_data = data_utils.TensorDataset(inp, tar)
-
-    # constructing data loaders
-    loader = torch.utils.data.DataLoader(tensor_data, batch_size=32, shuffle=False)
-    return loader
-
-YSO_loader_tr = to_loader(inp_TR,tar_tr)
-YSO_loader_te = to_loader(inp_TE,tar_te)
 YSO_NN = BaseMLP(9, 20, 5)
 YSO_NN.load_state_dict(torch.load("../MLP_Settings/IRAC_YSO_OneLayer_LR_0.1_MO_0.9_NEUR_20_Settings", map_location=device))
 
-YSO_preds_tr = test(YSO_NN, YSO_loader_tr, device)
-YSO_preds_te = test(YSO_NN, YSO_loader_te, device)
+YSO_preds_tr = test(YSO_NN, YSO_train, device)
+YSO_preds_te = test(YSO_NN, YSO_test, device)
 
-def flag_YSO(pred1,pred2):
+def flag_YSO(pred1,pred2,pred3):
     flag = []
-    for i, p2 in enumerate(pred2):
-        if pred1[i]==p2:
+    for i, p3 in enumerate(pred3):
+        if pred1[i]==pred2[i]:
             flag.append(0)
-        else:
+        elif pred1[i]==p3:
             flag.append(1)
+        elif pred2[i]==p3:
+            flag.append(2)
+        else:
+            flag.append(3)
     return flag
 
-flags_YSO_tr = np.array(flag_YSO(MLP_preds_tr,YSO_preds_tr))
-flags_YSO_te = np.array(flag_YSO(MLP_preds_te,YSO_preds_te))
-
-pred_tr = np.array(MLP_preds_tr)
-# for i, flag in enumerate(flags_YSO_tr):
-#     if flag == 0:
-#         pred_tr.append(MLP_preds_tr[i])
-#     elif flag == 1:
-#         pred_tr.append(MLP_preds_tr[i])
-#     elif flag == 2:
-#         pred_tr.append(RF_preds_tr[i])
-#     elif flag == 3:
-#         pred_tr.append(MLP_preds_tr[i])
-
-pred_te = np.array(MLP_preds_te)
-# for i, flag in enumerate(flags_YSO_te):
-#     if flag == 0:
-#         pred_te.append(MLP_preds_te[i])
-#     elif flag == 1:
-#         pred_te.append(MLP_preds_te[i])
-#     elif flag == 2:
-#         pred_te.append(RF_preds_te[i])
-#     elif flag == 3:
-#         pred_te.append(MLP_preds_te[i])
+flags_YSO_tr = np.array(flag_YSO(MLP_preds_tr,RF_preds_tr,YSO_preds_tr))
+flags_YSO_te = np.array(flag_YSO(MLP_preds_te,RF_preds_te,YSO_preds_te))
+pred_tr = []
+for i, flag in enumerate(flags_YSO_tr):
+    if flag == 0:
+        pred_tr.append(MLP_preds_tr[i])
+    elif flag == 1:
+        pred_tr.append(MLP_preds_tr[i])
+    elif flag == 2:
+        pred_tr.append(RF_preds_tr[i])
+    elif flag == 3:
+        pred_tr.append(MLP_preds_tr[i])
+pred_tr = np.array(pred_tr)
+pred_te = []
+for i, flag in enumerate(flags_YSO_te):
+    if flag == 0:
+        pred_te.append(MLP_preds_te[i])
+    elif flag == 1:
+        pred_te.append(MLP_preds_te[i])
+    elif flag == 2:
+        pred_te.append(RF_preds_te[i])
+    elif flag == 3:
+        pred_te.append(MLP_preds_te[i])
+pred_te = np.array(pred_te)
 
 
 YSE_labels = ["YSO","EG","Stars"]
 YSO_labels = ["YSO - Class I","YSO - Class FS","YSO - Class II","EG","Stars"]
 
 with open("../Results/"+outfile,"w") as f:
-    f.write("MLP on YSE Results \n Training data (c2d Survey)\n")
+    f.write("MLP Results \n Training data (c2d Survey)\n")
     f.write(classification_report(tar_tr,MLP_preds_tr,target_names=YSO_labels))
     f.write("Testing data (NGC 2264)\n")
     f.write(classification_report(tar_te,MLP_preds_te,target_names=YSO_labels))
-    f.write("\nMLP on YSO Results\n Training data (c2d Survey)\n")
+    f.write("\nCM Results\n Training data (c2d Survey)\n")
+    f.write(classification_report(tar_tr,RF_preds_tr,target_names=YSO_labels))
+    f.write("Testing data (NGC 2264)\n")
+    f.write(classification_report(tar_te,RF_preds_te,target_names=YSO_labels))
+    f.write("\nCM Results\n Training data (c2d Survey)\n")
     f.write(classification_report(tar_tr,YSO_preds_tr,target_names=YSO_labels))
     f.write("Testing data (NGC 2264)\n")
     f.write(classification_report(tar_te,YSO_preds_te,target_names=YSO_labels))
@@ -151,7 +164,8 @@ def tsne_plot(inp,pred,flag,type):
     plt.scatter(Y[np.where(pred==0)[0], 0], Y[np.where(pred==0)[0], 1], c="g",label='YSO - Class I')
     plt.scatter(Y[np.where(flag==3)[0], 0], Y[np.where(flag==3)[0], 1], c="k",marker='x',label='Insecure')
     plt.legend()
-    plt.savefig(f"../Results/t-SNE_final_{type}.png",dpi=300)
+    plt.savefig(f"../Results/Figures/t-SNE_final_{type}.png",dpi=300)
+    plt.close()
 
 tsne_plot(inp_TR,pred_tr,flags_YSO_tr,"c2d")
 tsne_plot(inp_TE,pred_te,flags_YSO_te,"NGC 2264")
