@@ -1,4 +1,4 @@
-MLP from YSE Results 
+MLP Results 
  Training data (c2d Survey)
                 precision    recall  f1-score   support
 
@@ -40,17 +40,17 @@ YSO - Class II       1.00      1.00      1.00      1152
 Testing data (NGC 2264)
                 precision    recall  f1-score   support
 
- YSO - Class I       1.00      0.74      0.85        54
-YSO - Class FS       0.97      0.87      0.91        67
-YSO - Class II       0.26      0.80      0.39       432
-            EG       0.63      0.84      0.72       373
-         Stars       0.99      0.86      0.92      7518
+ YSO - Class I       1.00      0.70      0.83        54
+YSO - Class FS       0.97      0.88      0.92        67
+YSO - Class II       0.25      0.77      0.37       432
+            EG       0.61      0.83      0.70       373
+         Stars       0.99      0.85      0.92      7518
 
       accuracy                           0.85      8444
-     macro avg       0.77      0.82      0.76      8444
-  weighted avg       0.94      0.85      0.88      8444
+     macro avg       0.76      0.81      0.75      8444
+  weighted avg       0.93      0.85      0.88      8444
 
-MLP from YSO Results
+CM Results
  Training data (c2d Survey)
                 precision    recall  f1-score   support
 
@@ -94,8 +94,8 @@ Testing data (NGC 2264)
 
  YSO - Class I       1.00      0.78      0.88        54
 YSO - Class FS       0.97      0.96      0.96        67
-YSO - Class II       0.82      0.81      0.81       432
-            EG       0.74      0.84      0.79       373
+YSO - Class II       0.80      0.80      0.80       432
+            EG       0.74      0.83      0.78       373
          Stars       0.99      0.98      0.99      7518
 
       accuracy                           0.97      8444

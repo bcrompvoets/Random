@@ -12,8 +12,8 @@ from NN_Defs import BaseMLP, TwoLayerMLP, MLP_data_setup, test, preproc_yso
 from custom_dataloader import replicate_data_single
 
 device = torch.device("cpu")
-outfile = "../Results/FullScript_Classification_Report.txt"
-
+outfile = "../Results/FullScript_Classification_Report_CIII.txt"
+ClassIII = True
 # File to use to scale rest of data
 file_tr = "../Data/c2d_1k_INP.npy" 
 file_tr_tar = "../Data/c2d_1k_TAR.npy" 
@@ -58,15 +58,15 @@ RF_preds_tr = rfcl.predict(inp_TR)
 RF_preds_te = rfcl.predict(inp_TE)
 
 # # Change preds to match up with new scheme
-preproc_yso(inp_tr[:,-1],MLP_preds_tr)
-preproc_yso(inp_te[:,-1],MLP_preds_te)
+preproc_yso(inp_tr[:,-1],MLP_preds_tr,three=ClassIII)
+preproc_yso(inp_te[:,-1],MLP_preds_te,three=ClassIII)
 
-preproc_yso(inp_tr[:,-1],RF_preds_tr)
-preproc_yso(inp_te[:,-1],RF_preds_te)
+preproc_yso(inp_tr[:,-1],RF_preds_tr,three=ClassIII)
+preproc_yso(inp_te[:,-1],RF_preds_te,three=ClassIII)
 
-preproc_yso(inp_tr[:,-1],tar_tr)
-preproc_yso(inp_te[:,-1],tar_te)
-
+preproc_yso(inp_tr[:,-1],tar_tr,three=ClassIII)
+preproc_yso(inp_te[:,-1],tar_te,three=ClassIII)
+print(np.unique(tar_tr))
 # Classify into YSO types
 X_tr = np.load("../Data/c2d_YSO_INP.npy") # Load input data
 Y_tr = np.load("../Data/c2d_YSO_TAR.npy") # Load target data
@@ -76,8 +76,12 @@ inp_tr_YSO, tar_tr_YSO = replicate_data_single(X_tr, Y_tr, [len(np.where(Y_tr==0
 inp_tr_YSO = np.delete(inp_tr_YSO,np.s_[8:10],axis=1)
 YSO_forscale, YSO_train, YSO_test = MLP_data_setup(inp_tr_YSO, tar_tr_YSO,inp_TR, tar_tr, inp_TE, tar_te)
 
-YSO_NN = BaseMLP(9, 20, 5)
-YSO_NN.load_state_dict(torch.load("../MLP_Settings/IRAC_YSO_OneLayer_LR_0.1_MO_0.9_NEUR_20_Settings", map_location=device))
+if ClassIII:
+    YSO_NN = BaseMLP(9, 10, 6)
+    YSO_NN.load_state_dict(torch.load("../MLP_Settings//IRAC_YSO_CIII_OneLayer_LR_0.1_MO_0.6_NEUR_10_Settings", map_location=device))
+else:
+    YSO_NN = BaseMLP(9, 20, 5)
+    YSO_NN.load_state_dict(torch.load("../MLP_Settings/IRAC_YSO_OneLayer_LR_0.1_MO_0.9_NEUR_20_Settings", map_location=device))
 
 YSO_preds_tr = test(YSO_NN, YSO_train, device)
 YSO_preds_te = test(YSO_NN, YSO_test, device)
@@ -122,7 +126,10 @@ pred_te = np.array(pred_te)
 
 
 YSE_labels = ["YSO","EG","Stars"]
-YSO_labels = ["YSO - Class I","YSO - Class FS","YSO - Class II","EG","Stars"]
+if ClassIII:
+    YSO_labels = ["YSO - Class I","YSO - Class FS","YSO - Class II","YSO - Class III","EG","Stars"]
+else:    
+    YSO_labels = ["YSO - Class I","YSO - Class FS","YSO - Class II","EG","Stars"]
 
 with open("../Results/"+outfile,"w") as f:
     f.write("MLP Results \n Training data (c2d Survey)\n")
@@ -144,7 +151,7 @@ with open("../Results/"+outfile,"w") as f:
 
 
 # t-SNE
-def tsne_plot(inp,pred,flag,type):
+def tsne_plot(inp,pred,flag,type,three=False):
     n_components = 2
     tsne = TSNE(
         n_components=n_components,
@@ -157,15 +164,21 @@ def tsne_plot(inp,pred,flag,type):
 
     plt.rcParams["font.family"] = "times"
     plt.title("t-SNE of predictions with insecure objects marked")
-    plt.scatter(Y[np.where(pred==4)[0], 0], Y[np.where(pred==4)[0], 1], c="orange",label='Stars')
-    plt.scatter(Y[np.where(pred==3)[0], 0], Y[np.where(pred==3)[0], 1], c="purple",label='EG')
+    if three:
+        plt.scatter(Y[np.where(pred==5)[0], 0], Y[np.where(pred==5)[0], 1], c="orange",label='Stars')
+        plt.scatter(Y[np.where(pred==4)[0], 0], Y[np.where(pred==4)[0], 1], c="purple",label='EG')
+        plt.scatter(Y[np.where(pred==3)[0], 0], Y[np.where(pred==3)[0], 1], c="cyan",label='YSO - Class III')
+    else:
+        plt.scatter(Y[np.where(pred==4)[0], 0], Y[np.where(pred==4)[0], 1], c="orange",label='Stars')
+        plt.scatter(Y[np.where(pred==3)[0], 0], Y[np.where(pred==3)[0], 1], c="purple",label='EG')
     plt.scatter(Y[np.where(pred==2)[0], 0], Y[np.where(pred==2)[0], 1], c="r",label='YSO - Class II')
     plt.scatter(Y[np.where(pred==1)[0], 0], Y[np.where(pred==1)[0], 1], c="b",label='YSO - Class FS')
     plt.scatter(Y[np.where(pred==0)[0], 0], Y[np.where(pred==0)[0], 1], c="g",label='YSO - Class I')
-    plt.scatter(Y[np.where(flag==3)[0], 0], Y[np.where(flag==3)[0], 1], c="k",marker='x',label='Insecure')
+    plt.scatter(Y[np.where(flag==3)[0], 0], Y[np.where(flag==3)[0], 1], c="k",marker='x',label='Very Insecure')
+    plt.scatter(Y[np.where(flag==2)[0], 0], Y[np.where(flag==2)[0], 1], c="w",marker='x',label='Insecure')
     plt.legend()
     plt.savefig(f"../Results/Figures/t-SNE_final_{type}.png",dpi=300)
     plt.close()
 
-tsne_plot(inp_TR,pred_tr,flags_YSO_tr,"c2d")
-tsne_plot(inp_TE,pred_te,flags_YSO_te,"NGC 2264")
+tsne_plot(inp_TR,pred_tr,flags_YSO_tr,"c2d_CIII",three=ClassIII)
+tsne_plot(inp_TE,pred_te,flags_YSO_te,"NGC 2264_CIII",three=ClassIII)

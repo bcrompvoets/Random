@@ -359,15 +359,14 @@ def main(epochs, NetInstance, OptInstance, outfile, train_loader, val_loader, te
 
     return f1_score(val_truth_values,val_predictions,average='macro',zero_division=1)
 
-def preproc_yso(alph,tar):
+def preproc_yso(alph,tar,three=False):
     """Pre-processing for training/validation of the different YSO kinds
     0 = Class I
     1 = Flat-Spectrum
     2 = Class II
-    3 = EG
-    4 = Stars"""
-    tar[np.where(tar==1)[0]] = 3 # Reclassify EG sources
-    tar[np.where(tar==2)[0]] = 4 # Reclassify Star sources
+    3 = Class III
+    4 = EG
+    5 = Stars"""
 
     yso = np.where(tar==0)[0]
     alph = alph[yso]
@@ -375,9 +374,19 @@ def preproc_yso(alph,tar):
     ci = np.where((alph>0.3))[0]
     cfs = np.where((alph<=0.3) & (alph>=-0.3))[0]
     cii = np.where((alph<-0.3))[0]
-
-    tar[yso[ci]] = 0
-    tar[yso[cfs]] = 1
-    tar[yso[cii]] = 2
+    if three:
+        ciii = np.where((alph<-1.6))[0]
+        tar[np.where(tar==1)[0]] = 4 # Reclassify EG sources
+        tar[np.where(tar==2)[0]] = 5 # Reclassify Star sources
+        tar[yso[ci]] = 0
+        tar[yso[cfs]] = 1
+        tar[yso[cii]] = 2
+        tar[yso[ciii]] = 3
+    else:
+        tar[np.where(tar==1)[0]] = 3 # Reclassify EG sources
+        tar[np.where(tar==2)[0]] = 4 # Reclassify Star sources
+        tar[yso[ci]] = 0
+        tar[yso[cfs]] = 1
+        tar[yso[cii]] = 2
 
     return tar
