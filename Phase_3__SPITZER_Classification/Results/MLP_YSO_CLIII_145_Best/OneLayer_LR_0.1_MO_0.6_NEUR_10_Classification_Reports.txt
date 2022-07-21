@@ -1,0 +1,41 @@
+Target Set Report (c2d CLOUDS)
+                 precision    recall  f1-score   support
+
+  YSO - Class I       1.00      0.95      0.98       145
+ YSO - Class FS       0.98      0.99      0.98       145
+ YSO - Class II       0.97      0.99      0.98       145
+YSO - Class III       0.94      0.92      0.93       145
+             EG       0.92      0.89      0.91       145
+           Star       0.86      0.93      0.89       145
+
+       accuracy                           0.94       870
+      macro avg       0.95      0.94      0.94       870
+   weighted avg       0.95      0.94      0.94       870
+
+Validation Set Report (NGC 2264)
+                 precision    recall  f1-score   support
+
+  YSO - Class I       0.91      0.76      0.83        54
+ YSO - Class FS       0.86      0.90      0.88        67
+ YSO - Class II       0.78      0.96      0.86       358
+YSO - Class III       0.01      0.04      0.01        74
+             EG       0.94      0.77      0.85       373
+           Star       0.98      0.93      0.96      7518
+
+       accuracy                           0.92      8444
+      macro avg       0.75      0.73      0.73      8444
+   weighted avg       0.96      0.92      0.94      8444
+
+Testing Set Report (c2d CLOUDS)
+                 precision    recall  f1-score   support
+
+  YSO - Class I       0.88      0.96      0.92      1391
+ YSO - Class FS       0.87      0.94      0.90      1443
+ YSO - Class II       0.92      0.93      0.93      4594
+YSO - Class III       0.73      0.84      0.78      2572
+             EG       0.97      0.91      0.94     10000
+           Star       0.92      0.92      0.92     10000
+
+       accuracy                           0.92     30000
+      macro avg       0.88      0.92      0.90     30000
+   weighted avg       0.92      0.92      0.92     30000
