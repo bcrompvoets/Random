@@ -11,7 +11,7 @@ from custom_dataloader import replicate_data_single
 from FullScript_Defs import flag_YSO, predbyflag, tsne_plot, plot_hist
 
 device = torch.device("cpu")
-outfile = "../Results/FullScript_Classification_Report_c2d Full.txt"
+outfile = "../Results/FullScript_Classification_Report_NGC 2264.txt"
 ClassIII = True
 # File to use to scale rest of data
 file_tr = "../Data/c2d_1k_INP.npy" 
@@ -26,10 +26,10 @@ ind_tr = inp_tr[:,0] # Create array which only holds indices
 inp_tr = inp_tr[:,1:] # Remove index from input
 
 # YSO_EG_Stars Test
-# X_te = np.load("../Data/NGC2264_INP.npy") # Load input data
-# Y_te = np.load("../Data/NGC2264_TAR.npy") # Load target data
-X_te = np.load("../Data/c2d_ALL_INP.npy") # Load input data
-Y_te = np.load("../Data/c2d_ALL_TAR.npy") # Load target data
+X_te = np.load("../Data/NGC2264_INP.npy") # Load input data
+Y_te = np.load("../Data/NGC2264_TAR.npy") # Load target data
+# X_te = np.load("../Data/c2d_ALL_INP.npy") # Load input data
+# Y_te = np.load("../Data/c2d_ALL_TAR.npy") # Load target data
 X_te = np.float32(X_te)
 Y_te = np.float32(Y_te)
 X_te = np.c_[ 0:len(X_te), X_te ] # Add an index for now
@@ -148,12 +148,12 @@ print(f"We have {len(np.where(flags_YSO_te==3)[0])} Insecure Classifications")
 
 # t-SNE
 tsne_plot(inp_TR,pred_tr,flags_YSO_tr,"c2d_CIII_2YSE_MIPS",three=ClassIII)
-tsne_plot(inp_TE,pred_te,flags_YSO_te,"c2d Full_CIII_2YSE_MIPS",three=ClassIII)
+tsne_plot(inp_TE,pred_te,flags_YSO_te,"NGC 2264_CIII_2YSE_MIPS",three=ClassIII)
 print("t-SNE plots completed")
 
 # Histogram
 plot_hist(inp_TR,pred_tr,"c2d_CIII_2YSE_MIPS")
-plot_hist(inp_TE,pred_te,"c2d Full_CIII_2YSE_MIPS")
+plot_hist(inp_TE,pred_te,"NGC 2264_CIII_2YSE_MIPS")
 print("Histograms of spectral index completed")
 
 # Print the Classification Reports
@@ -163,26 +163,27 @@ if ClassIII:
 else:    
     YSO_labels = ["YSO - Class I","YSO - Class FS","YSO - Class II","EG","Stars"]
 
+testset = "NGC 2264"
 with open("../Results/"+outfile,"w") as f:
     f.write("MLP Results \n Training data (c2d Survey)\n")
     f.write(classification_report(tar_tr,MLP_preds_tr,target_names=YSO_labels))
-    f.write("Testing data (Full c2d)\n")
+    f.write(f"Testing data ({testset})\n")
     f.write(classification_report(tar_te,MLP_preds_te,target_names=YSO_labels))
     f.write("\nMLP from YSO Results\n Training data (c2d Survey)\n")
     f.write(classification_report(tar_tr,YSO_preds_tr,target_names=YSO_labels))
-    f.write("Testing data (Full c2d)\n")
+    f.write(f"Testing data ({testset})\n")
     f.write(classification_report(tar_te,YSO_preds_te,target_names=YSO_labels))
     f.write("\nMLP from YSE 2 Results\n Training data (c2d Survey)\n")
     f.write(classification_report(tar_tr,MLP_preds_tr_2,target_names=YSO_labels))
-    f.write("Testing data (Full c2d)\n")
+    f.write(f"Testing data ({testset})\n")
     f.write(classification_report(tar_te,MLP_preds_te_2,target_names=YSO_labels))
     f.write("\nMLP from YSE MIPS Results\n Training data (c2d Survey)\n")
     f.write(classification_report(tar_tr_M,MLP_preds_tr_M,target_names=YSO_labels))
-    f.write("Testing data (Full c2d)\n")
+    f.write(f"Testing data ({testset})\n")
     f.write(classification_report(tar_te_M,MLP_preds_te_M,target_names=YSO_labels))
     f.write("\nFlagging and with best classifications \n Training data (c2d Survey)\n")
     f.write(classification_report(tar_tr,pred_tr,target_names=YSO_labels))
-    f.write("Testing data (Full c2d)\n")
+    f.write(f"Testing data ({testset})\n")
     f.write(classification_report(tar_te,pred_te,target_names=YSO_labels))
     # Make comparison of og three classes:
     YSE_tar_te = tar_te
@@ -194,5 +195,5 @@ with open("../Results/"+outfile,"w") as f:
     YSE_pred_te[YSE_pred_te<=3]=0
     YSE_pred_te[YSE_pred_te==4]=1
     YSE_pred_te[YSE_pred_te==5]=2
-    f.write("Testing data (Full c2d)\n")
+    f.write(f"Testing data ({testset})\n")
     f.write(classification_report(YSE_tar_te,pred_te,target_names=YSE_labels))

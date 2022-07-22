@@ -117,33 +117,33 @@ Flagging and with best classifications
   YSO - Class I       0.94      0.91      0.93       145
  YSO - Class FS       0.96      0.98      0.97       166
  YSO - Class II       0.97      0.99      0.98       809
-YSO - Class III       0.85      0.85      0.85       343
+YSO - Class III       0.96      0.47      0.63       343
              EG       0.97      0.92      0.94      1463
-          Stars       0.92      0.96      0.94      1463
+          Stars       0.85      0.99      0.91      1463
 
-       accuracy                           0.94      4389
-      macro avg       0.94      0.93      0.93      4389
-   weighted avg       0.94      0.94      0.94      4389
+       accuracy                           0.92      4389
+      macro avg       0.94      0.88      0.89      4389
+   weighted avg       0.93      0.92      0.92      4389
 Testing data (Full c2d)
                  precision    recall  f1-score   support
 
   YSO - Class I       0.75      0.91      0.83       145
  YSO - Class FS       0.84      0.98      0.90       166
  YSO - Class II       0.77      0.99      0.87       809
-YSO - Class III       0.03      0.85      0.06       343
+YSO - Class III       0.32      0.47      0.38       343
              EG       0.64      0.92      0.76      3621
-          Stars       1.00      0.97      0.98    338497
+          Stars       1.00      0.99      1.00    338497
 
-       accuracy                           0.97    343581
-      macro avg       0.67      0.94      0.73    343581
-   weighted avg       0.99      0.97      0.98    343581
+       accuracy                           0.99    343581
+      macro avg       0.72      0.88      0.79    343581
+   weighted avg       0.99      0.99      0.99    343581
 Testing data (Full c2d)
               precision    recall  f1-score   support
 
-         YSO       0.14      0.95      0.24      1463
+         YSO       0.66      0.86      0.75      1463
           EG       0.64      0.92      0.76      3621
-       Stars       1.00      0.97      0.98    338497
+       Stars       1.00      0.99      1.00    338497
 
-    accuracy                           0.97    343581
-   macro avg       0.59      0.95      0.66    343581
-weighted avg       0.99      0.97      0.98    343581
+    accuracy                           0.99    343581
+   macro avg       0.77      0.92      0.83    343581
+weighted avg       0.99      0.99      0.99    343581
