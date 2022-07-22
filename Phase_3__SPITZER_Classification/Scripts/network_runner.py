@@ -45,12 +45,15 @@ inp_te, tar_te = replicate_data_single(X_te, Y_te,\
 # inp_tr = np.delete(inp_tr,np.s_[8:10],axis=1)
 # inp_va = np.delete(inp_va,np.s_[8:10],axis=1)
 # inp_te = np.delete(inp_te,np.s_[8:10],axis=1)
-inp_tr = inp_tr[np.where(inp_tr[:,9]!=-99)[0]]
-tar_tr = tar_tr[np.where(inp_tr[:,9]!=-99)[0]]
-inp_va = inp_va[np.where(inp_va[:,9]!=-99)[0]]
-tar_va = tar_va[np.where(inp_va[:,9]!=-99)[0]]
-inp_te = inp_te[np.where(inp_te[:,9]!=-99)[0]]
-tar_te = tar_te[np.where(inp_te[:,9]!=-99)[0]]
+mips_ind_tr = np.where(inp_tr[:,9]!=-99)[0]
+mips_ind_va = np.where(inp_va[:,9]!=-99)[0]
+mips_ind_te = np.where(inp_te[:,9]!=-99)[0]
+inp_tr = inp_tr[mips_ind_tr]
+tar_tr = tar_tr[mips_ind_tr]
+inp_va = inp_va[mips_ind_va]
+tar_va = tar_va[mips_ind_va]
+inp_te = inp_te[mips_ind_te]
+tar_te = tar_te[mips_ind_te]
 
 train_loader, val_loader, test_loader = MLP_data_setup(inp_tr, tar_tr, inp_va, tar_va, inp_te, tar_te)
 

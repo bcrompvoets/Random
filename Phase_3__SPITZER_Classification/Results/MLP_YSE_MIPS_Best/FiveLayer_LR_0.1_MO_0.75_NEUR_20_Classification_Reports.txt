@@ -1,0 +1,32 @@
+Target Set Report (c2d CLOUDS)
+              precision    recall  f1-score   support
+
+         YSO       0.96      0.97      0.96      1463
+          EG       0.99      0.94      0.96      1463
+        Star       0.94      0.97      0.95      1382
+
+    accuracy                           0.96      4308
+   macro avg       0.96      0.96      0.96      4308
+weighted avg       0.96      0.96      0.96      4308
+
+Validation Set Report (NGC 2264)
+              precision    recall  f1-score   support
+
+         YSO       0.97      0.79      0.87       376
+          EG       0.74      0.97      0.84       155
+        Star       0.89      0.97      0.93       262
+
+    accuracy                           0.88       793
+   macro avg       0.87      0.91      0.88       793
+weighted avg       0.90      0.88      0.88       793
+
+Testing Set Report (c2d CLOUDS)
+              precision    recall  f1-score   support
+
+         YSO       0.96      0.89      0.92     10000
+          EG       0.96      0.94      0.95     10000
+        Star       0.90      0.99      0.94      9475
+
+    accuracy                           0.94     29475
+   macro avg       0.94      0.94      0.94     29475
+weighted avg       0.94      0.94      0.94     29475
