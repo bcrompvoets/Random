@@ -74,7 +74,6 @@ MLP_preds_tr_2 = test(NN_IR_2, IR_train, device)
 MLP_preds_te_2 = test(NN_IR_2, IR_test, device)
 
 # IRAC+MIPS MLP: Very good
-
 # Adjust test data to view only objects with MIPS detections
 mips_ind_tr = np.where(inp_tr[:,9]!=-99)[0]
 mips_ind_te = np.where(inp_te[:,9]!=-99)[0]
