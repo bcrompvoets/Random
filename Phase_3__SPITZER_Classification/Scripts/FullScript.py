@@ -11,8 +11,9 @@ from custom_dataloader import replicate_data_single
 from FullScript_Defs import flag_YSO, predbyflag, tsne_plot, plot_hist
 
 device = torch.device("cpu")
-outfile = "../Results/FullScript_Classification_Report_NGC 2264.txt"
 ClassIII = True
+testset = "NGC 2264"#"c2d Full"
+outfile = f"../Results/FullScript_Classification_Report_{testset}.txt"
 # File to use to scale rest of data
 file_tr = "../Data/c2d_1k_INP.npy" 
 file_tr_tar = "../Data/c2d_1k_TAR.npy" 
@@ -61,6 +62,9 @@ NN_IR.load_state_dict(torch.load("../MLP_Settings/IRAC_TwoLayer_LR_0.001_MO_0.9_
 MLP_preds_tr = test(NN_IR, IR_train, device)
 MLP_preds_te = test(NN_IR, IR_test, device)
 
+YSE_labels = ["YSO","EG","Stars"]
+print(classification_report(tar_te,MLP_preds_te,target_names=YSE_labels))
+
 # IRAC MLP 2: Also very good, trained on 15k objects in each class (some synth)
 # Define and load in settings
 NN_IR_2 = BaseMLP(9, 10, 3)
@@ -69,14 +73,7 @@ NN_IR_2.load_state_dict(torch.load("../MLP_Settings/IRAC_15k_OneLayer_LR_0.01_MO
 MLP_preds_tr_2 = test(NN_IR_2, IR_train, device)
 MLP_preds_te_2 = test(NN_IR_2, IR_test, device)
 
-# IRAC+MIPS MLP: Very good, needs it's own scaling factor
-# Input data for scaling
-X_sc_M = np.load("../Data/c2d_MIPS_INP.npy") # Load input data
-Y_sc_M = np.load("../Data/c2d_MIPS_TAR.npy") # Load target data
-X_sc_M = np.float32(X_sc_M)
-Y_sc_M = np.float32(Y_sc_M)
-# Y_tr = preproc_yso(alph=X_tr[:,-1],tar=Y_tr,three=CIII)
-inp_sc_M, tar_sc_M = replicate_data_single(X_sc_M, Y_sc_M, [len(np.where(Y_sc_M==0.)[0]),len(np.where(Y_sc_M==1.)[0]),len(np.where(Y_sc_M==2.)[0])])
+# IRAC+MIPS MLP: Very good
 
 # Adjust test data to view only objects with MIPS detections
 mips_ind_tr = np.where(inp_tr[:,9]!=-99)[0]
@@ -85,7 +82,7 @@ inp_tr_M = inp_tr[mips_ind_tr]
 tar_tr_M = tar_tr[mips_ind_tr]
 inp_te_M = inp_te[mips_ind_te]
 tar_te_M = tar_te[mips_ind_te]
-scale_M, test_M, train_M = MLP_data_setup(inp_sc_M, tar_sc_M, inp_te_M, tar_te_M, inp_tr_M, tar_tr_M)
+train_M, valid_M, test_M = MLP_data_setup(inp_tr_M, tar_tr_M, inp_te_M, tar_te_M, inp_te_M, tar_te_M)
 # Define and load in settings
 MIPS_NN = BaseMLP(11,50,3)
 MIPS_NN.load_state_dict(torch.load("../MLP_Settings/MIPS_OneLayer_LR_0.1_MO_0.75_NEUR_50_Settings"))
@@ -148,12 +145,12 @@ print(f"We have {len(np.where(flags_YSO_te==3)[0])} Insecure Classifications")
 
 # t-SNE
 tsne_plot(inp_TR,pred_tr,flags_YSO_tr,"c2d_CIII_2YSE_MIPS",three=ClassIII)
-tsne_plot(inp_TE,pred_te,flags_YSO_te,"NGC 2264_CIII_2YSE_MIPS",three=ClassIII)
+tsne_plot(inp_TE,pred_te,flags_YSO_te,f"{testset}_CIII_2YSE_MIPS",three=ClassIII)
 print("t-SNE plots completed")
 
 # Histogram
-plot_hist(inp_TR,pred_tr,"c2d_CIII_2YSE_MIPS")
-plot_hist(inp_TE,pred_te,"NGC 2264_CIII_2YSE_MIPS")
+plot_hist(inp_TR,pred_tr,"c2d_CIII_2YSE_MIPS",ClassIII=ClassIII)
+plot_hist(inp_TE,pred_te,f"{testset}_CIII_2YSE_MIPS",ClassIII=ClassIII)
 print("Histograms of spectral index completed")
 
 # Print the Classification Reports
@@ -163,7 +160,6 @@ if ClassIII:
 else:    
     YSO_labels = ["YSO - Class I","YSO - Class FS","YSO - Class II","EG","Stars"]
 
-testset = "NGC 2264"
 with open("../Results/"+outfile,"w") as f:
     f.write("MLP Results \n Training data (c2d Survey)\n")
     f.write(classification_report(tar_tr,MLP_preds_tr,target_names=YSO_labels))
@@ -187,13 +183,52 @@ with open("../Results/"+outfile,"w") as f:
     f.write(classification_report(tar_te,pred_te,target_names=YSO_labels))
     # Make comparison of og three classes:
     YSE_tar_te = tar_te
-    YSE_tar_te[YSE_tar_te<=3]=0
-    YSE_tar_te[YSE_tar_te==4]=1
-    YSE_tar_te[YSE_tar_te==5]=2
+    if ClassIII:
+        YSE_tar_te[YSE_tar_te<=3]=0
+        YSE_tar_te[YSE_tar_te==4]=1
+        YSE_tar_te[YSE_tar_te==5]=2
 
-    YSE_pred_te = pred_te
-    YSE_pred_te[YSE_pred_te<=3]=0
-    YSE_pred_te[YSE_pred_te==4]=1
-    YSE_pred_te[YSE_pred_te==5]=2
+        YSE_pred_te = pred_te
+        YSE_pred_te[YSE_pred_te<=3]=0
+        YSE_pred_te[YSE_pred_te==4]=1
+        YSE_pred_te[YSE_pred_te==5]=2
+    else:
+        YSE_tar_te[YSE_tar_te<=2]=0
+        YSE_tar_te[YSE_tar_te==3]=1
+        YSE_tar_te[YSE_tar_te==4]=2
+
+        YSE_pred_te = pred_te
+        YSE_pred_te[YSE_pred_te<=2]=0
+        YSE_pred_te[YSE_pred_te==3]=1
+        YSE_pred_te[YSE_pred_te==4]=2
     f.write(f"Testing data ({testset})\n")
     f.write(classification_report(YSE_tar_te,pred_te,target_names=YSE_labels))
+
+bins = np.linspace(-6,6,60)
+ind_Y = np.where(YSE_pred_te==0)[0]
+ind_E = np.where(YSE_pred_te==1)[0]
+ind_S = np.where(YSE_pred_te==2)[0]
+plt.hist(inp_te[ind_Y,-1],bins,histtype='step',density=True, color="mediumspringgreen", label = "YSOs")
+plt.hist(inp_te[ind_E,-1],bins,histtype='step',density=True, color="gold", label= "EGs")
+plt.hist(inp_te[ind_S,-1],bins,histtype='step',density=True, color="green", label = "Stars")
+
+# binwidth=0.2
+mu_Y = np.mean(inp_te[ind_Y,-1])
+sig_Y = np.std(inp_te[ind_Y,-1])
+# yM_Y = binwidth*len(ind_Y)
+mu_E = np.mean(inp_te[ind_E,-1])
+sig_E = np.std(inp_te[ind_E,-1])
+# yM_E = binwidth*len(ind_E)
+mu_S = np.mean(inp_te[ind_S,-1])
+sig_S = np.std(inp_te[ind_S,-1])
+# yM_S = binwidth*len(ind_S)
+bins_gaus = np.linspace(-6,6,600)
+plt.plot(bins_gaus, (1/(sig_Y * np.sqrt(2 * np.pi)) * np.exp( - (bins_gaus - mu_Y)**2 / (2 * sig_Y**2)) ),linewidth=2, color='mediumspringgreen')
+plt.plot(bins_gaus, (1/(sig_E * np.sqrt(2 * np.pi)) * np.exp( - (bins_gaus - mu_E)**2 / (2 * sig_E**2)) ),linewidth=2, color='gold')
+plt.plot(bins_gaus, (1/(sig_S * np.sqrt(2 * np.pi)) * np.exp( - (bins_gaus - mu_S)**2 / (2 * sig_S**2)) ),linewidth=2, color='green')
+
+plt.axvline(-2,ymax=1,ymin=0,color='k')
+plt.title("Spectral indices of YSOs, EGs, and Stars")
+plt.xlabel("Spectral index α")
+plt.legend()
+plt.savefig(f"../Results/Figures/{testset}_YSE_Hist.png",dpi=300)

@@ -92,19 +92,23 @@ def tsne_plot(inp,pred,flag,type,three=False):
     plt.savefig(f"../Results/Figures/t-SNE_final_{type}_W_InSecure.png",dpi=300)
     plt.close()
 
-def plot_hist(inp,pred,type):
+def plot_hist(inp,pred,type,ClassIII):
     alpha = inp[:,-1]
     plt.rcParams["font.family"] = "times"
     plt.title("Spectral index of predicted YSO stages")
     color = ["aquamarine","mediumaquamarine","mediumspringgreen","mediumseagreen"]
     stage = ["YSO - Class I","YSO - Class FS","YSO - Class II","YSO - Class III"]
     bins=np.linspace(-6,6,60)
-    for i,p in enumerate([0,1,2,3]):
+    if ClassIII:
+        n = 3
+    else:
+        n=2
+    for i,p in enumerate(list(range(0, n+1))):
         plt.hist(alpha[np.where(pred==p)],bins,color=color[i],label=stage[i])
-    mu = np.mean(alpha[np.where(pred<=3)])
-    sig = np.std(alpha[np.where(pred<=3)])
+    mu = np.mean(alpha[np.where(pred<=n)])
+    sig = np.std(alpha[np.where(pred<=n)])
     binwidth=0.2
-    yM = binwidth*len(pred[np.where(pred<=3)])
+    yM = binwidth*len(pred[np.where(pred<=n)])
     bins_gaus = np.linspace(-6,6,600)
     plt.plot(bins_gaus, yM*(1/(sig * np.sqrt(2 * np.pi)) * np.exp( - (bins_gaus - mu)**2 / (2 * sig**2)) ),linewidth=2, color='k')
     plt.vlines(0.3,ymax=yM*(1/(sig * np.sqrt(2 * np.pi)) * np.exp( - (0.3 - mu)**2 / (2 * sig**2))),ymin=0,color='k')
