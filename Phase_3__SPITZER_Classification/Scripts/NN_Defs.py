@@ -330,7 +330,7 @@ def bootstrap(NN, inp_tr, tar_tr, inp_te, tar_te, device):
     return ScoresR, ScoresP, ScoresA
 
 @jit
-def find_best_MLP(MLP, filepath_to_MLPdir, learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, cols, custom_labs, device):
+def find_best_MLP(MLP, filepath_to_MLPdir, epochs, learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, cols, custom_labs, device):
     f1Max = 0.5
     tic1 = time.perf_counter()
     for lr in learning_rate_vals:
@@ -339,7 +339,7 @@ def find_best_MLP(MLP, filepath_to_MLPdir, learning_rate_vals, momentum_vals, tr
             outfile = filepath_to_MLPdir + "LR_" + str(lr) + "_MO_" +  "_NEUR_" + str(n)#str(mo) +
             NN = MLP(cols,n,len(custom_labs))
             optimizer = optim.Adam(NN.parameters(), lr=lr)#, momentum=mo)
-            f1score = main(1000, NN, optimizer, outfile, train_loader, val_loader, test_loader, custom_labs, device,)#ScheduleInstance=optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min'))
+            f1score = main(epochs, NN, optimizer, outfile, train_loader, val_loader, test_loader, custom_labs, device,)#ScheduleInstance=optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min'))
             if f1score > f1Max:
                 f1Max = f1score
                 bestfile = outfile

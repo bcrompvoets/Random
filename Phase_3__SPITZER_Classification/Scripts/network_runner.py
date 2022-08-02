@@ -21,6 +21,8 @@ X_tr = np.float32(X_tr)
 Y_tr = np.float32(Y_tr)
 # Y_tr = preproc_yso(alph=X_tr[:,-1],tar=Y_tr,three=CIII)
 inp_tr, tar_tr = replicate_data_single(X_tr, Y_tr, [len(np.where(Y_tr==0.)[0]),len(np.where(Y_tr==1.)[0]),int(len(np.where(Y_tr==2.)[0])/10)])#]*len(np.unique(Y_tr)))
+while np.all(np.isfinite(inp_tr)) == False:
+        inp_tr,tar_tr = replicate_data_single(X_tr,Y_tr,[len(np.where(Y_tr==0.)[0]),len(np.where(Y_tr==1.)[0]),int(len(np.where(Y_tr==2.)[0])/10)])#]*len(np.unique(Y_tr)))
 
 # YSO_EG_Stars Valid
 X_va = np.load("../Data/NGC2264_mJy_INP.npy") # Load input data
@@ -78,16 +80,16 @@ custom_labs = ['YSO','EG','Star']
 if __name__ == '__main__':
     momentum_vals = np.array([0.6, 0.75, 0.9])
     learning_rate_vals = np.array([1e-1, 1e-2, 1e-3])
-    epochs = 500
-    columns = 9
-    filepath = "../Results/MLP/YSE_Chiu_mJy/"
+    epochs = 2500
+    columns = inp_tr.shape[1]
+    filepath = "../Results/MLP/YSE_3COL/"
     filepaths = [filepath+"OneLayer_", filepath+"TwoLayer_", filepath+"FiveLayer_"]
 
     # We want to run a loop over the momentum and learning rate values, and use the
     # validation f1 score for YSOs as the metric at which to determine the best 
-    iters = [#(BaseMLP, filepaths[0], learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, columns, custom_labs, device),\
-        (TwoLayerMLP, filepaths[1], learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, columns, custom_labs, device)]#,\
-        # (FiveLayerMLP,filepaths[2],learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, columns, custom_labs, device)]
+    iters = [(BaseMLP, filepaths[0], epochs, learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, columns, custom_labs, device),\
+        (TwoLayerMLP, filepaths[1], epochs, learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, columns, custom_labs, device),\
+        (FiveLayerMLP,filepaths[2], epochs, learning_rate_vals, momentum_vals, train_loader, val_loader, test_loader, columns, custom_labs, device)]
     with mp.Pool(3) as pool:
         bestfiles = pool.starmap(find_best_MLP, iters)
 
