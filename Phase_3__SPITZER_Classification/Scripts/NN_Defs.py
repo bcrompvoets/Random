@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from torch.nn.modules import Module
 import torch.utils.data as data_utils
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -53,6 +54,11 @@ def train(epoch, model, optimizer, train_loader, device):
         optimizer.zero_grad()
         output = model(data.float())
         loss = F.cross_entropy(output, target.squeeze(-1).long())
+        l2_lambda = 0.001
+        l2_norm = sum(p.pow(2.0).sum()
+                    for p in model.parameters())
+    
+        loss = loss + l2_lambda * l2_norm
         loss.backward()
         optimizer.step()
 
@@ -194,12 +200,49 @@ class TwoLayerMLP(nn.Module):
         
     def forward(self, x):
         x = self.fc1(x)
-        x = torch.sigmoid(x)
+        s = nn.SELU()
+        x = s(x)
         x = self.fc2(x)
-        x = torch.sigmoid(x)
+        x = s(x)
         x = self.fc3(x)
         x = F.softmax(x, dim=1) 
         return x
+
+class TwentyLayerMLP(nn.Module):
+    def __init__(self, input_size, n_hidden, output_size, weight_initialize=True):
+        super(TwentyLayerMLP,self).__init__()
+
+        self.layers = nn.ModuleList()
+        self.input_size = input_size
+        self.input_size = n_hidden
+        self.input_size = output_size  # Can be useful later ...
+        for n in np.arange(0,20):
+            if n == 19: # The final layer
+                layer = nn.Linear(input_size, output_size)
+                if weight_initialize:
+                    torch.nn.init.uniform_(layer.weight, -1/np.sqrt(input_size), 1/np.sqrt(input_size))
+                self.layers.append(layer) 
+            else:
+                layer = nn.Linear(input_size, n_hidden)
+                if weight_initialize:
+                    torch.nn.init.uniform_(layer.weight, -1/np.sqrt(input_size), 1/np.sqrt(input_size))
+                self.layers.append(layer) 
+                input_size = n_hidden  # For the next layer
+
+
+        self.device = torch.device('cpu')
+        self.to(self.device)
+        # self.learning_rate = learning_rate
+        # self.optimizer = optimizer(params=self.parameters(), lr=learning_rate)
+
+    def forward(self, input_data):
+        for n, layer in enumerate(self.layers):
+            input_data = layer(input_data)
+            if n == 19:
+                input_data = F.softmax(input_data, dim=1)
+            else:
+                input_data = torch.SELU(input_data)
+        return input_data
 
 class FiveLayerMLP(nn.Module):
     """Five Hidden Layer MLP"""
@@ -291,15 +334,15 @@ def find_best_MLP(MLP, filepath_to_MLPdir, learning_rate_vals, momentum_vals, tr
     f1Max = 0.5
     tic1 = time.perf_counter()
     for lr in learning_rate_vals:
-        for mo in momentum_vals:
-            for n in [10,20,50]:
-                outfile = filepath_to_MLPdir + "LR_" + str(lr) + "_MO_" + str(mo) + "_NEUR_" + str(n)
-                NN = MLP(cols,n,len(custom_labs))
-                optimizer = optim.SGD(NN.parameters(), lr=lr, momentum=mo)
-                f1score = main(3000, NN, optimizer, outfile, train_loader, val_loader, test_loader, custom_labs, device)
-                if f1score > f1Max:
-                    f1Max = f1score
-                    bestfile = outfile
+        # for mo in momentum_vals:
+        for n in [10,20,50]:
+            outfile = filepath_to_MLPdir + "LR_" + str(lr) + "_MO_" +  "_NEUR_" + str(n)#str(mo) +
+            NN = MLP(cols,n,len(custom_labs))
+            optimizer = optim.Adam(NN.parameters(), lr=lr)#, momentum=mo)
+            f1score = main(1000, NN, optimizer, outfile, train_loader, val_loader, test_loader, custom_labs, device,)#ScheduleInstance=optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min'))
+            if f1score > f1Max:
+                f1Max = f1score
+                bestfile = outfile
     if f1Max == 0.5:
         bestfile = "Failed to find better F1-Score than 50%"
     toc1 = time.perf_counter()
@@ -322,10 +365,10 @@ def main(epochs, NetInstance, OptInstance, outfile, train_loader, val_loader, te
         val_loss_all.append(val_loss)
 
         if ScheduleInstance is not None:
-            ScheduleInstance.step()
+            ScheduleInstance.step(val_loss)
 
-            if ScheduleInstance is not None:
-                print(f'Learning Rate : {ScheduleInstance.get_last_lr()}')
+            if epoch%100==0:
+                print(f'Learning Rate : {ScheduleInstance._last_lr}')
     
     # running testing set through network
     test_loss, test_predictions, test_truth_values = validate(NetInstance, test_loader, device)

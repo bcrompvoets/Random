@@ -3,38 +3,57 @@ import numpy as np
 from sklearn.manifold import TSNE
 
 
-def flag_YSO(pred1,pred2,pred3,pred4,mips_ind):
+def flag_YSE(pred1,pred2,predM,mips_ind):
     flag = []
     j = 0
-    for i, p3 in enumerate(pred3):
+    for i, p1 in enumerate(pred1):
         if j<len(mips_ind):
             if i == mips_ind[j]: # If this object is a MIPS object
-                if pred1[i]==pred2[i]==p3==pred4[mips_ind[j]]:
-                    flag.append(0) # All four agree
-                elif pred1[i]==pred2[i]==p3 or pred1[i]==pred2[i]==pred4[mips_ind[j]] or pred1[i]==p3==pred4[mips_ind[j]] or pred2[i]==p3==pred4[mips_ind[j]]:
-                    flag.append(1) # 3/4 agree
-                elif pred1[i]==pred2[i] or p3==pred4[mips_ind[j]] or pred2[i]==p3 or pred1[i]==p3 or pred2[i]==pred4[mips_ind[j]] or pred1[i]==pred4[mips_ind[j]]:
-                    flag.append(2) # 2/4 agree 
+                if p1==pred2[i]==predM[mips_ind[j]]:
+                    flag.append(0) # All three agree
+                elif p1==pred2[i] or p1==predM[mips_ind[j]] or pred2[i]==predM[mips_ind[j]]:
+                    flag.append(1) # 2/3 agree 
                 else:
-                    flag.append(3)
+                    flag.append(2)
             else: # If object does not have MIPS data
-                if pred1[i]==pred2[i]==p3:
-                    flag.append(1) # 3/4 agree
-                elif pred1[i]==pred2[i] or pred2[i]==p3 or pred1[i]==p3:
-                    flag.append(2) # 2/4 agree 
+                if p1==pred2[i]:
+                    flag.append(1) # 2/3 agree
                 else:
-                    flag.append(3)
+                    flag.append(2)
             j += 1
         else: # No more possible MIPS data, continue with only three
-            if pred1[i]==pred2[i]==p3:
-                flag.append(1) # 3/4 agree
-            elif pred1[i]==pred2[i] or pred2[i]==p3 or pred1[i]==p3:
-                flag.append(2) # 2/4 agree 
+            if p1==pred2[i]:
+                flag.append(1) # 2/3 agree
             else:
-                flag.append(3)
+                flag.append(2)
     return flag
 
-def predbyflag(flags, alpha, MLP_pred, MLP_pred_2, YSO_pred, MLP_pred_M,mips_ind,ClassIII):
+def flag_YSO(pred1,pred2,predM,mips_ind):
+    flag = []
+    j = 0
+    for i, p1 in enumerate(pred1):
+        if j<len(mips_ind):
+            if i == mips_ind[j]: # If this object is a MIPS object
+                if p1==pred2[i]==predM[mips_ind[j]]:
+                    flag.append(0) # All three agree
+                elif p1==pred2[i] or p1==predM[mips_ind[j]] or pred2[i]==predM[mips_ind[j]]:
+                    flag.append(1) # 2/3 agree 
+                else:
+                    flag.append(2)
+            else: # If object does not have MIPS data
+                if p1==pred2[i]:
+                    flag.append(1) # 2/3 agree
+                else:
+                    flag.append(2)
+            j += 1
+        else: # No more possible MIPS data, continue with only three
+            if p1==pred2[i]:
+                flag.append(1) # 2/3 agree
+            else:
+                flag.append(2)
+    return flag
+
+def predbyflag_YSE(flags, alpha, MLP_pred, MLP_pred_2, MLP_pred_M,mips_ind,ClassIII):
     pred = []
     for i, flag in enumerate(flags):
         if flag == 0:
@@ -43,16 +62,28 @@ def predbyflag(flags, alpha, MLP_pred, MLP_pred_2, YSO_pred, MLP_pred_M,mips_ind
             if int(MLP_pred[i])==int(MLP_pred_2[i]):
                 pred.append(int(MLP_pred[i]))
             else:
-                pred.append(int(YSO_pred[i]))
-        elif flag == 2:
-            if int(MLP_pred[i])==int(MLP_pred_2[i]) or int(MLP_pred[i])==int(YSO_pred[i]):
-                pred.append(int(MLP_pred[i]))
-            elif int(YSO_pred[i])==int(MLP_pred_2[i]):
-                pred.append(int(MLP_pred_2[i]))
-            else:
                 pred.append(MLP_pred_M[np.where(mips_ind==i)])
-        elif flag == 3:
+        elif flag == 2:
             pred.append(int(MLP_pred[i]))
+    if ClassIII:
+        ciii = np.where(np.array(pred)==3)[0]
+        for i in ciii:
+            if alpha[i] < -2:
+                pred[i] = 5
+    return pred
+
+def predbyflag_YSO(flags, alpha, MLP_pred, YSO_pred, YSO_pred_M, mips_ind, ClassIII):
+    pred = []
+    for i, flag in enumerate(flags):
+        if flag == 0:
+            pred.append(int(YSO_pred[i]))
+        elif flag == 1:
+            if int(MLP_pred[i])==int(YSO_pred[i]):
+                pred.append(int(YSO_pred[i]))
+            else:
+                pred.append(int(YSO_pred_M[np.where(mips_ind==i)]))
+        elif flag == 2:
+            pred.append(int(YSO_pred[i]))
     if ClassIII:
         ciii = np.where(np.array(pred)==3)[0]
         for i in ciii:
