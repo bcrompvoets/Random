@@ -53,6 +53,65 @@ def flag_YSO(pred1,pred2,predM,mips_ind):
                 flag.append(2)
     return flag
 
+def flag_ALL(pred_IR,pred_Y,pred_IR_2,predM,mips_ind):
+    flag = []
+    j = 0
+    for i, p1 in enumerate(pred_IR):
+        if j<len(mips_ind):
+            if i == mips_ind[j]: # If this object is a MIPS object
+                if p1==pred_Y[i]==pred_IR_2[i]==predM[mips_ind[j]]:
+                    flag.append(0) # All four agree
+                elif p1==pred_Y[i]==pred_IR_2[i] or pred_Y[i]==pred_IR_2[i]==predM[mips_ind[j]] or p1==pred_IR_2[i]==predM[mips_ind[j]]\
+                    or pred_Y[i]==1==predM[mips_ind[j]]:
+                    flag.append(1) # 3/4 agree
+                elif p1==pred_IR_2[i] or p1==pred_Y[i] or p1==predM[mips_ind[j]] or pred_IR_2[i]==predM[mips_ind[j]] or \
+                    pred_Y[i]==pred_IR_2[i] or pred_Y[i]==predM[mips_ind[j]]:
+                    flag.append(2) # 3/4 agree 
+                else:
+                    flag.append(3)
+            else: # If object does not have MIPS data
+                if p1==pred_Y[i]==pred_IR_2[i]:
+                        flag.append(1) # All three agree      
+                elif p1==pred_IR_2[i] or p1==pred_Y[i] or pred_Y[i]==pred_IR_2[i]:
+                    flag.append(2) # 2/3 agree
+                else:
+                    flag.append(3)
+            j += 1
+        else: # No more possible MIPS data, continue with only three
+            if p1==pred_Y[i]==pred_IR_2[i]:
+                    flag.append(1) # All three agree      
+            elif p1==pred_IR_2[i] or p1==pred_Y[i] or pred_Y[i]==pred_IR_2[i]:
+                flag.append(2) # 2/3 agree
+            else:
+                flag.append(3)
+    return flag
+
+def predbyflag(flags, alpha, MLP_pred, MLP_pred_2, YSO_pred, MLP_pred_M,mips_ind,ClassIII):
+    pred = []
+    for i, flag in enumerate(flags):
+        if flag == 0:
+            pred.append(int(MLP_pred[i]))
+        elif flag == 1:
+            if int(MLP_pred[i])==int(MLP_pred_2[i]):
+                pred.append(int(MLP_pred[i]))
+            else:
+                pred.append(MLP_pred_M[np.where(mips_ind==i)])
+        elif flag == 2:
+            if int(MLP_pred[i])==int(MLP_pred_2[i]) or MLP_pred[i]==YSO_pred[i]:
+                pred.append(int(MLP_pred[i]))
+            elif MLP_pred_2[i]==YSO_pred[i]:
+                pred.append(MLP_pred_2[i])
+            else:
+                pred.append(MLP_pred_M[np.where(mips_ind==i)])
+        elif flag == 3:
+            pred.append(int(MLP_pred[i]))
+    if ClassIII:
+        ciii = np.where(np.array(pred)==3)[0]
+        for i in ciii:
+            if alpha[i] < -2:
+                pred[i] = 5
+    return pred
+    
 def predbyflag_YSE(flags, alpha, MLP_pred, MLP_pred_2, MLP_pred_M,mips_ind,ClassIII):
     pred = []
     for i, flag in enumerate(flags):
@@ -135,9 +194,9 @@ def plot_hist(inp,pred,type,ClassIII):
     else:
         n=2
     for i,p in enumerate(list(range(0, n+1))):
-        plt.hist(alpha[np.where(pred==p)],bins,color=color[i],label=stage[i])
-    mu = np.mean(alpha[np.where(pred<=n)])
-    sig = np.std(alpha[np.where(pred<=n)])
+        plt.hist(alpha[np.where(pred==p)[0]],bins,color=color[i],label=stage[i])
+    mu = np.mean(alpha[np.where(pred<=n)[0]])
+    sig = np.std(alpha[np.where(pred<=n)[0]])
     binwidth=0.2
     yM = binwidth*len(pred[np.where(pred<=n)])
     bins_gaus = np.linspace(-6,6,600)
