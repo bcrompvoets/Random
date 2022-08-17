@@ -32,10 +32,11 @@ X_te = np.load("../Data/NGC3324_INP.npy") # Load input data
 Y_te = np.random.randint(low = 0,high=3,size=len(X_te))
 X_te = np.float32(X_te)
 Y_te = np.float32(Y_te)
-X_te = np.c_[ 0:len(X_te), X_te ] # Add an index for now
 inp_te, tar_te = replicate_data_single(X_te, Y_te, [len(np.where(Y_te==0.)[0]),len(np.where(Y_te==1.)[0]),len(np.where(Y_te==2.)[0])])
-ind_te = inp_te[:,0] # Create array which only holds indices
-inp_te = inp_te[:,1:] # Remove index from input
+ind_te = inp_te[:,:2] # Create array which only holds ra/dec
+inp_te = inp_te[:,2:] # Remove ra/dec from input
+print(inp_te.shape)
+print(ind_te.shape)
 isf_te = np.all(np.isfinite(inp_te))
 if isf_te == False:
     index = []
@@ -248,7 +249,12 @@ plt.savefig(f"../Results/Figures/{testset}_YSE_Hist.png",dpi=300)
 
 
 TEST_ALL = np.concatenate((inp_te,pred_te),axis=1)
+TEST_ALL = np.concatenate((ind_te,TEST_ALL),axis=1)
 
 np.save("../Results/NGC3324_Predictions",TEST_ALL)
+
+import pandas as pd
+TEST_DF = pd.DataFrame(TEST_ALL, columns=["ra","dec","3.6mag","d_3.6mag","4.5mag","d_4.5mag","5.8mag","d_5.8mag","8mag","d_8mag","24mag","d_24mag","alpha","Predictions"])
+TEST_DF.to_csv("../Results/NGC3324.csv")
 # print(TEST_ALL)
 # print(shape(TEST_ALL))
