@@ -15,8 +15,10 @@ device = torch.device("cpu")
 print(f'Running on : {device}')
 CIII = True # Train with Class III as a possible class
 # YSO_EG_Stars Train
-X_tr = np.load("../Data/c2d_2MASS_INP.npy") # Load input data
-Y_tr = np.load("../Data/c2d_2MASS_TAR.npy") # Load target data
+file_inp = "../Data/c2d_SPITZ+2MASS_INP.npy"
+file_tar = "../Data/c2d_SPITZ+2MASS_TAR.npy"
+X_tr = np.load(file_inp) # Load input data
+Y_tr = np.load(file_tar) # Load target data
 X_tr = np.float32(X_tr)
 Y_tr = np.float32(Y_tr)
 # Y_tr = preproc_yso(alph=X_tr[:,-1],tar=Y_tr,three=CIII)
@@ -25,24 +27,24 @@ while np.all(np.isfinite(inp_tr)) == False:
         inp_tr,tar_tr = replicate_data_single(X_tr,Y_tr,[len(np.where(Y_tr==1.)[0])]*len(np.unique(Y_tr)))#len(np.where(Y_tr=0.)[0]),len(np.where(Y_tr==1.)[0]),int(len(np.where(Y_tr==2.)[0])/100)])#
 
 # YSO_EG_Stars Valid
-X_va = np.load("../Data/c2d_2MASS_INP.npy") # Load input data
-Y_va = np.load("../Data/c2d_2MASS_TAR.npy") # Load target data
+X_va = np.load(file_inp) # Load input data
+Y_va = np.load(file_tar) # Load target data
 X_va = np.float32(X_va)
 Y_va = np.float32(Y_va)
 # Y_va = preproc_yso(alph=X_va[:,-1],tar=Y_va,three=CIII)
 inp_va, tar_va = replicate_data_single(X_va, Y_va,\
-     [len(np.where(Y_va==0.)[0]),len(np.where(Y_va==1.)[0]),int(len(np.where(Y_va==2.)[0])/1000)])#,len(np.where(Y_va==3.)[0]),len(np.where(Y_va==4.)[0]),len(np.where(Y_va==5.)[0])])
+     [len(np.where(Y_va==0.)[0]),len(np.where(Y_va==1.)[0]),int(len(np.where(Y_va==2.)[0])/100)])#,len(np.where(Y_va==3.)[0]),len(np.where(Y_va==4.)[0]),len(np.where(Y_va==5.)[0])])
 
 
 
 # YSO_EG_Stars Test
-X_te = np.load("../Data/c2d_2MASS_INP.npy") # Load input data
-Y_te = np.load("../Data/c2d_2MASS_TAR.npy") # Load target data
+X_te = np.load(file_inp) # Load input data
+Y_te = np.load(file_tar) # Load target data
 X_te = np.float32(X_te)
 Y_te = np.float32(Y_te)
 # Y_te = preproc_yso(alph=X_te[:,-1],tar=Y_te,three=CIII)
 inp_te, tar_te = replicate_data_single(X_te, Y_te,\
-      [len(np.where(Y_te==0.)[0]),len(np.where(Y_te==1.)[0]),int(len(np.where(Y_te==2.)[0])/100)])#,len(np.where(Y_te==3.)[0]),len(np.where(Y_te==4.)[0]),len(np.where(Y_te==5.)[0])])
+      [len(np.where(Y_te==0.)[0]),len(np.where(Y_te==1.)[0]),int(len(np.where(Y_te==2.)[0])/10)])#,len(np.where(Y_te==3.)[0]),len(np.where(Y_te==4.)[0]),len(np.where(Y_te==5.)[0])])
 
 inp_tr = np.delete(inp_tr,np.s_[8:10],axis=1)
 inp_va = np.delete(inp_va,np.s_[8:10],axis=1)
@@ -82,7 +84,7 @@ if __name__ == '__main__':
     learning_rate_vals = np.array([1e-1, 1e-2, 1e-3])
     epochs = 2500
     columns = inp_tr.shape[1]
-    filepath = "../Results/MLP/YSE_2MASS/"
+    filepath = "../Results/MLP/YSE_SPITZ+2MASS/"
     filepaths = [filepath+"OneLayer_", filepath+"TwoLayer_", filepath+"FiveLayer_"]
 
     # We want to run a loop over the momentum and learning rate values, and use the
