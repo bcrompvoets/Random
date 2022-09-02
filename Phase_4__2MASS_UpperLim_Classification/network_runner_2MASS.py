@@ -22,9 +22,9 @@ Y_tr = np.load(file_tar) # Load target data
 X_tr = np.float32(X_tr)
 Y_tr = np.float32(Y_tr)
 # Y_tr = preproc_yso(alph=X_tr[:,-1],tar=Y_tr,three=CIII)
-inp_tr, tar_tr = replicate_data_single(X_tr, Y_tr, [len(np.where(Y_tr==1.)[0])]*len(np.unique(Y_tr)))#,len(np.where(Y_tr==1.)[0]),int(len(np.where(Y_tr==2.)[0])/100)])
+inp_tr, tar_tr = replicate_data_single(X_tr, Y_tr, [250]*len(np.unique(Y_tr)))#,len(np.where(Y_tr==1.)[0]),int(len(np.where(Y_tr==2.)[0])/100)])
 while np.all(np.isfinite(inp_tr)) == False:
-        inp_tr,tar_tr = replicate_data_single(X_tr,Y_tr,[len(np.where(Y_tr==1.)[0])]*len(np.unique(Y_tr)))#len(np.where(Y_tr=0.)[0]),len(np.where(Y_tr==1.)[0]),int(len(np.where(Y_tr==2.)[0])/100)])#
+        inp_tr,tar_tr = replicate_data_single(X_tr,Y_tr,[250]*len(np.unique(Y_tr)))#len(np.where(Y_tr=0.)[0]),len(np.where(Y_tr==1.)[0]),int(len(np.where(Y_tr==2.)[0])/100)])#
 
 # YSO_EG_Stars Valid
 X_va = np.load(file_inp) # Load input data
@@ -32,9 +32,9 @@ Y_va = np.load(file_tar) # Load target data
 X_va = np.float32(X_va)
 Y_va = np.float32(Y_va)
 # Y_va = preproc_yso(alph=X_va[:,-1],tar=Y_va,three=CIII)
-inp_va, tar_va = replicate_data_single(X_va, Y_va,\
-     [len(np.where(Y_va==0.)[0]),len(np.where(Y_va==1.)[0]),int(len(np.where(Y_va==2.)[0])/100)])#,len(np.where(Y_va==3.)[0]),len(np.where(Y_va==4.)[0]),len(np.where(Y_va==5.)[0])])
-
+inp_va, tar_va = replicate_data_single(X_va, Y_va,[530,176,50000])#,len(np.where(Y_va==3.)[0]),len(np.where(Y_va==4.)[0]),len(np.where(Y_va==5.)[0])])
+while np.all(np.isfinite(inp_va)) == False:
+        inp_va,tar_va = replicate_data_single(X_va,Y_va,[530,176,50000]*len(np.unique(Y_tr)))
 
 
 # YSO_EG_Stars Test
@@ -45,6 +45,9 @@ Y_te = np.float32(Y_te)
 # Y_te = preproc_yso(alph=X_te[:,-1],tar=Y_te,three=CIII)
 inp_te, tar_te = replicate_data_single(X_te, Y_te,\
       [len(np.where(Y_te==0.)[0]),len(np.where(Y_te==1.)[0]),int(len(np.where(Y_te==2.)[0])/10)])#,len(np.where(Y_te==3.)[0]),len(np.where(Y_te==4.)[0]),len(np.where(Y_te==5.)[0])])
+while np.all(np.isfinite(inp_te)) == False:
+    inp_te, tar_te = replicate_data_single(X_te, Y_te,\
+        [len(np.where(Y_te==0.)[0]),len(np.where(Y_te==1.)[0]),int(len(np.where(Y_te==2.)[0])/10)])#,len(np.where(Y_te==3.)[0]),len(np.where(Y_te==4.)[0]),len(np.where(Y_te==5.)[0])])
 
 inp_tr = np.delete(inp_tr,np.s_[8:10],axis=1)
 inp_va = np.delete(inp_va,np.s_[8:10],axis=1)
