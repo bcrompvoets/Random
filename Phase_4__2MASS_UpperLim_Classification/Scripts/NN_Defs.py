@@ -140,7 +140,6 @@ def test(model, test_tensor, device):
         target = target.to(device)
 
         output = model(data.float())
-        val_loss += F.cross_entropy(output, target.squeeze(-1).long(), reduction='sum').item() # sum up batch loss                                                               
         pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability    
         
         # storing predictions and truth values

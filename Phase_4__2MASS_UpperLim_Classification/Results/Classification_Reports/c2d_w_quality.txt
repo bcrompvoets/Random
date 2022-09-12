@@ -1,0 +1,31 @@
+Using only ['2M', 'IR', 'MP'] bands
+YSE Results Validation Set c2d_w_quality
+              precision    recall  f1-score   support
+
+         YSO       0.24      0.97      0.39      3959
+          EG       0.52      0.95      0.67      6426
+       Stars       1.00      0.98      0.99    775866
+
+    accuracy                           0.98    786251
+   macro avg       0.59      0.97      0.68    786251
+weighted avg       0.99      0.98      0.98    786251
+YSO Results Validation Set c2d_w_quality
+                 precision    recall  f1-score   support
+
+  YSO - Class I       0.71      0.90      0.79       557
+ YSO - Class FS       0.76      0.92      0.83       433
+ YSO - Class II       0.76      0.98      0.85      2255
+YSO - Class III       0.04      0.97      0.08       714
+             EG       0.52      0.95      0.67      6426
+          Stars       1.00      0.97      0.99    775866
+
+       accuracy                           0.97    786251
+      macro avg       0.63      0.95      0.70    786251
+   weighted avg       0.99      0.97      0.98    786251
+We have 709 Class I YSOs
+We have 528 Class FS YSOs
+We have 2931 Class II YSOs
+We have 16740 Class III YSOs
+We have 11739 EGs
+We have 753604 Stars
+We have 697468 Insecure Classifications

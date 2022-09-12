@@ -1,0 +1,30 @@
+Using only ['IR', 'MP'] bands
+YSE Results Validation Set NGC_2264
+              precision    recall  f1-score   support
+
+         YSO       0.57      0.79      0.66       553
+          EG       0.85      0.73      0.79       373
+       Stars       0.98      0.96      0.97      7518
+
+    accuracy                           0.94      8444
+   macro avg       0.80      0.82      0.80      8444
+weighted avg       0.94      0.94      0.94      8444
+YSO Results Validation Set NGC_2264
+                 precision    recall  f1-score   support
+
+  YSO - Class I       0.91      0.76      0.83        54
+ YSO - Class FS       0.91      0.90      0.90        67
+ YSO - Class II       0.97      0.77      0.85       358
+YSO - Class III       0.15      0.74      0.25        74
+             EG       0.85      0.73      0.79       373
+          Stars       0.98      0.96      0.97      7518
+
+       accuracy                           0.93      8444
+      macro avg       0.79      0.81      0.76      8444
+   weighted avg       0.96      0.93      0.95      8444
+We have 45 Class I YSOs
+We have 66 Class FS YSOs
+We have 283 Class II YSOs
+We have 374 Class III YSOs
+We have 317 EGs
+We have 7359 Stars

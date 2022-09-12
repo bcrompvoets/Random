@@ -1,154 +1,86 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.manifold import TSNE
+import torch
+from NN_Defs import TwoLayerMLP, test, MLP_data_setup
+from scipy import stats
 
 
-def flag_YSE(pred1,pred2,predM,mips_ind):
-    flag = []
-    j = 0
-    for i, p1 in enumerate(pred1):
-        if j<len(mips_ind):
-            if i == mips_ind[j]: # If this object is a MIPS object
-                if p1==pred2[i]==predM[mips_ind[j]]:
-                    flag.append(0) # All three agree
-                elif p1==pred2[i] or p1==predM[mips_ind[j]] or pred2[i]==predM[mips_ind[j]]:
-                    flag.append(1) # 2/3 agree 
-                else:
-                    flag.append(2)
-            else: # If object does not have MIPS data
-                if p1==pred2[i]:
-                    flag.append(1) # 2/3 agree
-                else:
-                    flag.append(2)
-            j += 1
-        else: # No more possible MIPS data, continue with only three
-            if p1==pred2[i]:
-                flag.append(1) # 2/3 agree
-            else:
-                flag.append(2)
-    return flag
+def predict_yse(inp_tr,tar_tr,inp_te,tar_te,bands,device):
+    if bands[0]=='mag_J':
+        bands[0] = 'mag_2M1'
+    b = [idx[slice(-3,-1)] for idx in bands if (idx[-1] == '1' and idx[0] != 'e')]
+    # Add in only networks for which you have data:
+    # Test IRAC only
+    band = [idx for idx in bands if idx[-2].lower() == 'R'.lower()]
+    band_ind = np.where(np.isin(bands,band))[0]
+    IR_train, IR_valid, IR_test = MLP_data_setup(inp_tr[:,band_ind], tar_tr, inp_te[:,band_ind], tar_te, inp_te[:,band_ind], tar_te)
+    NN_IR = TwoLayerMLP(len(band_ind), 10, 3)
+    NN_IR.load_state_dict(torch.load("../Results/Best_Results/c2d_quality_2_IRAC_only/TwoLayer_LR_0.001_MO__NEUR_10_Settings", map_location=device))
+    # Test MLP
+    IR_preds_tr = test(NN_IR, IR_train, device)
+    IR_preds_te = test(NN_IR, IR_test, device)
+    if "MP" in b[-1] and "2M" in b[0]:
+        # Test IRAC, MIPS, and 2MASS
+        band = bands[:-1] # Everything except alpha
+        band_ind = np.where(np.isin(bands,band))[0]
+        I2M_train, I2M_valid, I2M_test = MLP_data_setup(inp_tr[:,band_ind], tar_tr, inp_te[:,band_ind], tar_te, inp_te[:,band_ind], tar_te)
+        NN_I2M = TwoLayerMLP(len(band_ind), 20, 3)
+        NN_I2M.load_state_dict(torch.load("../Results/Best_Results/c2d_quality_4_IRAC_MIPS_2MASS/TwoLayer_LR_0.001_MO__NEUR_20_Settings", map_location=device))
+        # Test MLP
+        I2M_preds_tr = test(NN_I2M, I2M_train, device)
+        I2M_preds_te = test(NN_I2M, I2M_test, device)
+    else:
+        I2M_preds_tr = [np.nan]*len(IR_preds_tr)
+        I2M_preds_te = [np.nan]*len(IR_preds_te)
+    if "MP" in b[-1]:
+        # Test IRAC and MIPS
+        band = [idx for idx in bands if (idx[-2].lower() == 'R'.lower() or idx[-2].lower() == 'P'.lower())]
+        band_ind = np.where(np.isin(bands,band))[0]
+        IM_train, IM_valid, IM_test = MLP_data_setup(inp_tr[:,band_ind], tar_tr, inp_te[:,band_ind], tar_te, inp_te[:,band_ind], tar_te)
+        NN_IM = TwoLayerMLP(len(band_ind), 10, 3)
+        NN_IM.load_state_dict(torch.load("../Results/Best_Results/c2d_quality_1/TwoLayer_LR_0.001_MO__NEUR_10_Settings", map_location=device))
+        # Test MLP
+        IM_preds_tr = test(NN_IM, IM_train, device)
+        IM_preds_te = test(NN_IM, IM_test, device)
+    else:
+        IM_preds_tr = [np.nan]*len(IR_preds_tr)
+        IM_preds_te = [np.nan]*len(IR_preds_te)
+    if "2M" in b[0]:
+        # Test IRAC and 2MASS
+        band = [idx for idx in bands if (idx[-2].lower() != 'P'.lower() and idx.lower()!='alpha')]
+        band_ind = np.where(np.isin(bands,band))[0]
+        I2_train, I2_valid, I2_test = MLP_data_setup(inp_tr[:,band_ind], tar_tr, inp_te[:,band_ind], tar_te, inp_te[:,band_ind], tar_te)
+        NN_I2 = TwoLayerMLP(len(band_ind), 20, 3)
+        NN_I2.load_state_dict(torch.load("../Results/Best_Results/c2d_quality_3_IRAC_2MASS/TwoLayer_LR_0.001_MO__NEUR_20_Settings", map_location=device))
+        # Test MLP
+        I2_preds_tr = test(NN_I2, I2_train, device)
+        I2_preds_te = test(NN_I2, I2_test, device)
+    else:
+        I2_preds_tr = [np.nan]*len(IR_preds_tr)
+        I2_preds_te = [np.nan]*len(IR_preds_te)
 
-def flag_YSO(pred1,pred2,predM,mips_ind):
-    flag = []
-    j = 0
-    for i, p1 in enumerate(pred1):
-        if j<len(mips_ind):
-            if i == mips_ind[j]: # If this object is a MIPS object
-                if p1==pred2[i]==predM[mips_ind[j]]:
-                    flag.append(0) # All three agree
-                elif p1==pred2[i] or p1==predM[mips_ind[j]] or pred2[i]==predM[mips_ind[j]]:
-                    flag.append(1) # 2/3 agree 
-                else:
-                    flag.append(2)
-            else: # If object does not have MIPS data
-                if p1==pred2[i]:
-                    flag.append(1) # 2/3 agree
-                else:
-                    flag.append(2)
-            j += 1
-        else: # No more possible MIPS data, continue with only three
-            if p1==pred2[i]:
-                flag.append(1) # 2/3 agree
-            else:
-                flag.append(2)
-    return flag
 
-def flag_ALL(pred_IR,pred_Y,pred_IR_2,predM,mips_ind):
-    flag = []
-    j = 0
-    for i, p1 in enumerate(pred_IR):
-        if j<len(mips_ind):
-            if i == mips_ind[j]: # If this object is a MIPS object
-                if p1==pred_Y[i]==pred_IR_2[i]==predM[mips_ind[j]]:
-                    flag.append(0) # All four agree
-                elif p1==pred_Y[i]==pred_IR_2[i] or pred_Y[i]==pred_IR_2[i]==predM[mips_ind[j]] or p1==pred_IR_2[i]==predM[mips_ind[j]]\
-                    or pred_Y[i]==1==predM[mips_ind[j]]:
-                    flag.append(1) # 3/4 agree
-                elif p1==pred_IR_2[i] or p1==pred_Y[i] or p1==predM[mips_ind[j]] or pred_IR_2[i]==predM[mips_ind[j]] or \
-                    pred_Y[i]==pred_IR_2[i] or pred_Y[i]==predM[mips_ind[j]]:
-                    flag.append(2) # 3/4 agree 
-                else:
-                    flag.append(3)
-            else: # If object does not have MIPS data
-                if p1==pred_Y[i]==pred_IR_2[i]:
-                        flag.append(1) # All three agree      
-                elif p1==pred_IR_2[i] or p1==pred_Y[i] or pred_Y[i]==pred_IR_2[i]:
-                    flag.append(2) # 2/3 agree
-                else:
-                    flag.append(3)
-            j += 1
-        else: # No more possible MIPS data, continue with only three
-            if p1==pred_Y[i]==pred_IR_2[i]:
-                    flag.append(1) # All three agree      
-            elif p1==pred_IR_2[i] or p1==pred_Y[i] or pred_Y[i]==pred_IR_2[i]:
-                flag.append(2) # 2/3 agree
-            else:
-                flag.append(3)
-    return flag
 
-def predbyflag(flags, alpha, MLP_pred, MLP_pred_2, YSO_pred, MLP_pred_M,mips_ind,ClassIII):
-    pred = []
-    for i, flag in enumerate(flags):
-        if flag == 0:
-            pred.append(int(MLP_pred[i]))
-        elif flag == 1:
-            if int(MLP_pred[i])==int(MLP_pred_2[i]):
-                pred.append(int(MLP_pred[i]))
-            else:
-                pred.append(MLP_pred_M[np.where(mips_ind==i)])
-        elif flag == 2:
-            if int(MLP_pred[i])==int(MLP_pred_2[i]) or MLP_pred[i]==YSO_pred[i]:
-                pred.append(int(MLP_pred[i]))
-            elif MLP_pred_2[i]==YSO_pred[i]:
-                pred.append(MLP_pred_2[i])
-            else:
-                pred.append(MLP_pred_M[np.where(mips_ind==i)])
-        elif flag == 3:
-            pred.append(int(MLP_pred[i]))
-    if ClassIII:
-        ciii = np.where(np.array(pred)==3)[0]
-        for i in ciii:
-            if alpha[i] < -2:
-                pred[i] = 5
-    return pred
-    
-def predbyflag_YSE(flags, alpha, MLP_pred, MLP_pred_2, MLP_pred_M,mips_ind,ClassIII):
-    pred = []
-    for i, flag in enumerate(flags):
-        if flag == 0:
-            pred.append(int(MLP_pred[i]))
-        elif flag == 1:
-            if int(MLP_pred[i])==int(MLP_pred_2[i]):
-                pred.append(int(MLP_pred[i]))
-            else:
-                pred.append(MLP_pred_M[np.where(mips_ind==i)])
-        elif flag == 2:
-            pred.append(int(MLP_pred[i]))
-    if ClassIII:
-        ciii = np.where(np.array(pred)==3)[0]
-        for i in ciii:
-            if alpha[i] < -2:
-                pred[i] = 5
-    return pred
+    # Determine matching predictions by mode
+    # Combine predictions into nxm grid. n - number of objects, m - number of classifications used\
+    Preds_tr = np.c_[IR_preds_tr,IM_preds_tr,I2_preds_tr,I2M_preds_tr]
+    Preds_te = np.c_[IR_preds_te,IM_preds_te,I2_preds_te,I2M_preds_te]
 
-def predbyflag_YSO(flags, alpha, MLP_pred, YSO_pred, YSO_pred_M, mips_ind, ClassIII):
-    pred = []
-    for i, flag in enumerate(flags):
-        if flag == 0:
-            pred.append(int(YSO_pred[i]))
-        elif flag == 1:
-            if int(MLP_pred[i])==int(YSO_pred[i]):
-                pred.append(int(YSO_pred[i]))
-            else:
-                pred.append(int(YSO_pred_M[np.where(mips_ind==i)]))
-        elif flag == 2:
-            pred.append(int(YSO_pred[i]))
-    if ClassIII:
-        ciii = np.where(np.array(pred)==3)[0]
-        for i in ciii:
-            if alpha[i] < -2:
-                pred[i] = 5
-    return pred
+
+    flags_tr = np.array(flag(Preds_tr)).ravel()
+    flags_te = np.array(flag(Preds_te)).ravel()
+    return Preds_tr, Preds_te, flags_tr, flags_te
+
+def flag(arr):
+    cols = np.shape(arr[0][~np.isnan(arr[0])])[0]
+    arr_f = []
+    for n in arr:
+        if len(np.unique(n[~np.isnan(n)]))>1:
+            arr_f.append(0)
+        else:
+            arr_f.append(1)
+    return arr_f
 
 def tsne_plot(inp,pred,flag,type,three=False):
     n_components = 2
@@ -177,7 +109,7 @@ def tsne_plot(inp,pred,flag,type,three=False):
     plt.scatter(Y[np.where(pred==0)[0], 0], Y[np.where(pred==0)[0], 1], c="aquamarine",linewidths=lw,label='YSO - Class I')
     plt.legend()
     plt.savefig(f"../Results/Figures/t-SNE_final_{type}_WO_InSecure.png",dpi=300)
-    plt.scatter(Y[np.where(flag==3)[0], 0], Y[np.where(flag==3)[0], 1], c="red",marker='x',label='Insecure')
+    plt.scatter(Y[np.where(flag==1)[0], 0], Y[np.where(flag==1)[0], 1], c="red",marker='x',label='Insecure')
     plt.legend()
     plt.savefig(f"../Results/Figures/t-SNE_final_{type}_W_InSecure.png",dpi=300)
     plt.close()

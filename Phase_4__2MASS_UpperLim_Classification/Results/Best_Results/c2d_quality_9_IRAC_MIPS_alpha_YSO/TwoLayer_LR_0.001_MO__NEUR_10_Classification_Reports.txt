@@ -1,0 +1,35 @@
+Target Set Report
+                 precision    recall  f1-score   support
+
+  YSO - Class I       0.99      1.00      0.99       414
+ YSO - Class FS       1.00      0.97      0.98       321
+ YSO - Class II       0.99      1.00      1.00      1724
+YSO - Class III       0.99      0.99      0.99       541
+
+       accuracy                           0.99      3000
+      macro avg       0.99      0.99      0.99      3000
+   weighted avg       0.99      0.99      0.99      3000
+
+Validation Set Report
+                 precision    recall  f1-score   support
+
+  YSO - Class I       0.99      1.00      1.00       143
+ YSO - Class FS       0.97      0.97      0.97       111
+ YSO - Class II       1.00      0.99      0.99       531
+YSO - Class III       0.98      1.00      0.99       173
+
+       accuracy                           0.99       958
+      macro avg       0.99      0.99      0.99       958
+   weighted avg       0.99      0.99      0.99       958
+
+Testing Set Report
+                 precision    recall  f1-score   support
+
+  YSO - Class I       0.99      1.00      1.00       143
+ YSO - Class FS       0.97      0.97      0.97       111
+ YSO - Class II       1.00      0.99      0.99       531
+YSO - Class III       0.98      1.00      0.99       173
+
+       accuracy                           0.99       958
+      macro avg       0.99      0.99      0.99       958
+   weighted avg       0.99      0.99      0.99       958
