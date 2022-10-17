@@ -1,9 +1,12 @@
+from cProfile import label
+from locale import normalize
 import numpy as np
 import pandas as pd
 from scipy import stats
 import matplotlib.pyplot as plt
+import random
 
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, ConfusionMatrixDisplay
 
 import torch
 import torch.utils.data as data_utils
@@ -16,7 +19,9 @@ device = torch.device("cpu")
 
 # Define global variables
 ClassIII = True
-testset = "c2d_w_quality"
+Predict = False
+testdir = "SPICY_w_quality"
+testset = testdir
 outfile_tr = f"../Results/Classification_Reports/c2d.txt"
 outfile_te = f"../Results/Classification_Reports/{testset}.txt"
 f_tr = open(outfile_tr,'w')
@@ -33,11 +38,23 @@ inputs = pd.read_csv(file_tr)
 
 
 # Add in test set here
-testin = pd.read_csv(f"{testset}.csv")
+testin = pd.read_csv(f"{testdir}.csv",comment='#')
 # Collect the column names of magnitudes and errors
 bands = [idx for idx in testin.columns.values if (idx[0].lower() == 'm'.lower() or idx[0].lower() == 'e'.lower())]
-bands = bands[:-2] # Remove MIPS2
 bands.append("alpha")
+
+bands_TR = [idx for idx in inputs.columns.values if (idx[0].lower() == 'm'.lower() or idx[0].lower() == 'e'.lower())]
+bands_TR.append("alpha")
+
+print(np.unique(testin['Target'].values))
+testin = testin[testin.Target < 3]
+print(np.unique(testin['Target'].values))
+# testin['Target'] = np.random.randint(low = 0,high=3,size=testin.shape[0])
+if 'Target' not in testin.columns.values:
+    testin['Target'] = np.random.randint(low = 0,high=3,size=testin.shape[0])
+    # testin['Target'] = [0]*len(testin[['alpha']].values)
+Predict = True
+
 
 inp_tr, tar_tr = replicate_data_single(inputs[bands].values.astype(float), inputs[['Target']].values.astype(int),[len(np.where(inputs[['Target']].values==0)[0])]*3)#,len(np.where(inputs[['Target']].values==1)[0]),int(len(np.where(inputs[['Target']].values==2)[0])/100)])#,len(np.where(Y_te==3.)[0]),len(np.where(Y_te==4.)[0]),len(np.where(Y_te==5.)[0])])
 while np.all(np.isfinite(inp_tr)) == False:
@@ -54,9 +71,9 @@ print(b)
 f_tr.write(f"Using only {b} bands\n")
 f_te.write(f"Using only {b} bands\n")
 
-
+print(bands)
 Preds_tr, Preds_te, flags_tr, flags_te = predict_yse(inp_tr, tar_tr, inp_te, tar_te, bands, device)
-print(np.where(flags_tr==1))
+
 
 PREDS_tr = stats.mode(Preds_tr,axis=1,nan_policy='omit')[0].ravel().astype(int)
 PREDS_te = stats.mode(Preds_te,axis=1,nan_policy='omit')[0].ravel().astype(int)
@@ -91,8 +108,8 @@ band = [idx for idx in bands if idx[-2].lower() == 'R'.lower()]
 band.append("alpha")
 band_ind = np.where(np.isin(bands,band))[0]
 IRY_train, IRY_valid, IRY_test = MLP_data_setup(inp_tr[yso_ind_tr,:][:,band_ind], filler_yso_tr, inp_te[yso_ind_te,:][:,band_ind], filler_yso_te, inp_te[yso_ind_te,:][:,band_ind], filler_yso_te)
-NN_IRY = TwoLayerMLP(len(band_ind), 10, 4)
-NN_IRY.load_state_dict(torch.load("../Results/Best_Results/c2d_quality_8_IRAC_alpha_YSO/TwoLayer_LR_0.001_MO__NEUR_10_Settings", map_location=device))
+NN_IRY = TwoLayerMLP(len(band_ind), 20, 6)
+NN_IRY.load_state_dict(torch.load("../Results/Best_Results/c2d_quality_15_IRAC_alpha_YSO+SE/TwoLayer_LR_0.001_MO__NEUR_20_Settings", map_location=device))
 # Test MLP
 IRY_preds_tr = np.array([np.nan]*len(PREDS_tr))
 IRY_preds_te = np.array([np.nan]*len(PREDS_te))
@@ -107,8 +124,8 @@ if "MP" in b[-1] and "2M" in b[0]:
     band = bands
     band_ind = np.where(np.isin(bands,band))[0]
     I2MY_train, I2MY_valid, I2MY_test = MLP_data_setup(inp_tr[yso_ind_tr,:][:,band_ind], filler_yso_tr, inp_te[yso_ind_te,:][:,band_ind], filler_yso_te, inp_te[yso_ind_te,:][:,band_ind], filler_yso_te)
-    NN_I2MY = TwoLayerMLP(len(band_ind), 10, 4)
-    NN_I2MY.load_state_dict(torch.load("../Results/Best_Results/c2d_quality_11_IRAC_MIPS_2MASS_alpha_YSO/TwoLayer_LR_0.001_MO__NEUR_10_Settings", map_location=device))
+    NN_I2MY = TwoLayerMLP(len(band_ind), 10, 6)
+    NN_I2MY.load_state_dict(torch.load("../Results/Best_Results/c2d_quality_12_IRAC_MIPS_2MASS_alpha_YSO+SE/TwoLayer_LR_0.001_MO__NEUR_10_Settings", map_location=device))
     # Test MLP
     I2MY_preds_tr[yso_ind_tr] = test(NN_I2MY, I2MY_train, device)
     I2MY_preds_te[yso_ind_te] = test(NN_I2MY, I2MY_test, device)
@@ -121,8 +138,8 @@ if "MP" in b[-1]:
     band.append("alpha")
     band_ind = np.where(np.isin(bands,band))[0]
     IMY_train, IMY_valid, IMY_test = MLP_data_setup(inp_tr[yso_ind_tr,:][:,band_ind], filler_yso_tr, inp_te[yso_ind_te,:][:,band_ind], filler_yso_te, inp_te[yso_ind_te,:][:,band_ind], filler_yso_te)
-    NN_IMY = TwoLayerMLP(len(band_ind), 10, 4)
-    NN_IMY.load_state_dict(torch.load("../Results/Best_Results/c2d_quality_9_IRAC_MIPS_alpha_YSO/TwoLayer_LR_0.001_MO__NEUR_10_Settings", map_location=device))
+    NN_IMY = TwoLayerMLP(len(band_ind), 20, 6)
+    NN_IMY.load_state_dict(torch.load("../Results/Best_Results/c2d_quality_16_LR_Reduce_YSO+SE/IRAC_MIPS_alphaLR_0.001_MO__NEUR_20_Settings", map_location=device))
     # Test MLP
     IMY_preds_tr[yso_ind_tr] = test(NN_IMY, IMY_train, device)
     IMY_preds_te[yso_ind_te] = test(NN_IMY, IMY_test, device)
@@ -135,8 +152,8 @@ if "2M" in b[0]:
     band = [idx for idx in bands if (idx[-2].lower() != 'P'.lower())]
     band_ind = np.where(np.isin(bands,band))[0]
     I2Y_train, I2Y_valid, I2Y_test = MLP_data_setup(inp_tr[yso_ind_tr,:][:,band_ind], filler_yso_tr, inp_te[yso_ind_te,:][:,band_ind], filler_yso_te, inp_te[yso_ind_te,:][:,band_ind], filler_yso_te)
-    NN_I2Y = TwoLayerMLP(len(band_ind), 20, 4)
-    NN_I2Y.load_state_dict(torch.load("../Results/Best_Results/c2d_quality_10_IRAC_2MASS_alpha_YSO/TwoLayer_LR_0.001_MO__NEUR_20_Settings", map_location=device))
+    NN_I2Y = TwoLayerMLP(len(band_ind), 20, 6)
+    NN_I2Y.load_state_dict(torch.load("../Results/Best_Results/c2d_quality_16_LR_Reduce_YSO+SE/IRAC_2MASS_alphaLR_0.001_MO__NEUR_20_Settings", map_location=device))
     # Test MLP
     I2Y_preds_tr[yso_ind_tr] = test(NN_I2Y, I2Y_train, device)
     I2Y_preds_te[yso_ind_te] = test(NN_I2Y, I2Y_test, device)
@@ -196,6 +213,23 @@ print("t-SNE plots completed")
 plot_hist(inp_tr,YSO_PREDS_tr,"spectral_index_hist_c2d",ClassIII=ClassIII)
 plot_hist(inp_te,YSO_PREDS_te,f"spectral_index_hist_{testset}",ClassIII=ClassIII)
 print("Histograms of spectral index completed")
+
+
+
+if Predict:
+    df = pd.DataFrame(data=np.c_[inp_te,PREDS_te],columns=np.r_[bands,['Preds']])
+    df.to_csv(f'{testset}_w_Preds.csv')
+
+
+# Confusion Matrix
+plt.subplot()
+ConfusionMatrixDisplay.from_predictions(tar_tr,YSO_PREDS_tr,cmap='copper',normalize='true',display_labels=YSO_labels)
+plt.savefig("../Results/Figures/CM_c2d.png")
+
+if ~Predict:
+    plt.subplot()
+    ConfusionMatrixDisplay.from_predictions(tar_te,YSO_PREDS_te,cmap='copper',normalize='true',display_labels=YSO_labels)
+    plt.savefig(f"../Results/Figures/CM_{testset}.png")
 
 # bins = np.linspace(-6,6,60)
 # ind_Y = np.where(YSE_pred_te==0)[0]

@@ -334,11 +334,11 @@ def find_best_MLP(MLP, filepath_to_MLPdir, epochs, learning_rate_vals, momentum_
     tic1 = time.perf_counter()
     for lr in learning_rate_vals:
         # for mo in momentum_vals:
-        for n in [10,20,50]:
+        for n in [10,20]:
             outfile = filepath_to_MLPdir + "LR_" + str(lr) + "_MO_" +  "_NEUR_" + str(n)#str(mo) +
             NN = MLP(cols,n,len(custom_labs))
             optimizer = optim.Adam(NN.parameters(), lr=lr)#, momentum=mo)
-            f1score = main(epochs, NN, optimizer, outfile, train_loader, val_loader, test_loader, custom_labs, device,)#ScheduleInstance=optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min'))
+            f1score = main(epochs, NN, optimizer, outfile, train_loader, val_loader, test_loader, custom_labs, device,ScheduleInstance=optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min'))
             if f1score > f1Max:
                 f1Max = f1score
                 bestfile = outfile

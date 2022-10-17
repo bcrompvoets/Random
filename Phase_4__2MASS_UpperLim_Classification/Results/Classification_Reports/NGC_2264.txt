@@ -2,29 +2,30 @@ Using only ['IR', 'MP'] bands
 YSE Results Validation Set NGC_2264
               precision    recall  f1-score   support
 
-         YSO       0.57      0.79      0.66       553
-          EG       0.85      0.73      0.79       373
+         YSO       0.57      0.79      0.67       553
+          EG       0.76      0.69      0.72       250
        Stars       0.98      0.96      0.97      7518
 
-    accuracy                           0.94      8444
-   macro avg       0.80      0.82      0.80      8444
-weighted avg       0.94      0.94      0.94      8444
+    accuracy                           0.94      8321
+   macro avg       0.77      0.81      0.79      8321
+weighted avg       0.95      0.94      0.94      8321
 YSO Results Validation Set NGC_2264
                  precision    recall  f1-score   support
 
-  YSO - Class I       0.91      0.76      0.83        54
- YSO - Class FS       0.91      0.90      0.90        67
- YSO - Class II       0.97      0.77      0.85       358
-YSO - Class III       0.15      0.74      0.25        74
-             EG       0.85      0.73      0.79       373
-          Stars       0.98      0.96      0.97      7518
+  YSO - Class I       0.77      0.63      0.69        54
+ YSO - Class FS       0.70      0.57      0.63        67
+ YSO - Class II       1.00      0.54      0.71       358
+YSO - Class III       0.10      0.34      0.15        74
+             EG       0.68      0.69      0.68       250
+          Stars       0.97      0.97      0.97      7518
 
-       accuracy                           0.93      8444
-      macro avg       0.79      0.81      0.76      8444
-   weighted avg       0.96      0.93      0.95      8444
-We have 45 Class I YSOs
-We have 66 Class FS YSOs
-We have 283 Class II YSOs
-We have 374 Class III YSOs
-We have 317 EGs
-We have 7359 Stars
+       accuracy                           0.93      8321
+      macro avg       0.70      0.62      0.64      8321
+   weighted avg       0.95      0.93      0.94      8321
+We have 44 Class I YSOs
+We have 54 Class FS YSOs
+We have 195 Class II YSOs
+We have 255 Class III YSOs
+We have 254 EGs
+We have 7519 Stars
+We have 0 Insecure Classifications

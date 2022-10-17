@@ -1,0 +1,31 @@
+Using only ['IR', 'MP'] bands
+YSE Results Validation Set Orion
+              precision    recall  f1-score   support
+
+         YSO       0.70      0.90      0.79      2548
+          EG       0.91      0.80      0.85      1663
+       Stars       0.97      0.94      0.96     14901
+
+    accuracy                           0.92     19112
+   macro avg       0.86      0.88      0.87     19112
+weighted avg       0.93      0.92      0.93     19112
+YSO Results Validation Set Orion
+                 precision    recall  f1-score   support
+
+  YSO - Class I       0.58      0.77      0.66       181
+ YSO - Class FS       0.73      0.64      0.68       315
+ YSO - Class II       0.98      0.73      0.84      1748
+YSO - Class III       0.24      0.66      0.35       304
+             EG       0.88      0.81      0.84      1663
+          Stars       0.96      0.96      0.96     14901
+
+       accuracy                           0.91     19112
+      macro avg       0.73      0.76      0.72     19112
+   weighted avg       0.93      0.91      0.92     19112
+We have 242 Class I YSOs
+We have 278 Class FS YSOs
+We have 1309 Class II YSOs
+We have 836 Class III YSOs
+We have 1532 EGs
+We have 14915 Stars
+We have 0 Insecure Classifications

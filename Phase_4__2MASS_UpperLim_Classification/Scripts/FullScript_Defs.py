@@ -22,11 +22,10 @@ def predict_yse(inp_tr,tar_tr,inp_te,tar_te,bands,device):
     IR_preds_te = test(NN_IR, IR_test, device)
     if "MP" in b[-1] and "2M" in b[0]:
         # Test IRAC, MIPS, and 2MASS
-        band = bands[:-1] # Everything except alpha
         band_ind = np.where(np.isin(bands,band))[0]
         I2M_train, I2M_valid, I2M_test = MLP_data_setup(inp_tr[:,band_ind], tar_tr, inp_te[:,band_ind], tar_te, inp_te[:,band_ind], tar_te)
         NN_I2M = TwoLayerMLP(len(band_ind), 20, 3)
-        NN_I2M.load_state_dict(torch.load("../Results/Best_Results/c2d_quality_4_IRAC_MIPS_2MASS/TwoLayer_LR_0.001_MO__NEUR_20_Settings", map_location=device))
+        NN_I2M.load_state_dict(torch.load("../Results/Best_Results/c2d_quality_17_LR_Reduce_YSE/IRAC_MIPS_2MASS_alphaLR_0.001_MO__NEUR_20_Settings", map_location=device))
         # Test MLP
         I2M_preds_tr = test(NN_I2M, I2M_train, device)
         I2M_preds_te = test(NN_I2M, I2M_test, device)
@@ -35,11 +34,11 @@ def predict_yse(inp_tr,tar_tr,inp_te,tar_te,bands,device):
         I2M_preds_te = [np.nan]*len(IR_preds_te)
     if "MP" in b[-1]:
         # Test IRAC and MIPS
-        band = [idx for idx in bands if (idx[-2].lower() == 'R'.lower() or idx[-2].lower() == 'P'.lower())]
+        band = [idx for idx in bands if (idx[-2].lower() == 'R'.lower() or idx[-2].lower() == 'P'.lower() or idx == 'alpha')]
         band_ind = np.where(np.isin(bands,band))[0]
         IM_train, IM_valid, IM_test = MLP_data_setup(inp_tr[:,band_ind], tar_tr, inp_te[:,band_ind], tar_te, inp_te[:,band_ind], tar_te)
         NN_IM = TwoLayerMLP(len(band_ind), 10, 3)
-        NN_IM.load_state_dict(torch.load("../Results/Best_Results/c2d_quality_1/TwoLayer_LR_0.001_MO__NEUR_10_Settings", map_location=device))
+        NN_IM.load_state_dict(torch.load("../Results/Best_Results/c2d_quality_17_LR_Reduce_YSE/IRAC_MIPS_alphaLR_0.001_MO__NEUR_10_Settings", map_location=device))
         # Test MLP
         IM_preds_tr = test(NN_IM, IM_train, device)
         IM_preds_te = test(NN_IM, IM_test, device)
@@ -48,11 +47,11 @@ def predict_yse(inp_tr,tar_tr,inp_te,tar_te,bands,device):
         IM_preds_te = [np.nan]*len(IR_preds_te)
     if "2M" in b[0]:
         # Test IRAC and 2MASS
-        band = [idx for idx in bands if (idx[-2].lower() != 'P'.lower() and idx.lower()!='alpha')]
+        band = [idx for idx in bands if (idx[-2].lower() != 'P'.lower())]
         band_ind = np.where(np.isin(bands,band))[0]
         I2_train, I2_valid, I2_test = MLP_data_setup(inp_tr[:,band_ind], tar_tr, inp_te[:,band_ind], tar_te, inp_te[:,band_ind], tar_te)
         NN_I2 = TwoLayerMLP(len(band_ind), 20, 3)
-        NN_I2.load_state_dict(torch.load("../Results/Best_Results/c2d_quality_3_IRAC_2MASS/TwoLayer_LR_0.001_MO__NEUR_20_Settings", map_location=device))
+        NN_I2.load_state_dict(torch.load("../Results/Best_Results/c2d_quality_17_LR_Reduce_YSE/IRAC_2MASS_alphaLR_0.001_MO__NEUR_20_Settings", map_location=device))
         # Test MLP
         I2_preds_tr = test(NN_I2, I2_train, device)
         I2_preds_te = test(NN_I2, I2_test, device)
@@ -73,13 +72,13 @@ def predict_yse(inp_tr,tar_tr,inp_te,tar_te,bands,device):
     return Preds_tr, Preds_te, flags_tr, flags_te
 
 def flag(arr):
-    cols = np.shape(arr[0][~np.isnan(arr[0])])[0]
+    # cols = np.shape(arr[0][~np.isnan(arr[0])])[0]
     arr_f = []
     for n in arr:
-        if len(np.unique(n[~np.isnan(n)]))>1:
-            arr_f.append(0)
+        if len(np.unique(n[~np.isnan(n)]))<=2: # There is 2 or less unique values. If only have 2 methods this will always return Secure
+            arr_f.append(0) # Secure
         else:
-            arr_f.append(1)
+            arr_f.append(1) # Insecure
     return arr_f
 
 def tsne_plot(inp,pred,flag,type,three=False):

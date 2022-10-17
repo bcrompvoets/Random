@@ -1,0 +1,31 @@
+Using only ['IR'] bands
+YSE Results Validation Set SPICY
+              precision    recall  f1-score   support
+
+         YSO       0.98      0.90      0.94    105054
+          EG       0.00      0.00      0.00         1
+       Stars       0.68      0.83      0.75     12392
+
+    accuracy                           0.90    117447
+   macro avg       0.55      0.58      0.56    117447
+weighted avg       0.95      0.90      0.92    117447
+YSO Results Validation Set SPICY
+                 precision    recall  f1-score   support
+
+  YSO - Class I       0.83      0.83      0.83     16816
+ YSO - Class FS       0.86      0.78      0.82     20747
+ YSO - Class II       0.99      0.89      0.94     61716
+YSO - Class III       0.77      0.75      0.76      5775
+             EG       0.00      0.00      0.00         1
+          Stars       0.68      0.83      0.75     12392
+
+       accuracy                           0.85    117447
+      macro avg       0.69      0.68      0.68    117447
+   weighted avg       0.90      0.85      0.87    117447
+We have 16815 Class I YSOs
+We have 18966 Class FS YSOs
+We have 55472 Class II YSOs
+We have 5627 Class III YSOs
+We have 5314 EGs
+We have 15253 Stars
+We have 0 Insecure Classifications
