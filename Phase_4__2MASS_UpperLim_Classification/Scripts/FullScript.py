@@ -20,7 +20,7 @@ device = torch.device("cpu")
 # Define global variables
 ClassIII = True
 Predict = False
-testdir = "SPICY_w_quality"
+testdir = "CC_w_Preds"
 testset = testdir
 outfile_tr = f"../Results/Classification_Reports/c2d.txt"
 outfile_te = f"../Results/Classification_Reports/{testset}.txt"
@@ -40,15 +40,15 @@ inputs = pd.read_csv(file_tr)
 # Add in test set here
 testin = pd.read_csv(f"{testdir}.csv",comment='#')
 # Collect the column names of magnitudes and errors
-bands = [idx for idx in testin.columns.values if (idx[0].lower() == 'm'.lower() or idx[0].lower() == 'e'.lower())]
+bands = [idx for idx in testin.columns.values if (idx[0].lower() == 'm'.lower() or idx[0].lower() == 'e'.lower() or idx[2:]=='J2000')]
 bands.append("alpha")
-
+bands_radec = bands
 bands_TR = [idx for idx in inputs.columns.values if (idx[0].lower() == 'm'.lower() or idx[0].lower() == 'e'.lower())]
 bands_TR.append("alpha")
+print(bands)
+bands_TR = bands[2:]
+# print(bands_TR)
 
-print(np.unique(testin['Target'].values))
-testin = testin[testin.Target < 3]
-print(np.unique(testin['Target'].values))
 # testin['Target'] = np.random.randint(low = 0,high=3,size=testin.shape[0])
 if 'Target' not in testin.columns.values:
     testin['Target'] = np.random.randint(low = 0,high=3,size=testin.shape[0])
@@ -56,14 +56,21 @@ if 'Target' not in testin.columns.values:
 Predict = True
 
 
-inp_tr, tar_tr = replicate_data_single(inputs[bands].values.astype(float), inputs[['Target']].values.astype(int),[len(np.where(inputs[['Target']].values==0)[0])]*3)#,len(np.where(inputs[['Target']].values==1)[0]),int(len(np.where(inputs[['Target']].values==2)[0])/100)])#,len(np.where(Y_te==3.)[0]),len(np.where(Y_te==4.)[0]),len(np.where(Y_te==5.)[0])])
+inp_tr, tar_tr = replicate_data_single(inputs[bands_TR].values.astype(float), inputs[['Target']].values.astype(int),[len(np.where(inputs[['Target']].values==0)[0])]*3)#,len(np.where(inputs[['Target']].values==1)[0]),int(len(np.where(inputs[['Target']].values==2)[0])/100)])#,len(np.where(Y_te==3.)[0]),len(np.where(Y_te==4.)[0]),len(np.where(Y_te==5.)[0])])
 while np.all(np.isfinite(inp_tr)) == False:
-    inp_tr, tar_tr = replicate_data_single(inputs[bands].values.astype(float), inputs[['Target']].values.astype(int),[len(np.where(inputs[['Target']].values==0)[0])]*3)#,len(np.where(inputs[['Target']].values==1)[0]),int(len(np.where(inputs[['Target']].values==2)[0])/100)])
+    inp_tr, tar_tr = replicate_data_single(inputs[bands_TR].values.astype(float), inputs[['Target']].values.astype(int),[len(np.where(inputs[['Target']].values==0)[0])]*3)#,len(np.where(inputs[['Target']].values==1)[0]),int(len(np.where(inputs[['Target']].values==2)[0])/100)])
 
 inp_te, tar_te = replicate_data_single(testin[bands].values.astype(float), testin[['Target']].values.astype(int),[len(np.where(testin[['Target']].values==0)[0]),len(np.where(testin[['Target']].values==1)[0]),len(np.where(testin[['Target']].values==2)[0])])#,len(np.where(Y_te==3.)[0]),len(np.where(Y_te==4.)[0]),len(np.where(Y_te==5.)[0])])
 while np.all(np.isfinite(inp_te)) == False:
     inp_te, tar_te = replicate_data_single(testin[bands].values.astype(float), testin[['Target']].values.astype(int),[len(np.where(testin[['Target']].values==0)[0]),len(np.where(testin[['Target']].values==1)[0]),len(np.where(testin[['Target']].values==2)[0])])#,len(np.where(Y_te==3.)[0]),len(np.where(Y_te==4.)[0]),len(np.where(Y_te==5.)[0])])
 
+# print(np.shape(inp_te))
+RADEC = inp_te[:,:2]
+inp_te = inp_te[:,2:]
+# print(np.shape(inp_te))
+# print(np.shape(RADEC))
+# print(np.shape(inp_tr))
+bands = bands_TR
 if bands[0]=='mag_J':
     bands[0] = 'mag_2M1'
 b = [idx[slice(-3,-1)] for idx in bands if (idx[-1] == '1' and idx[0] != 'e')]
@@ -217,7 +224,7 @@ print("Histograms of spectral index completed")
 
 
 if Predict:
-    df = pd.DataFrame(data=np.c_[inp_te,PREDS_te],columns=np.r_[bands,['Preds']])
+    df = pd.DataFrame(data=np.c_[RADEC,inp_te,PREDS_te],columns=np.r_[bands_radec,['Preds']])
     df.to_csv(f'{testset}_w_Preds.csv')
 
 
