@@ -2,26 +2,26 @@ Using only ['2M', 'IR'] bands
 YSE Results Validation Set CC_w_Preds
               precision    recall  f1-score   support
 
-         YSO       0.32      0.12      0.17       135
-          EG       0.29      0.01      0.02       156
-       Stars       0.31      0.89      0.46       123
+         YSO       0.36      0.14      0.20       133
+          EG       0.57      0.03      0.05       146
+       Stars       0.34      0.90      0.49       135
 
-    accuracy                           0.31       414
-   macro avg       0.30      0.34      0.22       414
-weighted avg       0.30      0.31      0.20       414
+    accuracy                           0.35       414
+   macro avg       0.42      0.35      0.25       414
+weighted avg       0.43      0.35      0.24       414
 YSO Results Validation Set CC_w_Preds
                  precision    recall  f1-score   support
 
-  YSO - Class I       0.25      1.00      0.40         2
- YSO - Class FS       0.33      1.00      0.50         2
- YSO - Class II       0.25      0.43      0.32         7
-YSO - Class III       0.40      0.05      0.09       124
-             EG       0.22      0.01      0.02       156
-          Stars       0.30      0.89      0.45       123
+  YSO - Class I       0.50      1.00      0.67         4
+ YSO - Class FS       0.33      0.67      0.44         3
+ YSO - Class II       0.42      0.83      0.56         6
+YSO - Class III       0.33      0.04      0.07       120
+             EG       0.56      0.03      0.06       146
+          Stars       0.34      0.92      0.50       135
 
-       accuracy                           0.30       414
-      macro avg       0.29      0.56      0.30       414
-   weighted avg       0.30      0.30      0.18       414
+       accuracy                           0.35       414
+      macro avg       0.41      0.58      0.38       414
+   weighted avg       0.42      0.35      0.22       414
 We have 8 Class I YSOs
 We have 6 Class FS YSOs
 We have 12 Class II YSOs

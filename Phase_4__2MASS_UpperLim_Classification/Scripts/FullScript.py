@@ -20,7 +20,7 @@ device = torch.device("cpu")
 # Define global variables
 ClassIII = True
 Predict = False
-testdir = "CC_w_Preds"
+testdir = "CC_Webb_Spitz_2m_w_Preds.csv"
 testset = testdir
 outfile_tr = f"../Results/Classification_Reports/c2d.txt"
 outfile_te = f"../Results/Classification_Reports/{testset}.txt"
