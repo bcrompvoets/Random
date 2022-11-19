@@ -102,7 +102,7 @@ def replicate_data_ind(targets, amounts_train, amounts_valid):
     return train_indices, valid_indices, test_indices
 
 
-def replicate_data_single(inputs, targets, amounts):
+def replicate_data_single(inputs, targets, amounts,seed=None):
     """Creates custom dataset (targets and inputs), custom built to the
     amounts needed, given some input dataset.
 
@@ -132,13 +132,16 @@ def replicate_data_single(inputs, targets, amounts):
     # These arrays will hold the indices of the shuffled indices
     train_indices = []
 
+    if seed == None:
+        seed = random.randint(0,1000)
+
     #Randomly choose amounts_train and amounts_valid amounts from these three classes
     for i, type_in in enumerate(class_indices):
         # Shuffle the array of indices 
-        type_in = shuffle(type_in,random_state=random.randint(0,1000))
+        type_in = shuffle(type_in,random_state=seed)
         train_indices = np.append(train_indices,type_in[0:amounts[i]]).astype(int)
   
-    train_indices = shuffle(train_indices,random_state=random.randint(0,1000))
+    train_indices = shuffle(train_indices,random_state=seed)
 
     # Create arrays that will hold the actual values for each case
     train_input = inputs[train_indices]
