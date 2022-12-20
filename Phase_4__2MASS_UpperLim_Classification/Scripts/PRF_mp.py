@@ -1,34 +1,33 @@
-# THIS FILE CURRENTLY GARBAGE
 import numpy as np
 import pandas as pd
 from custom_dataloader import replicate_data_single
 import matplotlib.pyplot as plt
 from PRF import prf
 
-from sklearn.metrics import plot_confusion_matrix, ConfusionMatrixDisplay,accuracy_score,f1_score,classification_report,f1_score,recall_score
+from sklearn.metrics import ConfusionMatrixDisplay,accuracy_score,f1_score,classification_report,f1_score,recall_score,precision_score
 
 import warnings
 warnings.filterwarnings('ignore')
 
 date = 'Dec192022'
-
 webb_inp = pd.read_csv('../../NGC_3324/CC_JWST_NIRCAM_MIRI_Full_'+date+'_2pt_vegamag_flux.csv')
 all_inp = pd.read_csv('CC_Webb_NIRCam_MIRI_Spitz_2m_w_SPICY_Preds_'+date+'.csv')
 
+date = 'Dec202022_NoF090W'
 cont = True
 amounts_te = []
 # 090, 187, 200, 335, 444, 470, 770, 1130, 1280, 1800
-inds = (0,4,6,8,12,14,16,18)
+inds = (0,2,4,6,8,10,12,14,16,18)
 
 bands = [idx for idx in webb_inp.columns.values if (idx[:3].lower() == 'iso'.lower() and idx[10]=='v')]
-print(np.array(bands)[np.array(inds)])
+# print(np.array(bands)[np.array(inds)])
 
 input_webb = all_inp[bands].to_numpy()
 tar_webb = all_inp[['SPICY_Class_0/1']].to_numpy()
 
 
-def get_best_prf(i1,i2,i3,i4,i5,i6,i7,i8,i9,i10):
-    inds = np.array([i1,i2,i3,i4,i5,i6,i7,i8,i9,i10])
+def get_best_prf(i1,i2,i3,i4,i5,i6,i7,i8,i9):
+    inds = np.array([i1,i2,i3,i4,i5,i6,i7,i8,i9])
     max_f1 = 0.3
     for i in np.arange(0,1000,2):
         seed = int(np.random.default_rng().random()*np.random.default_rng().random()*10000)
@@ -58,20 +57,19 @@ def get_best_prf(i1,i2,i3,i4,i5,i6,i7,i8,i9,i10):
 ##-------------------------------------------
 # this is what we need to parallelize
 
-all_inds = np.array([0, 2, 4, 6, 8, 10, 12, 14, 16, 18])
-
+all_inds = np.array([2, 4, 6, 8, 10, 12, 14, 16, 18])
+print("Starting bootstrapping!")
 import multiprocess as mp
 import time
 tic = time.perf_counter()
-iters = [all_inds] * 100
+iters = [all_inds] * 1000
 with mp.Pool(6) as pool:
     ans = pool.starmap(get_best_prf,iters)
 
 
 toc = time.perf_counter()
-print(f"Completed the bootstrapping in {(toc - tic)/60:0.2f} minutes")
+print(f"Completed the bootstrapping in {(toc - tic)/60:0.2f} minutes!\n\n")
 
-print(list(map(list, zip(*ans)))[1])
 pred_tes = list(map(list, zip(*ans)))[0]
 num_yso = list(map(list, zip(*ans)))[1]
 max_f1 = list(map(list, zip(*ans)))[2]
@@ -86,7 +84,7 @@ print("Shape of max_f1:",np.shape(max_f1))
 # Make two columns: final class, and probability of being that class
 p_star = np.nanmean(pred_tes,axis=0)
 preds = np.zeros(len(p_star))
-preds[p_star>0.2] = 1 #If there is at least a 20% probability that the object is a star, it is labelled as a star. Otherwise it is a YSO (with 80% probability)
+preds[p_star>0.5] = 1 #If there is at least a 50% probability that the object is a star, it is labelled as a star. Otherwise it is a YSO (with 80% probability)
 p_yso = 1-p_star
 
 # Make and save predictions/probabilities in csv
@@ -142,8 +140,11 @@ spitzer_bands.append('SPICY_Class')
 
 jwst_spitz_spicy_cat = pd.concat([j_matches,s2_matches[spitzer_bands]],axis=1)
 spicy_df_to_add = pd.DataFrame(data=jwst_spitz_spicy_cat[spitzer_bands].values,columns=spitzer_bands,index=jwst_spitz_spicy_cat['index'])
-CC_Webb_Classified = pd.concat([CC_Webb_Classified,spicy_df_to_add],axis=1)
-
+# CC_Webb_Classified = pd.concat([CC_Webb_Classified,spicy_df_to_add],axis=1)
+df_to_add = pd.DataFrame()
+df_to_add[spitzer_bands] = [[np.nan]*len(spitzer_bands)]*len(CC_Webb_Classified)
+df_to_add.iloc[spicy_df_to_add.index] = spicy_df_to_add
+CC_Webb_Classified[spitzer_bands] = df_to_add
 
 CC_Webb_Classified.to_csv('CC_Webb_Predictions_Prob_'+date+'.csv')
 
@@ -163,7 +164,7 @@ plt.rcParams['font.family'] = 'serif'
 # Scatter plot with hists for number of YSOs vs F1-Score
 print('Mean number of YSOs:',np.mean(num_yso), 'Median number of YSOs:', np.median(num_yso))
 print('Mean F1-Score:',np.mean(max_f1), 'Median F1-Score:', np.median(max_f1), 'Standard deviation F1-Score:', np.std(max_f1))
-print("Percent of number of objects above 100:",len(np.array(num_yso)[np.array(num_yso)>100]))
+print("Percent of number of objects above 100:",len(np.array(num_yso)[np.array(num_yso)>100])/10)
 fig = plt.figure(figsize=(6, 6),dpi=300)
 # Add a gridspec with two rows and two columns and a ratio of 1 to 4 between
 # the size of the marginal axes and the main axes in both directions.
@@ -180,15 +181,19 @@ ax_histy = fig.add_subplot(gs[1, 1], sharey=ax)
 
 ax_histx.tick_params(axis="x", labelbottom=False)
 ax_histy.tick_params(axis="y", labelleft=False)
-ax_histx.hist(num_yso,bins=np.arange(0,3000,50))#
-ax_histy.hist(max_f1,bins=np.arange(0.75,0.9,0.01), orientation='horizontal')
 ax.scatter(num_yso,max_f1)
+xmin,xmax = ax.get_xlim()
+ymin,ymax = ax.get_ylim()
+ax_histx.hist(num_yso,bins=np.arange(xmin,xmax,50))#
+ax_histy.hist(max_f1,bins=np.arange(ymin,ymax,0.01), orientation='horizontal')
 ax.set_xlabel('Amount of objects classified as YSOs')
 ax.set_ylabel('F1-Score of YSOs')
 # ax.set_xscale('log')
 
 plt.savefig("F1-Scoresvs_Num_YSOs_"+date+".png",dpi=300)
 
+nyso_f1s = pd.DataFrame(data={"F1-Scores": max_f1, "Num YSO": num_yso})
+nyso_f1s.to_csv("NumYSOs_F1Scores_"+date+".csv")
 
 #----------------------------------------
 # confusion matrix
@@ -255,6 +260,11 @@ plt.savefig(f"CC_w_Reiter_SPICYtr_Label_{filter}_"+date+".png",dpi=300)
 
 #--------------------------------------------------------------------
 # Compare SEDs and number of bands available for validation set. 
+a = CC_Webb_Classified[CC_Webb_Classified.Class==0][CC_Webb_Classified['SPICY_Class_0/1']==0].index # Correctly classified as YSO
+b = CC_Webb_Classified[CC_Webb_Classified.Class==0][CC_Webb_Classified['SPICY_Class_0/1']==1].index # Incorrectly classified as YSO
+c = CC_Webb_Classified[CC_Webb_Classified.Class!=0][CC_Webb_Classified['SPICY_Class_0/1']==0].index # Incorrectly classified as Star
+d = CC_Webb_Classified[CC_Webb_Classified.Class!=0][CC_Webb_Classified['SPICY_Class_0/1']==1].index # Correctly classified as Star
+diffs = all_inp.mag_IR2-all_inp.isophotal_vegamag_f444w
 
 def sed_plot_mu(ax, ind, cat,title=None,correction=0):
     mu = pd.DataFrame([cat.iloc[ind].mean(skipna=True)])
@@ -276,7 +286,6 @@ def sed_plot_mu(ax, ind, cat,title=None,correction=0):
 
     spitz2m_bands = [idx for idx in mu.columns.values if (idx[:3].lower() == 'mag')]
     spitz_mic = [1.235,1.662,2.159,3.6,4.5,5.8,8.0]
-    maxes = cat[spitz2m_bands].max().to_numpy()
 
     all_mic = list(np.r_[webb_mic,spitz_mic]) # Collect list of values for xticks
     del all_mic[4] 
@@ -310,8 +319,10 @@ axs[2][0].invert_yaxis()
 axs[3][0].invert_yaxis()
 # axs[3][1].invert_yaxis()
 axs[0][0] = sed_plot_mu(axs[0][0],a,CC_Webb_Classified,title='Consistently Classified YSOs',correction=np.nanmean(diffs))
-axs[1][0] = sed_plot_mu(axs[1][0],b,CC_Webb_Classified,title='Contaminants Classified as YSO',correction=np.nanmean(diffs))
-axs[2][0] = sed_plot_mu(axs[2][0],c,CC_Webb_Classified,title='YSOs Classified as Contaminants',correction=np.nanmean(diffs))
+if len(b) != 0:
+    axs[1][0] = sed_plot_mu(axs[1][0],b,CC_Webb_Classified,title='Contaminants Classified as YSO',correction=np.nanmean(diffs))
+if len(c) != 0:
+    axs[2][0] = sed_plot_mu(axs[2][0],c,CC_Webb_Classified,title='YSOs Classified as Contaminants',correction=np.nanmean(diffs))
 axs[3][0] = sed_plot_mu(axs[3][0],d,CC_Webb_Classified,title='Consistently Classified Contaminants',correction=np.nanmean(diffs))
 
 ylim_a = axs[0][0].get_ylim()[1]
@@ -357,15 +368,44 @@ for i in cuts:
     f1s.append(f1_score(tar_va,preds,average=None)[0])
     recs.append(recall_score(tar_va,preds,average=None)[0])
     pres.append(precision_score(tar_va,preds,average=None)[0])
-    print(f1_score(tar_va,preds,average=None))
 
-
-plt.plot(cuts,f1s,label='F1-Score')
-plt.plot(cuts,pres,label='Precision')
-plt.plot(cuts,recs,label='Recall')
-plt.xlabel('Probability YSO Cut')
-plt.ylabel('Metric Score')
+fig, ax = plt.subplots()
+ax.plot(cuts,f1s,label='F1-Score')
+ax.plot(cuts,pres,label='Precision')
+ax.plot(cuts,recs,label='Recall')
+ax.set_xlabel('Probability YSO Cut')
+ax.set_ylabel('Metric Score')
 
 plt.legend()
 
-plt.savefig('Prob_YSO_vs_metric'+date+'.png',dpi=300)
+plt.savefig('Prob_YSO_vs_metric_'+date+'.png',dpi=300)
+
+
+#--------------------------------------------------------------------
+# Histogram of brightnesses with wwavelength
+
+fig, axs = plt.subplots(5,2,figsize=(6,8),dpi=300)
+plt.tight_layout()
+bins =np.arange(4,20,2)
+axs[0][0].hist(CC_Webb_Classified[CC_Webb_Classified.Class==0].isophotal_vegamag_f090w,bins=bins,label='F090W')
+axs[0][1].hist(CC_Webb_Classified[CC_Webb_Classified.Class==0].isophotal_vegamag_f187n,bins=bins,label='F187N')
+axs[1][0].hist(CC_Webb_Classified[CC_Webb_Classified.Class==0].isophotal_vegamag_f200w,bins=bins,label='F200W')
+axs[1][1].hist(CC_Webb_Classified[CC_Webb_Classified.Class==0].isophotal_vegamag_f335m,bins=bins,label='F335M')
+axs[2][0].hist(CC_Webb_Classified[CC_Webb_Classified.Class==0].isophotal_vegamag_f444w,bins=bins,label='F444W')
+axs[2][1].hist(CC_Webb_Classified[CC_Webb_Classified.Class==0]['isophotal_vegamag_f444w-f470n'],bins=bins,label='F444W-F470N')
+axs[3][0].hist(CC_Webb_Classified[CC_Webb_Classified.Class==0].isophotal_vegamag_f770w,bins=bins,label='F770W')
+axs[3][1].hist(CC_Webb_Classified[CC_Webb_Classified.Class==0].isophotal_vegamag_f1130w,bins=bins,label='F1130W')
+axs[4][0].hist(CC_Webb_Classified[CC_Webb_Classified.Class==0].isophotal_vegamag_f1280w,bins=bins,label='F1280W')
+axs[4][1].hist(CC_Webb_Classified[CC_Webb_Classified.Class==0].isophotal_vegamag_f1800w,bins=bins,label='F1800W')
+
+axs[0][0].set_title('F090W')
+axs[0][1].set_title('F187N')
+axs[1][0].set_title('F200W')
+axs[1][1].set_title('F335M')
+axs[2][0].set_title('F444W')
+axs[2][1].set_title('F444W-F470N')
+axs[3][0].set_title('F770W')
+axs[3][1].set_title('F1130W')
+axs[4][0].set_title('F1280W')
+axs[4][1].set_title('F1800W')
+plt.savefig("Brightness_Band_YSO_"+date+".png",dpi=300)
