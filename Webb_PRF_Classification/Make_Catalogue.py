@@ -50,11 +50,9 @@ ap_type5 = 'aper_total'
 
 # Add the size of the objects to the bands
 for i, f in enumerate(nm_bands):
-    print(f)
     if i < 3:
         t[i]['size'] = np.sqrt((t[i]['semimajor_sigma']**2)+t[i]['semiminor_sigma']**2)*0.031/3600 # Convert pixels to arcseconds, arcseconds to degrees (F090,187,200)
     elif i<6:
-        print(f)
         t[i]['size'] = np.sqrt((t[i]['semimajor_sigma']**2)+t[i]['semiminor_sigma']**2)*0.063/3600 # Convert pixels to arcseconds, arcseconds to degrees (F335,444,470) 
     else:
         t[i]['size'] = np.sqrt((t[i]['semimajor_sigma']**2)+t[i]['semiminor_sigma']**2)*0.11/3600 # Convert pixels to arcseconds, arcseconds to degrees (MIRI)
@@ -140,15 +138,19 @@ spit2m_cat = spit2m_cat[spit2m_cat.DEJ2000>min(catalog.DEC)]
 
 # SPITZER data
 # Match to JWST catalog using astropy match_catalog_sky
+# Obtain SkyCoords
 j_sky = SkyCoord(catalog.RA*u.deg, catalog.DEC*u.deg)
 s2_sky = SkyCoord(spit2m_cat.RAJ2000*u.deg, spit2m_cat.DEJ2000*u.deg)
-sp_sky = SkyCoord(spicy_cat['     RAdeg      DEdeg'].to_numpy(),unit=u.deg)
+# Set tolerance - matched objects that are at most this far apart are considered one object
 tol = max(catalog['size'])
+# Match
 idx, sep2d, x = match_coordinates_sky(s2_sky, j_sky, nthneighbor=1, storekdtree='kdtree_sky')
 sep_constraint = sep2d < tol*u.deg
 print("Number of Spitzer sources found:",np.count_nonzero(sep_constraint))
+# Make new data frames which contain only the matched data, in the order of it's matching
 j_matches = catalog.iloc[idx[sep_constraint]]
 s2_matches = spit2m_cat.iloc[sep_constraint]
+# Reset the indices in order to match between two catalogues using pd concat
 j_matches.reset_index(drop=True,inplace=True)
 s2_matches.reset_index(drop=True,inplace=True)
 jwst_spitz_cat = pd.concat([j_matches,s2_matches],axis=1)
@@ -164,17 +166,20 @@ j_matches = jwst_spitz_cat.iloc[idx[sep_constraint]]
 s2_matches = spicy_cat.iloc[sep_constraint]
 j_matches.reset_index(inplace=True)
 s2_matches.reset_index(drop=True,inplace=True)
+# This catalogue contains only objects with SPICY detections
 jwst_spitz_spicy_cat = pd.concat([j_matches,s2_matches[[' SPICY','class    ']]],axis=1)
 
-# Create DF to add
+# Connect SPICY predictions to JWST/Spitzer matched catalogue
 spicy_df_to_add = pd.DataFrame(data={'SPICY':jwst_spitz_spicy_cat[' SPICY'].values,'SPICY_Class':jwst_spitz_spicy_cat['class    '].values},index=jwst_spitz_spicy_cat['index'])
-jwst_spitz_spicy_cat = pd.concat([jwst_spitz_cat,spicy_df_to_add],axis=1)
-jwst_spitz_spicy_cat.drop('Unnamed: 0',axis=1,inplace=True)
-print(len(np.unique(jwst_spitz_spicy_cat.SPICY.values)))
+df_to_add = pd.DataFrame()
+df_to_add[spicy_df_to_add.columns] = [[np.nan]*len(spicy_df_to_add.columns)]*len(jwst_spitz_cat)
+df_to_add.iloc[spicy_df_to_add.index] = spicy_df_to_add
+jwst_spitz_cat[df_to_add.columns] = df_to_add
 
 # Specify true and false class
-jwst_spitz_spicy_cat['SPICY_Class_0/1'] = 0
-spicy_ind = np.where(np.isnan(jwst_spitz_spicy_cat.SPICY))[0]
-jwst_spitz_spicy_cat['SPICY_Class_0/1'].loc[spicy_ind] = 1
+jwst_spitz_cat['SPICY_Class_0/1'] = 0
+spicy_ind = np.where(np.isnan(jwst_spitz_cat.SPICY))[0]
+jwst_spitz_cat['SPICY_Class_0/1'].loc[spicy_ind] = 1
 
-jwst_spitz_spicy_cat.to_csv(saveto+"_SPICY_Preds.csv")
+# Save Spitzer and JWST matched data
+jwst_spitz_cat.to_csv(saveto+"_SPICY_Preds.csv")
