@@ -9,11 +9,24 @@ from sklearn.metrics import ConfusionMatrixDisplay,accuracy_score,f1_score,class
 import warnings
 warnings.filterwarnings('ignore')
 
-date = 'Dec192022'
-webb_inp = pd.read_csv('../../NGC_3324/CC_JWST_NIRCAM_MIRI_Full_'+date+'_2pt_vegamag_flux.csv')
-all_inp = pd.read_csv('CC_Webb_NIRCam_MIRI_Spitz_2m_w_SPICY_Preds_'+date+'.csv')
+date = 'Feb092023'
+webb_inp = pd.read_csv('CC_Catalog.csv')
+# all_inp = pd.read_csv('CC_Catalog_SPICY_Preds.csv')
 
-date = 'Dec202022_NoF090W'
+val_df = pd.read_csv('/Users/breannacrompvoets/Documents/Star_Formation/YSO+Classification/Archive/Phase_4__2MASS_UpperLim_Classification/Scripts/CC_Webb_Predictions_Prob_Dec192022_Spitz_ONLY.csv')#[['isophotal_vegamag_f200w',
+    #    'isophotal_vegamag_err_f200w', 'isophotal_vegamag_f090w',
+    #    'isophotal_vegamag_err_f090w', 'isophotal_vegamag_f187n',
+    #    'isophotal_vegamag_err_f187n', 'isophotal_vegamag_f335m',
+    #    'isophotal_vegamag_err_f335m', 'isophotal_vegamag_f444w',
+    #    'isophotal_vegamag_err_f444w', 'isophotal_vegamag_f444w-f470n',
+    #    'isophotal_vegamag_err_f444w-f470n', 'isophotal_vegamag_f770w',
+    #    'isophotal_vegamag_err_f770w', 'isophotal_vegamag_f1130w',
+    #    'isophotal_vegamag_err_f1130w', 'isophotal_vegamag_f1280w',
+    #    'isophotal_vegamag_err_f1280w', 'isophotal_vegamag_f1800w',
+    #    'isophotal_vegamag_err_f1800w','SPICY_Class_0/1']]
+train_df = pd.read_csv('/Users/breannacrompvoets/Documents/Star_Formation/Non-tracked_Notebooks/Augmented_data.csv')
+all_inp = val_df
+
 cont = True
 amounts_te = []
 # 090, 187, 200, 335, 444, 470, 770, 1130, 1280, 1800
@@ -22,17 +35,19 @@ inds = (0,2,4,6,8,10,12,14,16,18)
 bands = [idx for idx in webb_inp.columns.values if (idx[:3].lower() == 'iso'.lower() and idx[10]=='v')]
 # print(np.array(bands)[np.array(inds)])
 
-input_webb = all_inp[bands].to_numpy()
-tar_webb = all_inp[['SPICY_Class_0/1']].to_numpy()
+input_tr = train_df[bands].to_numpy()
+target_tr = train_df[['SPICY_Class_0/1']].to_numpy()
+input_va = train_df[bands].to_numpy()
+target_va = train_df[['SPICY_Class_0/1']].to_numpy()
 
 
-def get_best_prf(i1,i2,i3,i4,i5,i6,i7,i8,i9):
-    inds = np.array([i1,i2,i3,i4,i5,i6,i7,i8,i9])
-    max_f1 = 0.3
-    for i in np.arange(0,1000,2):
+def get_best_prf(i1,i2,i3,i4,i5,i6,i7,i8,i9,i10):
+    inds = np.array([i1,i2,i3,i4,i5,i6,i7,i8,i9,i10])
+    max_f1 = 0.5
+    for i in np.arange(0,10,2):
         seed = int(np.random.default_rng().random()*np.random.default_rng().random()*10000)
-        inp_tr, tar_tr = replicate_data_single(input_webb,tar_webb,amounts=[len(tar_webb[tar_webb==0]),len(tar_webb[tar_webb==0])*3],seed=seed)
-        inp_va, tar_va = replicate_data_single(input_webb,tar_webb,amounts=[len(tar_webb[tar_webb==0]),len(tar_webb[tar_webb==1])],seed=seed)
+        inp_tr, tar_tr = replicate_data_single(input_tr,target_tr,amounts=[len(target_tr[target_tr==0]),len(target_tr[target_tr==1])],seed=seed)
+        inp_va, tar_va = replicate_data_single(input_va,target_va,amounts=[len(target_va[target_va==0]),len(target_va[target_va==1])],seed=seed)
 
         prf_cls = prf(n_estimators=100, bootstrap=False, keep_proba=0.75)
         prf_cls.fit(X=inp_tr[:,inds], dX=inp_tr[:,inds+1], y=tar_tr)
@@ -55,14 +70,14 @@ def get_best_prf(i1,i2,i3,i4,i5,i6,i7,i8,i9):
 
 
 ##-------------------------------------------
-# this is what we need to parallelize
+# Parallelize
 
-all_inds = np.array([2, 4, 6, 8, 10, 12, 14, 16, 18])
+all_inds = np.array([0, 2, 4, 6, 8, 10, 12, 14, 16, 18])
 print("Starting bootstrapping!")
 import multiprocess as mp
 import time
 tic = time.perf_counter()
-iters = [all_inds] * 1000
+iters = [all_inds] * 100
 with mp.Pool(6) as pool:
     ans = pool.starmap(get_best_prf,iters)
 
@@ -87,6 +102,7 @@ preds = np.zeros(len(p_star))
 preds[p_star>0.5] = 1 #If there is at least a 50% probability that the object is a star, it is labelled as a star. Otherwise it is a YSO (with 80% probability)
 p_yso = 1-p_star
 
+print("Number of YSOs with prob>50\%:",len(preds[p_yso>0.5]))
 # Make and save predictions/probabilities in csv
 CC_Webb_Classified = pd.DataFrame()
 
@@ -164,7 +180,7 @@ plt.rcParams['font.family'] = 'serif'
 # Scatter plot with hists for number of YSOs vs F1-Score
 print('Mean number of YSOs:',np.mean(num_yso), 'Median number of YSOs:', np.median(num_yso))
 print('Mean F1-Score:',np.mean(max_f1), 'Median F1-Score:', np.median(max_f1), 'Standard deviation F1-Score:', np.std(max_f1))
-print("Percent of number of objects above 100:",len(np.array(num_yso)[np.array(num_yso)>100])/10)
+print("Percent of number of objects above 100:",len(np.array(num_yso)[np.array(num_yso)>100])/len(np.array(num_yso))*100)
 fig = plt.figure(figsize=(6, 6),dpi=300)
 # Add a gridspec with two rows and two columns and a ratio of 1 to 4 between
 # the size of the marginal axes and the main axes in both directions.
@@ -213,8 +229,8 @@ from astropy.wcs import WCS
 
 
 # Plot image
-filter = "f444w"
-image_file = f"../../../ngc3324/FITS/JWST_{filter}.fits"
+filter = "f200w"
+image_file = f"../../ngc3324/FITS/JWST_{filter}.fits"
 
 
 h = fits.getheader(image_file)
@@ -356,29 +372,68 @@ plt.savefig('seds_'+date+'.png',dpi=300)
 #--------------------------------------------------------------------
 # Plot of Prob YSO vs recall/precision
 tar_va = CC_Webb_Classified.dropna(subset='SPICY_Class_0/1')[['SPICY_Class_0/1']].values.astype(int)
-prob_yso = CC_Webb_Classified.dropna(subset='SPICY_Class_0/1')[['Prob YSO']].values
+prob_yso_SP = CC_Webb_Classified.dropna(subset='SPICY_Class_0/1')[['Prob YSO']].values
+prob_yso = CC_Webb_Classified[['Prob YSO']].values
+
+# f1s = []
+# recs = []
+# pres = []
+# cuts = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.95,1]
+# for i in cuts:
+#     preds = np.array([1]*len(CC_Webb_Classified.dropna(subset='SPICY_Class_0/1')[['Class']].values))
+#     preds[np.where(prob_yso>i)[0]] = 0
+#     f1s.append(f1_score(tar_va,preds,average=None)[0])
+#     recs.append(recall_score(tar_va,preds,average=None)[0])
+#     pres.append(precision_score(tar_va,preds,average=None)[0])
+
+# fig, ax = plt.subplots()
+# ax.plot(cuts,f1s,label='F1-Score')
+# ax.plot(cuts,pres,label='Precision')
+# ax.plot(cuts,recs,label='Recall')
+# ax.set_xlabel('Probability YSO Cut')
+# ax.set_ylabel('Metric Score')
+
+# plt.legend()
+
+# plt.savefig('Prob_YSO_vs_metric_'+date+'.png',dpi=300)
+
+# tar_va = CC_Webb_Classified.dropna(subset='SPICY_Class_0/1')[['SPICY_Class_0/1']].values.astype(int)
+# prob_yso_SP = CC_Webb_Classified.dropna(subset='SPICY_Class_0/1')[['Prob YSO']].values
+# prob_yso = CC_Webb_Classified['Prob YSO'].values
 
 f1s = []
 recs = []
 pres = []
-cuts = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.95,1]
+nums = []
+cuts = np.arange(0.0,1.05,0.05)
 for i in cuts:
     preds = np.array([1]*len(CC_Webb_Classified.dropna(subset='SPICY_Class_0/1')[['Class']].values))
-    preds[np.where(prob_yso>i)[0]] = 0
+    preds[np.where(prob_yso_SP>i)[0]] = 0
     f1s.append(f1_score(tar_va,preds,average=None)[0])
     recs.append(recall_score(tar_va,preds,average=None)[0])
     pres.append(precision_score(tar_va,preds,average=None)[0])
+    preds = np.array([1]*len(CC_Webb_Classified['Class'].values))
+    preds[np.where(prob_yso>i)[0]] = 0
+    nums.append(len(preds[preds==0]))
 
-fig, ax = plt.subplots()
-ax.plot(cuts,f1s,label='F1-Score')
-ax.plot(cuts,pres,label='Precision')
-ax.plot(cuts,recs,label='Recall')
+fig, ax = plt.subplots(dpi=300)
+a1, = ax.plot(cuts,f1s,label='F1-Score')
+a2, = ax.plot(cuts,pres,label='Precision')
+a3, = ax.plot(cuts,recs,label='Recall')
 ax.set_xlabel('Probability YSO Cut')
 ax.set_ylabel('Metric Score')
+ax.set_xticks(np.arange(0,1.1,0.1))
 
-plt.legend()
+ax2 = ax.twinx()
+a4, = ax2.plot(cuts[:-1],nums[:-1],'#777777',label='Number YSOs')
+ax2.set_ylabel('Number of YSOs')
+ax2.grid(False)  
+ax2.set_yscale('log')
 
+lns = [a1, a2, a3, a4]
+ax2.legend(handles=lns, loc='lower left')
 plt.savefig('Prob_YSO_vs_metric_'+date+'.png',dpi=300)
+
 
 
 #--------------------------------------------------------------------
@@ -409,3 +464,18 @@ axs[3][1].set_title('F1130W')
 axs[4][0].set_title('F1280W')
 axs[4][1].set_title('F1800W')
 plt.savefig("Brightness_Band_YSO_"+date+".png",dpi=300)
+
+#----------------------------------------------------------
+#ROC Curve
+from sklearn.metrics import RocCurveDisplay
+tar_va= CC_Webb_Classified[~CC_Webb_Classified['SPICY_Class_0/1'].isna()][['SPICY_Class_0/1']].values
+prob_va = CC_Webb_Classified[~CC_Webb_Classified['SPICY_Class_0/1'].isna()].values
+
+RocCurveDisplay.from_predictions(tar_va,pred_va,pos_label=0)
+plt.savefig('ROC_Curve_'+date+'.png',dpi=300)
+#----------------------------------------------------------
+#Precision-Recall Curve
+from sklearn.metrics import PrecisionRecallDisplay
+
+PrecisionRecallDisplay.from_predictions(tar_va,prob_va,pos_label=0)
+plt.savefig('PR_Curve_'+date+'.png',dpi=300)
