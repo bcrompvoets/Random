@@ -9,22 +9,13 @@ from sklearn.metrics import ConfusionMatrixDisplay,accuracy_score,f1_score,class
 import warnings
 warnings.filterwarnings('ignore')
 
-date = 'Feb092023'
-webb_inp = pd.read_csv('CC_Catalog.csv')
-# all_inp = pd.read_csv('CC_Catalog_SPICY_Preds.csv')
+date = 'Feb172023'
+webb_inp = pd.read_csv('CC_Catalog_Feb172023.csv')
+# webb_inp = pd.read_csv('CC_Catalog.csv')
 
-val_df = pd.read_csv('/Users/breannacrompvoets/Documents/Star_Formation/YSO+Classification/Archive/Phase_4__2MASS_UpperLim_Classification/Scripts/CC_Webb_Predictions_Prob_Dec192022_Spitz_ONLY.csv')#[['isophotal_vegamag_f200w',
-    #    'isophotal_vegamag_err_f200w', 'isophotal_vegamag_f090w',
-    #    'isophotal_vegamag_err_f090w', 'isophotal_vegamag_f187n',
-    #    'isophotal_vegamag_err_f187n', 'isophotal_vegamag_f335m',
-    #    'isophotal_vegamag_err_f335m', 'isophotal_vegamag_f444w',
-    #    'isophotal_vegamag_err_f444w', 'isophotal_vegamag_f444w-f470n',
-    #    'isophotal_vegamag_err_f444w-f470n', 'isophotal_vegamag_f770w',
-    #    'isophotal_vegamag_err_f770w', 'isophotal_vegamag_f1130w',
-    #    'isophotal_vegamag_err_f1130w', 'isophotal_vegamag_f1280w',
-    #    'isophotal_vegamag_err_f1280w', 'isophotal_vegamag_f1800w',
-    #    'isophotal_vegamag_err_f1800w','SPICY_Class_0/1']]
-train_df = pd.read_csv('/Users/breannacrompvoets/Documents/Star_Formation/Non-tracked_Notebooks/Augmented_data.csv')
+# val_df = pd.read_csv('CC_Webb_Predictions_Prob_Dec192022_Spitz_ONLY.csv')
+val_df = pd.read_csv('CC_Catalog_Feb172023_SPICY_Preds.csv').dropna(subset=['SPICY_Class_0/1'])
+train_df = pd.read_csv('/Users/breannacrompvoets/Documents/Star_Formation/Non-tracked_Notebooks/Augmented_data_prob.csv')
 all_inp = val_df
 
 cont = True
@@ -33,52 +24,59 @@ amounts_te = []
 inds = (0,2,4,6,8,10,12,14,16,18)
 
 bands = [idx for idx in webb_inp.columns.values if (idx[:3].lower() == 'iso'.lower() and idx[10]=='v')]
+bands1 = [idx for idx in webb_inp.columns.values if (idx[:3].lower() == 'iso'.lower() and idx[10]=='v')]
+bands.append('SPICY_Prob')
 # print(np.array(bands)[np.array(inds)])
 
+# input_tr = input_va = train_df[bands].to_numpy()
+# target_tr = target_va = train_df[['SPICY_Class_0/1']].to_numpy()
 input_tr = train_df[bands].to_numpy()
 target_tr = train_df[['SPICY_Class_0/1']].to_numpy()
-input_va = train_df[bands].to_numpy()
-target_va = train_df[['SPICY_Class_0/1']].to_numpy()
+input_va = val_df[bands].to_numpy()
+target_va = val_df[['SPICY_Class_0/1']].to_numpy()
 
 
 def get_best_prf(i1,i2,i3,i4,i5,i6,i7,i8,i9,i10):
     inds = np.array([i1,i2,i3,i4,i5,i6,i7,i8,i9,i10])
     max_f1 = 0.5
-    for i in np.arange(0,10,2):
-        seed = int(np.random.default_rng().random()*np.random.default_rng().random()*10000)
-        inp_tr, tar_tr = replicate_data_single(input_tr,target_tr,amounts=[len(target_tr[target_tr==0]),len(target_tr[target_tr==1])],seed=seed)
-        inp_va, tar_va = replicate_data_single(input_va,target_va,amounts=[len(target_va[target_va==0]),len(target_va[target_va==1])],seed=seed)
+    # for i in np.arange(0,10,2):
+    seed = int(np.random.default_rng().random()*np.random.default_rng().random()*10000)
+    inp_tr, tar_tr = replicate_data_single(input_tr,target_tr,amounts=[len(target_tr[target_tr==0]),len(target_tr[target_tr==1])],seed=seed)
+    inp_va, tar_va = replicate_data_single(input_va,target_va,amounts=[len(target_va[target_va==0]),len(target_va[target_va==1])],seed=seed)
 
-        prf_cls = prf(n_estimators=100, bootstrap=False, keep_proba=0.75)
-        prf_cls.fit(X=inp_tr[:,inds], dX=inp_tr[:,inds+1], y=tar_tr)
+    inp_tr, prob_tr = inp_tr[:,:-1], inp_tr[:,-1]
+    inp_va, prob_va = inp_va[:,:-1], inp_va[:,-1]
+    dy_tr = np.array([np.array([x,1-x]) for x in prob_tr])
+    # dy_va = np.array([np.array([x,1-x]) for x in prob_va])
+    prf_cls = prf(n_estimators=100, bootstrap=False, keep_proba=0.75)
+    prf_cls.fit(X=inp_tr[:,inds], dX=inp_tr[:,inds+1], py=dy_tr)#y=tar_tr
+    pred_va = prf_cls.predict(X=inp_va[:,inds],dX=inp_va[:,inds+1])
 
-        pred_va = prf_cls.predict(X=inp_va[:,inds],dX=inp_va[:,inds+1])
-
-        if (f1_score(tar_va,pred_va,average=None)[0] > max_f1):
+    if (f1_score(tar_va,pred_va,average=None)[0] > max_f1):
             
-            max_prf = prf_cls
-            max_f1 = f1_score(tar_va,pred_va,average=None)[0]
+        max_prf = prf_cls
+        max_f1 = f1_score(tar_va,pred_va,average=None)[0]
+        
     
-    
-    inp_te = webb_inp[np.array(bands)].to_numpy()
-    pred_te_max = max_prf.predict(X=inp_te[:,all_inds], dX=inp_te[:,all_inds+1]) 
+    inp_te = webb_inp[np.array(bands1)].to_numpy()
+    pred_te_max = max_prf.predict(X=inp_te[:,inds], dX=inp_te[:,inds+1]) 
     num_yso = len(pred_te_max[pred_te_max==0]) 
 
     return pred_te_max, num_yso, max_f1
 
 
-
+bands = bands1
 
 ##-------------------------------------------
 # Parallelize
-
+# pred_tes, num_yso, max_f1 = get_best_prf(0, 2, 4, 6, 8, 10, 12, 14, 16, 18)
 all_inds = np.array([0, 2, 4, 6, 8, 10, 12, 14, 16, 18])
 print("Starting bootstrapping!")
 import multiprocess as mp
 import time
 tic = time.perf_counter()
 iters = [all_inds] * 100
-with mp.Pool(6) as pool:
+with mp.Pool(1) as pool:
     ans = pool.starmap(get_best_prf,iters)
 
 
@@ -206,7 +204,7 @@ ax.set_xlabel('Amount of objects classified as YSOs')
 ax.set_ylabel('F1-Score of YSOs')
 # ax.set_xscale('log')
 
-plt.savefig("F1-Scoresvs_Num_YSOs_"+date+".png",dpi=300)
+plt.savefig("Figures/F1-Scoresvs_Num_YSOs_"+date+".png",dpi=300)
 
 nyso_f1s = pd.DataFrame(data={"F1-Scores": max_f1, "Num YSO": num_yso})
 nyso_f1s.to_csv("NumYSOs_F1Scores_"+date+".csv")
@@ -219,7 +217,7 @@ ConfusionMatrixDisplay.from_predictions(tar_va,pred_va,cmap='Reds',display_label
 print(f1_score(tar_va,pred_va))
 print(classification_report(tar_va,pred_va))
 plt.grid(False)
-plt.savefig('CM_va_PRF_SPICY_'+date+'.png',dpi=300,facecolor=fig.get_facecolor())
+plt.savefig('Figures/CM_va_PRF_SPICY_'+date+'.png',dpi=300,facecolor=fig.get_facecolor())
 
 
 #----------------------------------------
@@ -249,9 +247,9 @@ reit = ["10:36:42.3 -58:38:04", "10:36:48.0 -58:38:19", "10:36:47.3 -58:38:10", 
     "10:36:51.4 -58:37:48", "10:36:53.8 -58:37:48", "10:36:51.5 -58:37:10", "10:36:54.2 -58:36:26", "10:36:54.4 -58:36:18", "10:36:54.0 -58:37:20",\
         "10:36:53.6 -58:35:20", "10:36:53.1 -58:37:37", "10:36:53.3 -58:37:54", "10:36:52.7 -58:38:05", "10:36:53.1 -58:37:08", "10:36:51.6 -58:36:58",\
         "10:36:52.3 -58:38:09", "10:36:53.9 -58:36:29", "10:37:01.5 -58:37:51", "10:37:02.1 -58:36:58", "10:36:53.9 -58:36:32"]# End of third row is the end of MHO-only sources
-sky_1 = SkyCoord(reit,unit=(u.hourangle, u.deg))
-ra_1 = sky_1.ra
-dec_1 = sky_1.dec
+r_1 = SkyCoord(reit,unit=(u.hourangle, u.deg))
+ra_1 = r_1.ra
+dec_1 = r_1.dec
 
 ra_spicy = CC_Webb_Classified.RA.values[CC_Webb_Classified['SPICY_Class_0/1']==0]
 dec_spicy = CC_Webb_Classified.DEC.values[CC_Webb_Classified['SPICY_Class_0/1']==0]
@@ -260,7 +258,7 @@ dec_spicy = CC_Webb_Classified.DEC.values[CC_Webb_Classified['SPICY_Class_0/1']=
 ra_yso = CC_Webb_Classified.RA.values[CC_Webb_Classified.Class == 0]
 dec_yso = CC_Webb_Classified.DEC.values[CC_Webb_Classified.Class == 0]
 
-plt.scatter(ra_yso,dec_yso, marker='*', s=150,transform=ax.get_transform('fk5'),label='Our YSOs')
+plt.scatter(ra_yso,dec_yso, marker='*', s=150,alpha=0.4,transform=ax.get_transform('fk5'),label='Our YSOs')
 plt.scatter(ra_spicy,dec_spicy, marker='s',s=150, alpha=0.4,transform=ax.get_transform('fk5'),label='SPICY YSOs')
 plt.scatter(ra_1,dec_1, marker='o',s=150, alpha=0.4,transform=ax.get_transform('fk5'),label='Reiter et al. 2022 YSOs')
 ax.set_ylim(ymax, ymin)
@@ -273,6 +271,36 @@ ax.grid(False)
 # plt.ylabel('DEC')
 
 plt.savefig(f"CC_w_Reiter_SPICYtr_Label_{filter}_"+date+".png",dpi=300)
+
+#--------------------------------------------------------------------
+# Make table of Reiter, SPICY, and our own classifications
+reit_name = ['MHO1632','MHO1633','MHO1634','MHO1635','MHO1636','MHO1637','MHO1638','MHO1639, HH1221, HH1003A','MHO1640','MHO1643, HH1218','MHO1645, MHO1646','MHO1647, HH1002C','MHO1649','MHO1650',\
+    'MHO1651','MHO1652','MHO1641a','MHO1641b','HH1219','HH1223','HHc-3','HHc-4','HHc-5']
+
+tab_preds = open("Table_Reiter_SPICY_YSO.txt",'w')
+tab_preds.write("\citet{Kuhn2021} & \citet{Reiter2022} & Our Work \\\ \hline \n")
+
+j_sky = SkyCoord(CC_Webb_Classified.RA*u.deg,CC_Webb_Classified.DEC*u.deg)
+r_inds, sep2d, _ = match_coordinates_sky(r_1, j_sky, nthneighbor=1, storekdtree='kdtree_sky')
+sp_inds = CC_Webb_Classified.dropna(subset=['SPICY']).index
+_, inds_of_match = np.unique(np.r_[r_inds,sp_inds], return_index=True)
+matched_inds = np.r_[r_inds,sp_inds][np.sort(inds_of_match)]
+for i, m in enumerate(matched_inds):
+    df_tmp = CC_Webb_Classified.iloc[m]
+    if df_tmp[['Class']].values[0]==1:
+        y_or_s = 'Cont.'
+    else:
+        y_or_s = 'YSO'
+    if m in r_inds:
+        if m in sp_inds:
+            tab_preds.write(f"{df_tmp.SPICY_Class}- SPICY {df_tmp.SPICY} & {reit_name[i]} & {y_or_s} \\\ \n")
+        else:
+            tab_preds.write(f" & {reit_name[i]} & {y_or_s} \\\ \n")
+    else:
+        tab_preds.write(f"{df_tmp.SPICY_Class}- SPICY {df_tmp.SPICY} &  & {y_or_s} \\\ \n")
+
+tab_preds.close()
+
 
 #--------------------------------------------------------------------
 # Compare SEDs and number of bands available for validation set. 
@@ -367,7 +395,7 @@ axs[3][1].hist([np.count_nonzero(~CC_Webb_Classified[webb_bands].iloc[i].isna())
 axs[2][1].set_xlim(0,11)
 axs[3][1].set_xlabel('Bands Available')
 
-plt.savefig('seds_'+date+'.png',dpi=300)
+plt.savefig('Figures/seds_'+date+'.png',dpi=300)
 
 #--------------------------------------------------------------------
 # Plot of Prob YSO vs recall/precision
@@ -432,7 +460,7 @@ ax2.set_yscale('log')
 
 lns = [a1, a2, a3, a4]
 ax2.legend(handles=lns, loc='lower left')
-plt.savefig('Prob_YSO_vs_metric_'+date+'.png',dpi=300)
+plt.savefig('Figures/Prob_YSO_vs_metric_'+date+'.png',dpi=300)
 
 
 
@@ -463,19 +491,4 @@ axs[3][0].set_title('F770W')
 axs[3][1].set_title('F1130W')
 axs[4][0].set_title('F1280W')
 axs[4][1].set_title('F1800W')
-plt.savefig("Brightness_Band_YSO_"+date+".png",dpi=300)
-
-#----------------------------------------------------------
-#ROC Curve
-from sklearn.metrics import RocCurveDisplay
-tar_va= CC_Webb_Classified[~CC_Webb_Classified['SPICY_Class_0/1'].isna()][['SPICY_Class_0/1']].values
-prob_va = CC_Webb_Classified[~CC_Webb_Classified['SPICY_Class_0/1'].isna()].values
-
-RocCurveDisplay.from_predictions(tar_va,pred_va,pos_label=0)
-plt.savefig('ROC_Curve_'+date+'.png',dpi=300)
-#----------------------------------------------------------
-#Precision-Recall Curve
-from sklearn.metrics import PrecisionRecallDisplay
-
-PrecisionRecallDisplay.from_predictions(tar_va,prob_va,pos_label=0)
-plt.savefig('PR_Curve_'+date+'.png',dpi=300)
+plt.savefig("Figures/Brightness_Band_YSO_"+date+".png",dpi=300)
