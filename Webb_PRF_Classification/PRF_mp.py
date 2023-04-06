@@ -10,12 +10,9 @@ import warnings
 warnings.filterwarnings('ignore')
 
 date = 'Feb172023'
-webb_inp = pd.read_csv('CC_Catalog_Feb172023.csv')
-# webb_inp = pd.read_csv('CC_Catalog.csv')
-
-# val_df = pd.read_csv('CC_Webb_Predictions_Prob_Dec192022_Spitz_ONLY.csv')
-val_df = pd.read_csv('CC_Catalog_Feb172023_SPICY_Preds.csv').dropna(subset=['SPICY_Class_0/1'])
-train_df = pd.read_csv('/Users/breannacrompvoets/Documents/Star_Formation/Non-tracked_Notebooks/Augmented_data_prob.csv')
+webb_inp = pd.read_csv('CC_Catalog_'+date+'.csv')
+val_df = pd.read_csv('CC_Catalog_'+date+'_SPICY_Preds.csv').dropna(subset=['SPICY_Class_0/1'])
+train_df = pd.read_csv('Augmented_data_prob.csv')
 all_inp = val_df
 
 cont = True
@@ -35,6 +32,10 @@ target_tr = train_df[['SPICY_Class_0/1']].to_numpy()
 input_va = val_df[bands].to_numpy()
 target_va = val_df[['SPICY_Class_0/1']].to_numpy()
 
+# inp_tr, tar_tr = replicate_data_single(input_tr,target_tr,amounts=[len(target_tr[target_tr==0]),len(target_tr[target_tr==1])])
+# inp_va, tar_va = replicate_data_single(input_va,target_va,amounts=[len(target_va[target_va==0]),len(target_va[target_va==1])])
+
+# inp_te = webb_inp[np.array(bands1)].to_numpy()
 
 def get_best_prf(i1,i2,i3,i4,i5,i6,i7,i8,i9,i10):
     inds = np.array([i1,i2,i3,i4,i5,i6,i7,i8,i9,i10])
@@ -47,11 +48,11 @@ def get_best_prf(i1,i2,i3,i4,i5,i6,i7,i8,i9,i10):
     inp_tr, prob_tr = inp_tr[:,:-1], inp_tr[:,-1]
     inp_va, prob_va = inp_va[:,:-1], inp_va[:,-1]
     dy_tr = np.array([np.array([x,1-x]) for x in prob_tr])
-    # dy_va = np.array([np.array([x,1-x]) for x in prob_va])
-    prf_cls = prf(n_estimators=100, bootstrap=False, keep_proba=0.75)
+    
+    prf_cls = prf(n_estimators=100, bootstrap=False, keep_proba=0.5)
     prf_cls.fit(X=inp_tr[:,inds], dX=inp_tr[:,inds+1], py=dy_tr)#y=tar_tr
     pred_va = prf_cls.predict(X=inp_va[:,inds],dX=inp_va[:,inds+1])
-
+    pred_tr = prf_cls.predict(inp_tr[:,inds],inp_tr[:,inds+1])
     if (f1_score(tar_va,pred_va,average=None)[0] > max_f1):
             
         max_prf = prf_cls
@@ -78,18 +79,18 @@ tic = time.perf_counter()
 iters = [all_inds] * 100
 with mp.Pool(1) as pool:
     ans = pool.starmap(get_best_prf,iters)
-
-
 toc = time.perf_counter()
 print(f"Completed the bootstrapping in {(toc - tic)/60:0.2f} minutes!\n\n")
 
 pred_tes = list(map(list, zip(*ans)))[0]
 num_yso = list(map(list, zip(*ans)))[1]
 max_f1 = list(map(list, zip(*ans)))[2]
-
 print("Shape of predictions:",np.shape(pred_tes))
 print("Shape of num_ysos:",np.shape(num_yso))
 print("Shape of max_f1:",np.shape(max_f1))
+
+np.savetxt("Num_YSOs_"+date, num_yso)
+np.savetxt("Max_f1s_"+date, max_f1)
 #-----------------------------------------
 
 # To determine classification, use mean of each row to determine probability of that object being a star. 
@@ -164,6 +165,46 @@ CC_Webb_Classified.to_csv('CC_Webb_Predictions_Prob_'+date+'.csv')
 
 
 #----------------------------------------------------------------------------
+# Make table of Reiter, SPICY, and our own classifications
+
+reit = ["10:36:42.3 -58:38:04", "10:36:48.0 -58:38:19", "10:36:47.3 -58:38:10", "10:36:46.7 -58:38:05", "10:36:51.5 -58:37:54", "10:36:50.5 -58:37:52",\
+    "10:36:51.4 -58:37:48", "10:36:53.8 -58:37:48", "10:36:51.5 -58:37:10", "10:36:54.2 -58:36:26", "10:36:54.4 -58:36:18", "10:36:54.0 -58:37:20",\
+        "10:36:53.6 -58:35:20", "10:36:53.1 -58:37:37", "10:36:53.3 -58:37:54", "10:36:52.7 -58:38:05", "10:36:53.1 -58:37:08", "10:36:51.6 -58:36:58",\
+        "10:36:52.3 -58:38:09", "10:36:53.9 -58:36:29", "10:37:01.5 -58:37:51", "10:37:02.1 -58:36:58", "10:36:53.9 -58:36:32"]# End of third row is the end of MHO-only sources
+r_1 = SkyCoord(reit,unit=(u.hourangle, u.deg))
+
+reit_name = ['MHO1632','MHO1633','MHO1634','MHO1635','MHO1636','MHO1637','MHO1638','MHO1639, HH1221, HH1003A','MHO1640','MHO1643, HH1218','MHO1645, MHO1646','MHO1647, HH1002C','MHO1649','MHO1650',\
+    'MHO1651','MHO1652','MHO1641a','MHO1641b','HH1219','HH1223','HHc-3','HHc-4','HHc-5']
+
+tab_preds = open("Table_Reiter_SPICY_YSO.txt",'w')
+tab_preds.write("\citet{Kuhn2021} & \citet{Reiter2022} & Our Work \\\ \hline \n")
+
+j_sky = SkyCoord(CC_Webb_Classified.RA*u.deg,CC_Webb_Classified.DEC*u.deg)
+r_inds, sep2d, _ = match_coordinates_sky(r_1, j_sky, nthneighbor=1, storekdtree='kdtree_sky')
+sp_inds = CC_Webb_Classified.dropna(subset=['SPICY']).index
+_, inds_of_match = np.unique(np.r_[r_inds,sp_inds], return_index=True)
+matched_inds = np.r_[r_inds,sp_inds][np.sort(inds_of_match)]
+for i, m in enumerate(matched_inds):
+    df_tmp = CC_Webb_Classified.iloc[m]
+    if df_tmp[['Class']].values[0]==1:
+        y_or_s = 'C'
+    else:
+        y_or_s = 'YSO'
+    if m in r_inds:
+        if m in sp_inds:
+            tab_preds.write(f"{df_tmp.SPICY_Class}- SPICY {df_tmp.SPICY} & {reit_name[i]} & {y_or_s} \\\ \n")
+        else:
+            tab_preds.write(f"- & {reit_name[i]} & {y_or_s} \\\ \n")
+    else:
+        tab_preds.write(f"{df_tmp.SPICY_Class}- SPICY {df_tmp.SPICY} & - & {y_or_s} \\\ \n")
+
+tab_preds.close()
+
+
+#TMP - Make matches to Reiter have those RA/DEC
+CC_Webb_Classified.iloc[r_inds].RA = r_1.ra
+CC_Webb_Classified.iloc[r_inds].DEC = r_1.dec
+
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 
@@ -210,6 +251,15 @@ nyso_f1s = pd.DataFrame(data={"F1-Scores": max_f1, "Num YSO": num_yso})
 nyso_f1s.to_csv("NumYSOs_F1Scores_"+date+".csv")
 
 #----------------------------------------
+# Just hist
+
+fig, ax = plt.subplots(figsize=(10,10),dpi=300)
+ax.hist(num_yso,bins=np.arange(xmin,xmax,50))
+ax.set_xlabel('Amount of objects classified as YSOs')
+plt.savefig("Figures/Num_YSOs_"+date+".png",dpi=300)
+
+
+#----------------------------------------
 # confusion matrix
 tar_va = CC_Webb_Classified.dropna(subset='SPICY_Class_0/1')[['SPICY_Class_0/1']].values.astype(int)
 pred_va = CC_Webb_Classified.dropna(subset='SPICY_Class_0/1')[['Class']].values
@@ -242,12 +292,6 @@ ymax, ymin = ax.get_ylim()
 xmax, xmin = ax.get_xlim()
 
 
-
-reit = ["10:36:42.3 -58:38:04", "10:36:48.0 -58:38:19", "10:36:47.3 -58:38:10", "10:36:46.7 -58:38:05", "10:36:51.5 -58:37:54", "10:36:50.5 -58:37:52",\
-    "10:36:51.4 -58:37:48", "10:36:53.8 -58:37:48", "10:36:51.5 -58:37:10", "10:36:54.2 -58:36:26", "10:36:54.4 -58:36:18", "10:36:54.0 -58:37:20",\
-        "10:36:53.6 -58:35:20", "10:36:53.1 -58:37:37", "10:36:53.3 -58:37:54", "10:36:52.7 -58:38:05", "10:36:53.1 -58:37:08", "10:36:51.6 -58:36:58",\
-        "10:36:52.3 -58:38:09", "10:36:53.9 -58:36:29", "10:37:01.5 -58:37:51", "10:37:02.1 -58:36:58", "10:36:53.9 -58:36:32"]# End of third row is the end of MHO-only sources
-r_1 = SkyCoord(reit,unit=(u.hourangle, u.deg))
 ra_1 = r_1.ra
 dec_1 = r_1.dec
 
@@ -271,35 +315,6 @@ ax.grid(False)
 # plt.ylabel('DEC')
 
 plt.savefig(f"CC_w_Reiter_SPICYtr_Label_{filter}_"+date+".png",dpi=300)
-
-#--------------------------------------------------------------------
-# Make table of Reiter, SPICY, and our own classifications
-reit_name = ['MHO1632','MHO1633','MHO1634','MHO1635','MHO1636','MHO1637','MHO1638','MHO1639, HH1221, HH1003A','MHO1640','MHO1643, HH1218','MHO1645, MHO1646','MHO1647, HH1002C','MHO1649','MHO1650',\
-    'MHO1651','MHO1652','MHO1641a','MHO1641b','HH1219','HH1223','HHc-3','HHc-4','HHc-5']
-
-tab_preds = open("Table_Reiter_SPICY_YSO.txt",'w')
-tab_preds.write("\citet{Kuhn2021} & \citet{Reiter2022} & Our Work \\\ \hline \n")
-
-j_sky = SkyCoord(CC_Webb_Classified.RA*u.deg,CC_Webb_Classified.DEC*u.deg)
-r_inds, sep2d, _ = match_coordinates_sky(r_1, j_sky, nthneighbor=1, storekdtree='kdtree_sky')
-sp_inds = CC_Webb_Classified.dropna(subset=['SPICY']).index
-_, inds_of_match = np.unique(np.r_[r_inds,sp_inds], return_index=True)
-matched_inds = np.r_[r_inds,sp_inds][np.sort(inds_of_match)]
-for i, m in enumerate(matched_inds):
-    df_tmp = CC_Webb_Classified.iloc[m]
-    if df_tmp[['Class']].values[0]==1:
-        y_or_s = 'Cont.'
-    else:
-        y_or_s = 'YSO'
-    if m in r_inds:
-        if m in sp_inds:
-            tab_preds.write(f"{df_tmp.SPICY_Class}- SPICY {df_tmp.SPICY} & {reit_name[i]} & {y_or_s} \\\ \n")
-        else:
-            tab_preds.write(f" & {reit_name[i]} & {y_or_s} \\\ \n")
-    else:
-        tab_preds.write(f"{df_tmp.SPICY_Class}- SPICY {df_tmp.SPICY} &  & {y_or_s} \\\ \n")
-
-tab_preds.close()
 
 
 #--------------------------------------------------------------------
