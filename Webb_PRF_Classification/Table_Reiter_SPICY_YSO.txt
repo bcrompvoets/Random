@@ -22,23 +22,23 @@ FS       - SPICY 7440.0 & HH1223 & YSO \\
 - & HHc-3 & C \\ 
 ClassII  - SPICY 7467.0 & HHc-4 & YSO \\ 
 - & HHc-5 & C \\ 
-ClassII  - SPICY 7428.0 & - & YSO \\ 
-ClassI   - SPICY 7435.0 & - & YSO \\ 
-FS       - SPICY 7448.0 & - & YSO \\ 
-ClassII  - SPICY 7464.0 & - & YSO \\ 
-FS       - SPICY 7465.0 & - & YSO \\ 
 FS       - SPICY 7454.0 & - & YSO \\ 
+ClassII  - SPICY 7428.0 & - & YSO \\ 
+FS       - SPICY 7461.0 & - & YSO \\ 
+ClassI   - SPICY 7435.0 & - & YSO \\ 
+FS       - SPICY 7473.0 & - & YSO \\ 
+FS       - SPICY 7448.0 & - & YSO \\ 
+FS       - SPICY 7465.0 & - & YSO \\ 
+ClassII  - SPICY 7475.0 & - & YSO \\ 
 ClassII  - SPICY 7444.0 & - & YSO \\ 
 ClassII  - SPICY 7447.0 & - & YSO \\ 
 ClassI   - SPICY 7469.0 & - & YSO \\ 
-FS       - SPICY 7461.0 & - & YSO \\ 
-FS       - SPICY 7473.0 & - & YSO \\ 
+ClassII  - SPICY 7452.0 & - & YSO \\ 
 ClassII  - SPICY 7476.0 & - & YSO \\ 
-ClassII  - SPICY 7462.0 & - & C \\ 
-ClassII  - SPICY 7475.0 & - & YSO \\ 
+ClassII  - SPICY 7462.0 & - & YSO \\ 
 ClassII  - SPICY 7477.0 & - & YSO \\ 
+ClassII  - SPICY 7482.0 & - & YSO \\ 
 ClassII  - SPICY 7481.0 & - & YSO \\ 
 ClassII  - SPICY 7479.0 & - & YSO \\ 
-ClassII  - SPICY 7452.0 & - & YSO \\ 
-ClassII  - SPICY 7482.0 & - & YSO \\ 
+ClassII  - SPICY 7464.0 & - & YSO \\ 
 ClassII  - SPICY 7409.0 & - & YSO \\ 

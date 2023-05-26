@@ -8,7 +8,7 @@ date = 'Feb172023'
 
 # inp = pd.read_csv('catalog.csv' )
 # inp = pd.read_csv('/Users/breannacrompvoets/Documents/Star_Formation/YSO+Classification/Webb_PRF_Classification/CC_Webb_Predictions_Prob_Feb172023_Spitz_ONLY.csv')
-inp = pd.read_csv('CC_Catalog_'+date+'_SPICY_Preds.csv')[['isophotal_vegamag_f200w',
+inp = pd.read_csv('CC_Catalog_2_5sig'+date+'_SPICY_Preds.csv')[['isophotal_vegamag_f200w',
        'isophotal_vegamag_err_f200w', 'isophotal_vegamag_f090w',
        'isophotal_vegamag_err_f090w', 'isophotal_vegamag_f187n',
        'isophotal_vegamag_err_f187n', 'isophotal_vegamag_f335m',
@@ -134,6 +134,6 @@ inp_df = pd.DataFrame(data=np.hstack((inp,err,tar.reshape(-1,1),prob.reshape(-1,
        'isophotal_vegamag_err_f1130w', 'isophotal_vegamag_err_f1280w',
        'isophotal_vegamag_err_f1800w', 'SPICY_Class_0/1', 'SPICY_Prob'])
 
-inp_df.to_csv("Augmented_data_prob.csv")
+inp_df.to_csv("Augmented_data_prob_2_5sig.csv")
 print(f'Augmented data has {len(inp_df)}, with {len(inp_df)/2} YSOs and {len(inp_df)/2} contaminants')
 print("Done making augmented data!")

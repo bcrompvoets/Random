@@ -9,10 +9,10 @@ from sklearn.metrics import ConfusionMatrixDisplay,accuracy_score,f1_score,class
 import warnings
 warnings.filterwarnings('ignore')
 
-date = 'Feb172023'
+date = '2_5sigFeb172023'
 webb_inp = pd.read_csv('CC_Catalog_'+date+'.csv')
 val_df = pd.read_csv('CC_Catalog_'+date+'_SPICY_Preds.csv').dropna(subset=['SPICY_Class_0/1'])
-train_df = pd.read_csv('Augmented_data_prob.csv')
+train_df = pd.read_csv('Augmented_data_prob_2_5sig.csv')
 all_inp = val_df
 
 cont = True
