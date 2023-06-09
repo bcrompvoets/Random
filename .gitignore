@@ -5,3 +5,4 @@ Webb_PRF_Classification/*.fits
 Webb_PRF_Classification/*.DS_Store
 # Webb_PRF_Classification/make_cat_tmp.ipynb
 Webb_PRF_Classification/JN_CSV_to_numpy_Spitzer.ipynb
+Webb_PRF_Classification/Data
