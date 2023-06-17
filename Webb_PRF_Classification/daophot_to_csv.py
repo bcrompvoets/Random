@@ -10,7 +10,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-date = 'May302023'
+date = 'June132023'
 filepath = "/Users/breannacrompvoets/DAOPHOT/NGC3324/RESULTS_MJYSR/"
 
 # Open file
@@ -19,6 +19,50 @@ dao = pd.read_csv(filepath+"ngc3324_3_pi.raw", header=None,delim_whitespace=True
 dao.set_index('Index',inplace=True)
 dao.where(dao!=99.9999, np.nan,inplace=True)
 dao.where(dao!=9.9999, np.nan,inplace=True)
+
+# Correct ZPs
+filters = ['f090w','f187n','f200w','f335m','f444w','f470n']
+head = ['ID', 'x', 'y', 'mag_1','mag_2','mag_3','mag_4','mag_5','mag_6','mag_7','mag_8','mag_9','mag_10','mag_11','mag_12']
+zps= []
+for filt in filters:
+
+    ap_test_adu = pd.read_csv("/users/breannacrompvoets/DAOPHOT/NGC3324/"+filt+"_zp.ap", header=None,delim_whitespace=True, skiprows=3, names=head).iloc[::2, :]
+    ap_test_mjysr = pd.read_csv("~/DAOPHOT/NGC3324/RESULTS_MJYSR/"+filt+"_zp_jy.ap", header=None,delim_whitespace=True, skiprows=3, names=head).iloc[::2, :]
+    ap_test_adu.where(ap_test_adu!=99.999, np.nan,inplace=True)
+    ap_test_adu.where(ap_test_adu!=-99.999, np.nan,inplace=True)
+    ap_test_mjysr.where(ap_test_mjysr!=99.999, np.nan,inplace=True)
+    ap_test_mjysr.where(ap_test_mjysr!=-99.999, np.nan,inplace=True)
+    ap_test_mjysr.where(ap_test_mjysr!=98.999, np.nan,inplace=True)
+    ap_test_mjysr.where(ap_test_mjysr!=-98.999, np.nan,inplace=True)
+    hdu = fits.open(f'/users/breannacrompvoets/DAOPHOT/NGC3324/RESULTS_MJYSR/'+filt+'.fits')
+    k = ap_test_adu.mag_11-ap_test_mjysr.mag_11#*hdu[0].header['PIXAR_SR']*10**6*np.pi*rads[-2]**2) # flux in Jy is flux in MJy/sr * sr/px * Jy/MJy * area of aperature in pix, conversion absorbed into k
+    zps.append(np.nanmean(k))
+veg_zp = [26.29,22.37,25.60,23.78,24.30,20.22]
+for f, filt in enumerate(filters):
+    dao[filt] = veg_zp[f]-(dao[filt]+zps[f])
+
+# Add in colours and deltas
+dao_tmp =dao.copy()
+dao_tmp.dropna(inplace=True)
+for filt in filters:
+    dao_tmp = dao_tmp[dao_tmp['e_'+filt]<0.05]
+dao["f090w-f444w"] = dao['f090w'] - dao['f444w']
+dao["e_f090w-f444w"] = np.sqrt(dao['e_f090w'].values**2+dao['e_f444w'].values**2)
+for f, filt in enumerate(filters):
+    dao[filt+"-"+filters[f+1]] = dao[filt] - dao[filters[f+1]]
+    dao["e_"+filt+"-"+filters[f+1]] = np.sqrt(dao["e_"+filt].values**2 + dao["e_"+filters[f+1]].values**2)
+    lin_fit = np.polyfit(dao_tmp['f090w'] - dao_tmp['f444w'], dao_tmp[filt]-dao_tmp[filters[f+1]], 1)
+    dao["δ_"+filt+"-"+filters[f+1]] = dao[filt]-dao[filters[f+1]] - (lin_fit[0] * (dao['f090w'] - dao['f444w']) + lin_fit[1])
+    dao["e_δ_"+filt+"-"+filters[f+1]] = np.sqrt(dao['e_'+filt].values**2+dao['e_'+filters[f+1]].values**2)
+    if f == len(filters)-2:
+        break
+
+dao["(f090w-f200w)-(f200w-f444w)"] = dao['f090w']-2*dao['f200w']+dao['f444w']
+dao["e_δ_(f090w-f200w)-(f200w-f444w)"] = np.sqrt(dao['e_f090w'].values**2+2*dao['e_f200w'].values**2+dao['e_f444w'].values**2)
+lin_fit = np.polyfit(dao_tmp['f090w'] - dao_tmp['f444w'], dao_tmp['f090w']-2*dao_tmp['f200w']+dao_tmp['f444w'], 1)
+dao["δ_(f090w-f200w)-(f200w-f444w)"] = dao['f090w']-2*dao['f200w']+dao['f444w'] - (lin_fit[0] * (dao['f090w'] - dao['f444w']) + lin_fit[1])
+dao["e_δ_(f090w-f200w)-(f200w-f444w)"] = np.sqrt(dao['e_f090w'].values**2+2*dao['e_f200w'].values**2+dao['e_f444w'].values**2)
+
 
 # Get RA/DEC match
 hdu = fits.open(filepath+"f090w.fits")
@@ -41,23 +85,23 @@ dao_tab = Table.from_pandas(dao,units=unts)
 from astropy.io.votable import from_table, writeto
 dao_votab = from_table(dao_tab)
 
-writeto(dao_votab, filepath+f"DAOPHOT_Version_3_{date}.xml")
+writeto(dao_votab, filepath+f"DAOPHOT_{date}.xml")
 
 # Match to Spitzer
 
 # Add SPICY Predictions
-spit2m_cat = pd.read_csv('../Archive/Phase_4__2MASS_UpperLim_Classification/Scripts/NGC_3324_w_Preds.csv')[['RAJ2000','DEJ2000','mag_IR1','e_mag_IR1','mag_IR2','e_mag_IR2','mag_IR3','e_mag_IR3','mag_IR4','e_mag_IR4']]
-# spicy_cat = pd.read_csv('../Archive/SPICY_YSO_SubClasses.csv',comment='#')
-ALL_cat = pd.read_csv('All_YSOs_RADEC.csv')
-IR_cat = ALL_cat[ALL_cat.Survey=='IR (Ohlendorf et al. 2013)']
-print(IR_cat.Survey[0])
+# spit2m_cat = pd.read_csv('../Archive/Phase_4__2MASS_UpperLim_Classification/Scripts/NGC_3324_w_Preds.csv')[['RAJ2000','DEJ2000','mag_IR1','e_mag_IR1','mag_IR2','e_mag_IR2','mag_IR3','e_mag_IR3','mag_IR4','e_mag_IR4']]
+spicy_cat = pd.read_csv('/Users/breannacrompvoets/Documents/Star_Formation/YSO+Classification/Webb_PRF_Classification/Archive/SPICY_GaiaEDR3.csv',comment='#')
+spicy_cat.dropna(subset=['ra_GaiaEDR3','dec_GaiaEDR3'],inplace=True)
+# ALL_cat = pd.read_csv('/Users/breannacrompvoets/Documents/Star_Formation/YSO+Classification/Webb_PRF_Classification/Data/All_YSOs_RADEC.csv')
+# IR_cat = ALL_cat[ALL_cat.Survey=='IR (Ohlendorf et al. 2013)']
 
 
 # SPITZER data
 # Match to JWST catalog using astropy match_catalog_sky
 # Obtain SkyCoords
 j_sky = SkyCoord(dao.RA*u.deg, dao.DEC*u.deg)
-s2_sky = SkyCoord(spit2m_cat.RAJ2000*u.deg, spit2m_cat.DEJ2000*u.deg)
+s2_sky = SkyCoord(spicy_cat.ra_GaiaEDR3*u.deg, spicy_cat.dec_GaiaEDR3*u.deg)
 # Set tolerance - matched objects that are at most this far apart are considered one object
 tol = 0.003 #in degrees #max(catalog['size'])
 # Match
@@ -66,11 +110,11 @@ sep_constraint = sep2d < tol*u.deg
 print("Number of Spitzer sources found:",np.count_nonzero(sep_constraint))
 # Make new data frames which contain only the matched data, in the order of it's matching
 j_matches = dao.iloc[idx[sep_constraint]]
-s2_matches = spit2m_cat.iloc[sep_constraint]
+s2_matches = spicy_cat.iloc[sep_constraint]
 # Reset the indices in order to match between two catalogues using pd concat
 j_matches.reset_index(drop=True,inplace=True)
 s2_matches.reset_index(drop=True,inplace=True)
-jwst_spitz_cat = pd.concat([j_matches,s2_matches],axis=1)
+jwst_spitz_cat = pd.concat([j_matches,s2_matches[['yso_candidate','p1']]],axis=1)
 
 # SPICY predictions
 # Match to JWST catalog using astropy match_catalog_sky
@@ -89,12 +133,12 @@ jwst_spitz_cat = pd.concat([j_matches,s2_matches],axis=1)
 
 
 # Match to JWST catalog using astropy match_catalog_sky
-j_sky = SkyCoord(jwst_spitz_cat.RAJ2000*u.deg, jwst_spitz_cat.DEJ2000*u.deg)
-sp_sky = SkyCoord(IR_cat.RA*u.deg, IR_cat.DEC*u.deg)
-idx, sep2d, _ = match_coordinates_sky(sp_sky, j_sky, nthneighbor=1, storekdtree='kdtree_sky')
-sep_constraint = sep2d < tol*u.deg
-jwst_spitz_cat['Class'] = [1]*len(jwst_spitz_cat)
-jwst_spitz_cat.loc[idx[sep_constraint],'Class'] = [0]*len(idx[sep_constraint])
+# j_sky = SkyCoord(jwst_spitz_cat.RAJ2000*u.deg, jwst_spitz_cat.DEJ2000*u.deg)
+# sp_sky = SkyCoord(IR_cat.RA*u.deg, IR_cat.DEC*u.deg)
+# idx, sep2d, _ = match_coordinates_sky(sp_sky, j_sky, nthneighbor=1, storekdtree='kdtree_sky')
+# sep_constraint = sep2d < tol*u.deg
+# jwst_spitz_cat['Class'] = [1]*len(jwst_spitz_cat)
+# jwst_spitz_cat.loc[idx[sep_constraint],'Class'] = [0]*len(idx[sep_constraint])
 # Connect IR predictions to JWST/Spitzer matched catalogue
 
 
