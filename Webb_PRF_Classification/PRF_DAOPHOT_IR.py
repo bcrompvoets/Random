@@ -9,161 +9,15 @@ from sklearn.metrics import ConfusionMatrixDisplay,accuracy_score,f1_score,class
 import warnings
 warnings.filterwarnings('ignore')
 
-date = 'May302023'
-webb_inp = pd.read_csv(f'DAOPHOT_Catalog_{date}_IR.csv')
-val_df = pd.read_csv(f'DAOPHOT_Catalog_{date}_SPICY_Preds.csv').dropna(subset=['SPICY_Class_0/1'])
-train_df = pd.read_csv(f"Augmented_data_{date}.csv")
-all_inp = val_df
+date = 'June192023'
+CC_Webb_Classified = pd.read_csv(f'CC_Classified')#f'CC_Classified_DAOPHOT_{date}.csv'
+dao_IR = pd.read_csv(f'DAOPHOT_Catalog_{date}_IR.csv')
+
 date = 'DAOPHOT_'+ date
-cont = True
-amounts_te = []
-# 090, 187, 200, 335, 444, 470, 770, 1130, 1280, 1800
-inds = np.array([0,2,4,6,8,10])
 
-bands = [idx for idx in webb_inp.columns.values if (idx[0].lower() == 'f'.lower()) or (idx[:3].lower() == 'e_f'.lower())]
-
-print(np.array(bands)[np.array(inds)])
-
-# input_tr = input_va = train_df[bands].to_numpy()
-# target_tr = target_va = train_df[['SPICY_Class_0/1']].to_numpy()
-input_tr = train_df[bands].to_numpy()
-target_tr = train_df[['Class']].to_numpy()
-input_va = val_df[bands].to_numpy()
-target_va = val_df[['SPICY_Class_0/1']].to_numpy()
-print(np.unique(target_tr))
-print(np.unique(target_va))
-
-# inp_tr, tar_tr = replicate_data_single(input_tr,target_tr,amounts=[len(target_tr[target_tr==0]),len(target_tr[target_tr==1])])
-# inp_va, tar_va = replicate_data_single(input_va,target_va,amounts=[len(target_va[target_va==0]),len(target_va[target_va==1])])
-
-# inp_te = webb_inp[np.array(bands1)].to_numpy()
-
-# def get_best_prf(i1,i2,i3,i4,i5,i6):
-    # inds = np.array([i1,i2,i3,i4,i5,i6])
-    # max_f1 = 0.0
-    # for i in np.arange(0,10,2):
-seed = int(np.random.default_rng().random()*np.random.default_rng().random()*10000)
-inp_tr, tar_tr = replicate_data_single(input_tr,target_tr,amounts=[len(target_tr[target_tr==0]),int(len(target_tr[target_tr==1]))],seed=42)
-inp_va, tar_va = replicate_data_single(input_va,target_va,amounts=[len(target_va[target_va==0]),len(target_va[target_va==1])],seed=42)
-
-# inp_tr, prob_tr = inp_tr[:,:-1], inp_tr[:,-1]
-# inp_va, prob_va = inp_va[:,:-1], inp_va[:,-1]
-# dy_tr = np.array([np.array([x,1-x]) for x in prob_tr])
-
-prf_cls = prf(n_estimators=1000, bootstrap=False, keep_proba=0.5)
-prf_cls.fit(X=inp_tr[:,inds], dX=inp_tr[:,inds+1], y=tar_tr)
-pred_va = prf_cls.predict(X=inp_va[:,inds],dX=inp_va[:,inds+1])
-pred_tr = prf_cls.predict(inp_tr[:,inds],inp_tr[:,inds+1])
-# if (f1_score(tar_va,pred_va,average=None)[0] > max_f1):
-        
-max_prf = prf_cls
-max_f1 = f1_score(tar_va,pred_va,average=None)[0]
-    
-
-inp_te = webb_inp[np.array(bands)].to_numpy()
-tar_te = webb_inp.Class.values
-pred_te_max = max_prf.predict(X=inp_te[:,inds], dX=inp_te[:,inds+1]) 
-num_yso = len(pred_te_max[pred_te_max==0]) 
-
-print("F1-Scores:\n Training is ",f1_score(tar_tr,pred_tr,average=None)[0],"\n Validation (SPICY) is ",f1_score(tar_va,pred_va,average=None)[0], "\nTest (IR sources) is ",f1_score(tar_te,pred_te_max,average=None)[0])
-
-    # return pred_te_max, num_yso, max_f1
-
-
-# ##-------------------------------------------
-# # Parallelize
-# # pred_tes, num_yso, max_f1 = get_best_prf(0, 2, 4, 6, 8, 10, 12, 14, 16, 18)
-# all_inds = np.array([0, 2, 4, 6, 8, 10])
-# print("Starting bootstrapping!")
-# import multiprocess as mp
-# import time
-# tic = time.perf_counter()
-# iters = [all_inds] * 10
-# with mp.Pool(1) as pool:
-#     ans = pool.starmap(get_best_prf,iters)
-# toc = time.perf_counter()
-# print(f"Completed the bootstrapping in {(toc - tic)/60:0.2f} minutes!\n\n")
-
-# pred_tes = list(map(list, zip(*ans)))[0]
-# num_yso = list(map(list, zip(*ans)))[1]
-# max_f1 = list(map(list, zip(*ans)))[2]
-# print("Shape of predictions:",np.shape(pred_tes))
-# print("Shape of num_ysos:",np.shape(num_yso))
-# print("Shape of max_f1:",np.shape(max_f1))
-
-# np.savetxt("Num_YSOs_"+date, num_yso)
-# np.savetxt("Max_f1s_"+date, max_f1)
-# #-----------------------------------------
-
-# # To determine classification, use mean of each row to determine probability of that object being a star. 
-# # If the probability to be a star is less than 50%, then the object is a YSO with probability 1-mean
-# # Make two columns: final class, and probability of being that class
-# p_star = np.nanmean(pred_tes,axis=0)
-# preds = np.zeros(len(p_star))
-# preds[p_star>0.5] = 1 #If there is at least a 50% probability that the object is a star, it is labelled as a star. Otherwise it is a YSO (with 80% probability)
-# p_yso = 1-p_star
-
-# print("Number of YSOs with prob>50\%:",len(preds[p_yso>0.5]))
-# # Make and save predictions/probabilities in csv
-# CC_Webb_Classified = pd.DataFrame()
-
-# CC_Webb_Classified['RA'] = webb_inp['RA']
-# CC_Webb_Classified['DEC'] = webb_inp[['DEC']].values
-# # CC_Webb_Classified['size'] = webb_inp[['size']].values
-# CC_Webb_Classified[np.array(bands)] = webb_inp[bands].values
-# CC_Webb_Classified['Class'] = preds
-# CC_Webb_Classified['Prob YSO'] = p_yso
-
-# ----------------------------------------
-# Put NANs back into all_inp
-
-# spitzer_bands = [idx for idx in all_inp.columns.values if (idx[:3].lower() == 'mag' or idx[:5].lower() == 'e_mag')]
-
-# for i, s in enumerate(spitzer_bands):
-#     if i%2 == 0:
-#         s_ind = all_inp[all_inp[s] == max(all_inp[s].values)].index
-#         all_inp[s].iloc[s_ind] = np.nan
-#     else:
-#         # s_ind = all_inp[all_inp[s] == max(all_inp[s].values)]
-#         all_inp[s].iloc[s_ind] = np.nan
-
-
-# #----------------------------------------
-# from astropy.coordinates import match_coordinates_sky,SkyCoord
-# import astropy.units as u
-# # ADD SPICY PREDS
-# j_sky = SkyCoord(CC_Webb_Classified.RA*u.deg,CC_Webb_Classified.DEC*u.deg)
-# sp_sky = SkyCoord(all_inp.RA*u.deg, all_inp.DEC*u.deg)
-
-# tol = 0.003# max(CC_Webb_Classified['size'])
-
-# idx, sep2d, _ = match_coordinates_sky(sp_sky, j_sky, nthneighbor=1, storekdtree='kdtree_sky')
-# sep_constraint = sep2d < tol*u.deg
-
-# print(np.count_nonzero(sep_constraint))
-
-# j_matches = CC_Webb_Classified.iloc[idx[sep_constraint]]
-# s2_matches = all_inp.iloc[sep_constraint]
-
-# j_matches.reset_index(inplace=True)
-# s2_matches.reset_index(drop=True,inplace=True)
-
-
-
-# spitzer_bands = [idx for idx in s2_matches.columns.values if (idx[:3].lower() == 'mag' or idx[:5].lower() == 'e_mag')]
-# spitzer_bands.append('SPICY_Class_0/1')
-# spitzer_bands.append('SPICY')
-# spitzer_bands.append('SPICY_Class')
-
-# jwst_spitz_spicy_cat = pd.concat([j_matches,s2_matches[spitzer_bands]],axis=1)
-# spicy_df_to_add = pd.DataFrame(data=jwst_spitz_spicy_cat[spitzer_bands].values,columns=spitzer_bands,index=jwst_spitz_spicy_cat['index'])
-# # CC_Webb_Classified = pd.concat([CC_Webb_Classified,spicy_df_to_add],axis=1)
-# df_to_add = pd.DataFrame()
-# df_to_add[spitzer_bands] = [[np.nan]*len(spitzer_bands)]*len(CC_Webb_Classified)
-# df_to_add.iloc[spicy_df_to_add.index] = spicy_df_to_add
-# CC_Webb_Classified[spitzer_bands] = df_to_add
-
-# CC_Webb_Classified.to_csv('CC_Webb_Predictions_Prob_'+date+'.csv')
+fcd_columns = [c for c in dao_IR.columns if c[0] == "f" or c[0]=='δ'or c[0]=='S']
+errs = ["e_"+f for f in fcd_columns]
+bands = fcd_columns+errs
 
 
 # #----------------------------------------------------------------------------
@@ -210,47 +64,53 @@ print("F1-Scores:\n Training is ",f1_score(tar_tr,pred_tr,average=None)[0],"\n V
 # #----------------------------------------------------------------------------
 # #----------------------------------------------------------------------------
 
-# # Make Plots
+# Make Plots
 
-# plt.style.use('ggplot')
-# plt.rcParams['font.size'] = 12
-# plt.rcParams['font.family'] = 'serif'
+plt.style.use('ggplot')
+plt.rcParams['font.size'] = 12
+plt.rcParams['font.family'] = 'serif'
 
 
 # #----------------------------------------------------------------------------
-# # Scatter plot with hists for number of YSOs vs F1-Score
+# Scatter plot with hists for number of YSOs vs F1-Score
+num_yso_rf = np.loadtxt("Data/Num_YSOs_RFDAOPHOT_June192023")
+num_yso_prf = np.loadtxt("Data/Num_YSOs_PRFDAOPHOT_June192023")
+max_f1_rf = np.loadtxt("Data/Max_f1s_RFDAOPHOT_June192023")
+max_f1_prf = np.loadtxt("Data/Max_f1s_PRFDAOPHOT_June192023")
+
 # print('Mean number of YSOs:',np.mean(num_yso), 'Median number of YSOs:', np.median(num_yso))
 # print('Mean F1-Score:',np.mean(max_f1), 'Median F1-Score:', np.median(max_f1), 'Standard deviation F1-Score:', np.std(max_f1))
-# print("Percent of number of objects above 100:",len(np.array(num_yso)[np.array(num_yso)>100])/len(np.array(num_yso))*100)
-# fig = plt.figure(figsize=(6, 6),dpi=300)
-# # Add a gridspec with two rows and two columns and a ratio of 1 to 4 between
-# # the size of the marginal axes and the main axes in both directions.
-# # Also adjust the subplot parameters for a square plot.
-# gs = fig.add_gridspec(2, 2,  width_ratios=(4, 1), height_ratios=(1, 4),
-#                       left=0.1, right=0.9, bottom=0.1, top=0.9,
-#                       wspace=0.05, hspace=0.05)
-# # Create the Axes.
-# ax = fig.add_subplot(gs[1, 0])
-# ax_histx = fig.add_subplot(gs[0, 0], sharex=ax)
-# ax_histy = fig.add_subplot(gs[1, 1], sharey=ax)
-# # Draw the scatter plot and marginals.
-# # scatter_hist(amounts_te, f1scores, ax, ax_histx, ax_histy)
+fig = plt.figure(figsize=(6, 6),dpi=300)
+fig.tight_layout()
+# Add a gridspec with two rows and two columns and a ratio of 1 to 4 between
+# the size of the marginal axes and the main axes in both directions.
+# Also adjust the subplot parameters for a square plot.
+gs = fig.add_gridspec(2, 2,  width_ratios=(4, 1), height_ratios=(1, 4),
+                      left=0.1, right=0.9, bottom=0.1, top=0.9,
+                      wspace=0.05, hspace=0.05)
+# Create the Axes.
+ax = fig.add_subplot(gs[1, 0])
+ax_histx = fig.add_subplot(gs[0, 0], sharex=ax)
+ax_histy = fig.add_subplot(gs[1, 1], sharey=ax)
+# Draw the scatter plot and marginals.
+# scatter_hist(amounts_te, f1scores, ax, ax_histx, ax_histy)
 
-# ax_histx.tick_params(axis="x", labelbottom=False)
-# ax_histy.tick_params(axis="y", labelleft=False)
-# ax.scatter(num_yso,max_f1)
-# xmin,xmax = ax.get_xlim()
-# ymin,ymax = ax.get_ylim()
-# ax_histx.hist(num_yso,bins=np.arange(xmin,xmax,50))#
-# ax_histy.hist(max_f1,bins=np.arange(ymin,ymax,0.01), orientation='horizontal')
-# ax.set_xlabel('Amount of objects classified as YSOs')
-# ax.set_ylabel('F1-Score of YSOs')
-# # ax.set_xscale('log')
+ax_histx.tick_params(axis="x", labelbottom=False)
+ax_histy.tick_params(axis="y", labelleft=False)
+ax.scatter(num_yso_rf,max_f1_rf,label='RF')
+ax.scatter(num_yso_prf,max_f1_prf,label='PRF')
+xmin,xmax = ax.get_xlim()
+ymin,ymax = ax.get_ylim()
+ax_histx.hist(num_yso_rf,bins=np.arange(xmin,xmax,5),histtype='step')#
+ax_histx.hist(num_yso_prf,bins=np.arange(xmin,xmax,5),histtype='step')#
+ax_histy.hist(max_f1_rf,bins=np.arange(ymin,ymax,0.005), orientation='horizontal',histtype='step')
+ax_histy.hist(max_f1_prf,bins=np.arange(ymin,ymax,0.005), orientation='horizontal',histtype='step')
+ax.set_xlabel('Amount of objects classified as YSOs')
+ax.set_ylabel('F1-Score of YSOs')
+# ax.set_xscale('log')
 
-# plt.savefig("Figures/F1-Scoresvs_Num_YSOs_"+date+".png",dpi=300)
+plt.savefig("Figures/F1-Scoresvs_Num_YSOs_"+date+".png",dpi=300)
 
-# nyso_f1s = pd.DataFrame(data={"F1-Scores": max_f1, "Num YSO": num_yso})
-# nyso_f1s.to_csv("NumYSOs_F1Scores_"+date+".csv")
 
 # #----------------------------------------
 # # Just hist
