@@ -1,0 +1,42 @@
+\citet{Kuhn2021} & \citet{Reiter2022} & Our Work \\ \hline 
+- & MHO1632 & C \\ 
+- & MHO1633 & C \\ 
+IR (Ohlendorf et al. 2013) - SPICY 7423.0 & MHO1634 & YSO \\ 
+- & MHO1635 & C \\ 
+- & MHO1636 & C \\ 
+- & MHO1637 & YSO \\ 
+- & MHO1638 & C \\ 
+- & MHO1639, HH1221, HH1003A & C \\ 
+- & MHO1640 & C \\ 
+- & MHO1643, HH1218 & C \\ 
+- & MHO1645, MHO1646 & C \\ 
+SPICY (Kuhn et al. 2021) - SPICY 7447.0 & MHO1647, HH1002C & YSO \\ 
+- & MHO1649 & C \\ 
+- & MHO1650 & C \\ 
+SPICY (Kuhn et al. 2021) - SPICY 7460.0 & MHO1651 & YSO \\ 
+- & MHO1652 & C \\ 
+- & MHO1641a & C \\ 
+- & MHO1641b & C \\ 
+SPICY (Kuhn et al. 2021) - SPICY 7466.0 & HH1219 & YSO \\ 
+- & HH1223 & C \\ 
+- & HHc-3 & C \\ 
+SPICY (Kuhn et al. 2021) - SPICY 7475.0 & HHc-4 & YSO \\ 
+- & HHc-5 & C \\ 
+SPICY (Kuhn et al. 2021) - SPICY 7478.0 & - & YSO \\ 
+IR (Ohlendorf et al. 2013) - SPICY 7480.0 & - & C \\ 
+SPICY (Kuhn et al. 2021) - SPICY 7481.0 & - & YSO \\ 
+nan - SPICY nan & - & YSO \\ 
+nan - SPICY nan & - & YSO \\ 
+nan - SPICY nan & - & YSO \\ 
+nan - SPICY nan & - & YSO \\ 
+nan - SPICY nan & - & YSO \\ 
+nan - SPICY nan & - & YSO \\ 
+nan - SPICY nan & - & YSO \\ 
+nan - SPICY nan & - & YSO \\ 
+nan - SPICY nan & - & YSO \\ 
+nan - SPICY nan & - & YSO \\ 
+nan - SPICY nan & - & YSO \\ 
+nan - SPICY nan & - & YSO \\ 
+nan - SPICY nan & - & C \\ 
+nan - SPICY nan & - & YSO \\ 
+nan - SPICY nan & - & YSO \\ 

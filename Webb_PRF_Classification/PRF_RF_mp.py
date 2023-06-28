@@ -19,7 +19,7 @@ date = 'DAOPHOT_'+ date
 cont = True
 amounts_te = []
 
-fcd_columns = [c for c in dao_IR.columns if c[0] == "f" or c[0]=='δ'or c[0]=='S']
+fcd_columns = [c for c in dao_aug.columns if c[0] == "f" or c[0]=='δ'or c[0]=='S']
 errs = ["e_"+f for f in fcd_columns]
 bands = fcd_columns+errs
 tars = ['Prob', 'Class']
@@ -103,7 +103,7 @@ print("Starting bootstrapping!")
 import multiprocess as mp
 import time
 tic = time.perf_counter()
-n = 1000
+n = 100
 
 with mp.Pool(6) as pool:
     ans_prf = pool.starmap(get_best_prf,[prf_inds] * n)

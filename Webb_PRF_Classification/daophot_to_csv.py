@@ -10,13 +10,13 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-date = 'June192023_alf'
+date = 'June192023'
 filepath = "/Users/breannacrompvoets/DAOPHOT/NGC3324/"
 filepath_dat_sv = "/Users/breannacrompvoets/Documents/Star_Formation/YSO+Classification/Webb_PRF_Classification/Data/"
 
 # Open file
 head = ['Index','x','y','f090w','e_f090w','f187n','e_f187n','f200w','e_f200w','f335m','e_f335m','f444w','e_f444w','f470n','e_f470n']
-dao = pd.read_csv(filepath+"ngc3324_pi_alf.raw", header=None,delim_whitespace=True, skiprows=3, names=head).iloc[::2, :]
+dao = pd.read_csv(filepath+"ngc3324_pi.raw", header=None,delim_whitespace=True, skiprows=3, names=head).iloc[::2, :]
 dao.set_index('Index',inplace=True)
 dao.where(dao!=99.9999, np.nan,inplace=True)
 dao.where(dao!=9.9999, np.nan,inplace=True)
@@ -100,24 +100,18 @@ writeto(dao_votab, filepath_dat_sv+f"XML Files/DAOPHOT_{date}.xml")
 tol = 0.00005
 yso_IR = pd.read_csv('IR_YSOs_RADEC_NGC3324.csv')
 cont_IR = pd.read_csv("IR_Conts_RADEC_NGC3324.csv")
-IR = pd.concat([yso_IR[['RA','DEC','Prob']].copy(), cont_IR.copy()])
+IR = pd.concat([yso_IR.copy(), cont_IR.copy()]) #[['RA','DEC','Prob']]
 IR.reset_index(inplace=True)
 
 ind, sep, _ = match_coordinates_sky(SkyCoord(IR.RA,IR.DEC,unit=u.deg),SkyCoord(dao.RA,dao.DEC,unit=u.deg))
-# import matplotlib.pyplot as plt
-# plt.hist([float(s) for s in sep/u.deg])
-# # plt.vlines(np.percentile(95,[float(s) for s in sep/u.deg]),ymin=0,ymax=200)
-# plt.show(block=False)
-# print(ind.shape)
-# print(sep.shape)
-# print(dao.loc[ind[1],['RA','DEC']],"\n \n \n",IR.loc[1,['RA','DEC']])
-# tol = input("Set tolerance to? ")
-# plt.close()
+
 
 dao_IR = dao.loc[ind[sep<tol*u.deg]]
 dao_IR['Prob'] = IR.loc[sep<tol*u.deg,'Prob'].values
 dao_IR['Class'] = [1]*len(dao_IR)
 dao_IR.loc[dao_IR.Prob>0.5,'Class'] = 0
+dao_IR['Survey'] = IR.loc[sep<tol*u.deg,'Survey'].values
+dao_IR['SPICY_ID'] = IR.loc[sep<tol*u.deg,'SPICY_ID'].values
 
 # Save Spitzer and JWST matched data
 dao_IR.to_csv(f"DAOPHOT_Catalog_{date}_IR.csv",index=False)
