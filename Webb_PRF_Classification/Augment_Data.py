@@ -30,7 +30,6 @@ inp_df = pd.read_csv(f"DAOPHOT_Catalog_{date}_IR.csv")[['f090w', 'e_f090w', 'f18
        '(f090w-f200w)-(f200w-f444w)', 'e_(f090w-f200w)-(f200w-f444w)',
        'δ_(f090w-f200w)-(f200w-f444w)', 'e_δ_(f090w-f200w)-(f200w-f444w)',
        'Sum1', 'e_Sum1','Prob','Class']].dropna()
-print(inp_df.columns)
 print('loading data, Done!')
 
 cat_t= inp_df.copy().values
@@ -45,12 +44,13 @@ tar_test= cat_t[:,-1]
 prob_test = cat_t[:,-2]
 
 
-print (len(cat_t))
 
 idx_0=(np.where(tar_test==0)[0])
 idx_1=(np.where(tar_test==1)[0])
 mag= inp_test 
 err= err_test 
+
+print (len(idx_0), len(idx_1))
 
 mag_0=mag[idx_0]  
 mag_1=mag[idx_1]  

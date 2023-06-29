@@ -23,10 +23,6 @@ bands = fcd_columns+errs
 
 # ----------------------------------------------------------------------------
 # Make table of Reiter, SPICY, and our own classifications
-CC_Webb_Classified['Init_Class'] = [np.nan]*len(CC_Webb_Classified)
-ind, sep, _ = match_coordinates_sky(SkyCoord(dao_IR.RA,dao_IR.DEC,unit=u.deg),SkyCoord(CC_Webb_Classified.RA,CC_Webb_Classified.DEC,unit=u.deg))
-CC_Webb_Classified.loc[ind,'Init_Class'] = dao_IR.Class.values
-
 
 reit = ["10:36:42.3 -58:38:04", "10:36:48.0 -58:38:19", "10:36:47.3 -58:38:10", "10:36:46.7 -58:38:05", "10:36:51.5 -58:37:54", "10:36:50.5 -58:37:52",\
     "10:36:51.4 -58:37:48", "10:36:53.8 -58:37:48", "10:36:51.5 -58:37:10", "10:36:54.2 -58:36:26", "10:36:54.4 -58:36:18", "10:36:54.0 -58:37:20",\
@@ -47,18 +43,22 @@ matched_inds = np.r_[r_inds,sp_inds][np.sort(inds_of_match)]
 
 for i, m in enumerate(matched_inds):
     df_tmp = CC_Webb_Classified.iloc[m]
-    df_tmp_ir = dao_IR.iloc[i]
-    if df_tmp[['Class_RF']].values[0]==1 or df_tmp[['Class_PRF']].values[0]==1:
-        y_or_s = 'C'
+    # df_tmp_ir = dao_IR.iloc[i]
+    if df_tmp[['Class_RF']].values[0]==0 and df_tmp[['Class_PRF']].values[0]==0:
+        y_or_s = 'YSO - PRF and RF'
+    elif df_tmp[['Class_RF']].values[0]==0:
+        y_or_s = 'YSO - RF'
+    elif df_tmp[['Class_PRF']].values[0]==0:
+        y_or_s = 'YSO - PRF'
     else:
-        y_or_s = 'YSO'
+        y_or_s = 'C'
     if m in r_inds:
         if m in sp_inds:
-            tab_preds.write(f"{df_tmp_ir.Survey} - SPICY {df_tmp_ir.SPICY_ID} & {reit_name[i]} & {y_or_s} \\\ \n")
+            tab_preds.write(f"{df_tmp.Survey} - SPICY {df_tmp.SPICY_ID} & {reit_name[i]} & {y_or_s} \\\ \n")
         else:
             tab_preds.write(f"- & {reit_name[i]} & {y_or_s} \\\ \n")
     else:
-        tab_preds.write(f"{df_tmp_ir.Survey} - SPICY {df_tmp_ir.SPICY_ID} & - & {y_or_s} \\\ \n")
+        tab_preds.write(f"{df_tmp.Survey} - SPICY {df_tmp.SPICY_ID} & - & {y_or_s} \\\ \n")
 
 tab_preds.close()
 
@@ -114,7 +114,7 @@ ax_histy.hist(max_f1_prf,bins=np.arange(ymin,ymax,0.005), orientation='horizonta
 ax.set_xlabel('Amount of objects classified as YSOs')
 ax.set_ylabel('F1-Score of YSOs')
 # ax.set_xscale('log')
-
+ax.legend(loc='upper right')
 plt.savefig("Figures/F1-Scoresvs_Num_YSOs_"+date+".png",dpi=300)
 
 
@@ -362,7 +362,7 @@ plt.savefig('Figures/Prob_YSO_vs_metric_'+date+'.png',dpi=300)
 
 fig, axs = plt.subplots(3,2,figsize=(6,8),dpi=300)
 fig.tight_layout()
-bins =np.arange(4,20,2)
+bins =np.arange(6,24,2)
 f = 0
 for i in range(0,3):
     for j in range(0,2):

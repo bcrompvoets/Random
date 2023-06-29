@@ -4,8 +4,9 @@ from custom_dataloader import replicate_data_single
 import matplotlib.pyplot as plt
 from PRF import prf
 from sklearn.ensemble import RandomForestClassifier
-
-from sklearn.metrics import ConfusionMatrixDisplay,accuracy_score,f1_score,classification_report,f1_score,recall_score,precision_score
+from sklearn.metrics import f1_score
+from astropy.coordinates import match_coordinates_sky,SkyCoord
+import astropy.units as u
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -165,8 +166,18 @@ CC_Webb_Classified['Prob_RF'] = [-99.999]*len(dao)
 CC_Webb_Classified.loc[dao.dropna().index,'Class_RF'] = preds_rf
 CC_Webb_Classified.loc[dao.dropna().index,'Prob_RF'] = p_yso_rf
 
+CC_Webb_Classified.to_csv(f"CC_Classified_{date}.csv",index=False)
+print("Saved CC_Webb_Classified in case of failure at next step.")
+
 # Add IR classifications for ease of comparison
+ind, sep, _ = match_coordinates_sky(SkyCoord(dao_IR.RA,dao_IR.DEC,unit=u.deg),SkyCoord(CC_Webb_Classified.RA,CC_Webb_Classified.DEC,unit=u.deg))
 
-
+CC_Webb_Classified['Init_Class'] = [np.nan]*len(CC_Webb_Classified)
+CC_Webb_Classified.loc[ind,'Init_Class'] = dao_IR.Class.values
+CC_Webb_Classified['Survey'] = [np.nan]*len(CC_Webb_Classified)
+CC_Webb_Classified.loc[ind,'Survey'] = dao_IR.Survey.values
+CC_Webb_Classified['SPICY_ID'] = [np.nan]*len(CC_Webb_Classified)
+CC_Webb_Classified.loc[ind,'SPICY_ID'] = dao_IR.SPICY_ID.values
 
 CC_Webb_Classified.to_csv(f"CC_Classified_{date}.csv",index=False)
+print("Classification finished and comparison to previous work added!")

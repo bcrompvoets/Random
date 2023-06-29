@@ -24,24 +24,23 @@ dao.where(dao!=9.9999, np.nan,inplace=True)
 # Correct ZPs
 # filters = ['f090w','f200w','f335m','f444w','f470n']
 filters = ['f090w','f187n','f200w','f335m','f444w','f470n']
-# head = ['ID', 'x', 'y', 'mag_1','mag_2','mag_3','mag_4','mag_5','mag_6','mag_7','mag_8','mag_9','mag_10','mag_11','mag_12']
-# zps= []
-# for filt in filters:
-
-#     ap_test_adu = pd.read_csv("/users/breannacrompvoets/DAOPHOT/NGC3324/"+filt+"_zp.ap", header=None,delim_whitespace=True, skiprows=3, names=head).iloc[::2, :]
-#     ap_test_mjysr = pd.read_csv("~/DAOPHOT/NGC3324/RESULTS_MJYSR/"+filt+"_zp_jy.ap", header=None,delim_whitespace=True, skiprows=3, names=head).iloc[::2, :]
-#     ap_test_adu.where(ap_test_adu!=99.999, np.nan,inplace=True)
-#     ap_test_adu.where(ap_test_adu!=-99.999, np.nan,inplace=True)
-#     ap_test_mjysr.where(ap_test_mjysr!=99.999, np.nan,inplace=True)
-#     ap_test_mjysr.where(ap_test_mjysr!=-99.999, np.nan,inplace=True)
-#     ap_test_mjysr.where(ap_test_mjysr!=98.999, np.nan,inplace=True)
-#     ap_test_mjysr.where(ap_test_mjysr!=-98.999, np.nan,inplace=True)
-#     hdu = fits.open(f'/users/breannacrompvoets/DAOPHOT/NGC3324/RESULTS_MJYSR/'+filt+'.fits')
-#     k = ap_test_adu.mag_11-ap_test_mjysr.mag_11#*hdu[0].header['PIXAR_SR']*10**6*np.pi*rads[-2]**2) # flux in Jy is flux in MJy/sr * sr/px * Jy/MJy * area of aperature in pix, conversion absorbed into k
-#     zps.append(np.nanmean(k))
-# veg_zp = [26.29,22.37,25.60,23.78,24.30,20.22]
-# for f, filt in enumerate(filters):
-#     dao[filt] = veg_zp[f]-(dao[filt]-zps[f])
+head = ['ID', 'x', 'y', 'mag_1','mag_2','mag_3','mag_4','mag_5','mag_6','mag_7','mag_8','mag_9','mag_10','mag_11','mag_12']
+zps= []
+for filt in filters:
+    ap_test_adu = pd.read_csv("/users/breannacrompvoets/DAOPHOT/NGC3324/"+filt+"_zp.ap", header=None,delim_whitespace=True, skiprows=3, names=head).iloc[::2, :]
+    ap_test_mjysr = pd.read_csv("~/DAOPHOT/NGC3324/RESULTS_MJYSR/"+filt+"_zp_jy.ap", header=None,delim_whitespace=True, skiprows=3, names=head).iloc[::2, :]
+    ap_test_adu.where(ap_test_adu!=99.999, np.nan,inplace=True)
+    ap_test_adu.where(ap_test_adu!=-99.999, np.nan,inplace=True)
+    ap_test_mjysr.where(ap_test_mjysr!=99.999, np.nan,inplace=True)
+    ap_test_mjysr.where(ap_test_mjysr!=-99.999, np.nan,inplace=True)
+    ap_test_mjysr.where(ap_test_mjysr!=98.999, np.nan,inplace=True)
+    ap_test_mjysr.where(ap_test_mjysr!=-98.999, np.nan,inplace=True)
+    hdu = fits.open(f'/users/breannacrompvoets/DAOPHOT/NGC3324/RESULTS_MJYSR/'+filt+'.fits')
+    k = ap_test_adu.mag_10-(ap_test_mjysr.mag_10-25+2.5*np.log10(hdu[0].header['PHOTMJSR']))#*hdu[0].header['PIXAR_SR']*10**6*np.pi*rads[-2]**2) # flux in Jy is flux in MJy/sr * sr/px * Jy/MJy * area of aperature in pix, conversion absorbed into k
+    zps.append(np.nanmean(k))
+veg_zp = [26.29,22.37,25.60,23.78,24.30,20.22]
+for f, filt in enumerate(filters):
+    dao[filt] = veg_zp[f]+(dao[filt]-zps[f])
 
 # Add in colours and deltas
 dao_tmp =dao.copy()
