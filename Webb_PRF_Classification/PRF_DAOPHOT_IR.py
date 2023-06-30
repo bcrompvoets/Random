@@ -20,6 +20,12 @@ fcd_columns = [c for c in dao_IR.columns if c[0] == "f" or c[0]=='δ'or c[:3]=='
 errs = ["e_"+f for f in fcd_columns]
 bands = fcd_columns+errs
 
+# ----------------------------------------------------------------------------
+# Print classification reports
+print("RF Classification Report")
+
+print(classification_report(CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns).Init_Class,CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns).Class_RF))
+print(classification_report(CC_Webb_Classified.dropna(subset='Init_Class').Init_Class,CC_Webb_Classified.dropna(subset='Init_Class').Class_PRF))
 
 # ----------------------------------------------------------------------------
 # Make table of Reiter, SPICY, and our own classifications
@@ -291,10 +297,11 @@ plt.savefig('Figures/seds_'+date+'.png',dpi=300)
 #--------------------------------------------------------------------
 # Plot of Prob YSO vs recall/precision
 
-tar_va = CC_Webb_Classified.dropna(subset='Init_Class')[['Init_Class']].values.astype(int)
-prob_yso_rf_ir = CC_Webb_Classified.dropna(subset='Init_Class')[['Prob_RF']].values
+tar_va_rf = CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns)[['Init_Class']].values.astype(int)
+prob_yso_rf_ir = CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns)[['Prob_RF']].values
 prob_yso_rf = CC_Webb_Classified['Prob_RF'].values
 
+tar_va_prf = CC_Webb_Classified.dropna(subset='Init_Class')[['Init_Class']].values.astype(int)
 prob_yso_prf_ir = CC_Webb_Classified.dropna(subset='Init_Class')[['Prob_PRF']].values
 prob_yso_prf = CC_Webb_Classified['Prob_PRF'].values
 
@@ -310,21 +317,21 @@ nums_prf = []
 
 cuts = np.arange(0.0,1.05,0.05)
 for i in cuts:
-    preds = np.array([1]*len(CC_Webb_Classified.dropna(subset='Init_Class')[['Class_RF']].values))
+    preds = np.array([1]*len(CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns)[['Class_RF']].values))
     # print(np.where(prob_yso_rf_ir>i)[0])
     preds[np.where(prob_yso_rf_ir>i)[0]] = 0
-    f1s_rf.append(f1_score(tar_va,preds,average=None)[0])
-    recs_rf.append(recall_score(tar_va,preds,average=None)[0])
-    pres_rf.append(precision_score(tar_va,preds,average=None)[0])
+    f1s_rf.append(f1_score(tar_va_rf,preds,average=None)[0])
+    recs_rf.append(recall_score(tar_va_rf,preds,average=None)[0])
+    pres_rf.append(precision_score(tar_va_rf,preds,average=None)[0])
     preds = np.array([1]*len(CC_Webb_Classified['Class_RF'].values))
     preds[np.where(prob_yso_rf>i)[0]] = 0
     nums_rf.append(len(preds[preds==0]))
 
     preds = np.array([1]*len(CC_Webb_Classified.dropna(subset='Init_Class')[['Class_PRF']].values))
     preds[np.where(prob_yso_prf_ir>i)[0]] = 0
-    f1s_prf.append(f1_score(tar_va,preds,average=None)[0])
-    recs_prf.append(recall_score(tar_va,preds,average=None)[0])
-    pres_prf.append(precision_score(tar_va,preds,average=None)[0])
+    f1s_prf.append(f1_score(tar_va_prf,preds,average=None)[0])
+    recs_prf.append(recall_score(tar_va_prf,preds,average=None)[0])
+    pres_prf.append(precision_score(tar_va_prf,preds,average=None)[0])
     preds = np.array([1]*len(CC_Webb_Classified['Class_PRF'].values))
     preds[np.where(prob_yso_prf>i)[0]] = 0
     nums_prf.append(len(preds[preds==0]))
@@ -394,5 +401,43 @@ for f in fcd_columns:
     plt.xlabel("F090W-F444W")
     plt.ylabel(f.upper())
     plt.gca().invert_yaxis()
+    plt.legend()
     plt.savefig(f"Figures/CMD_{f}.png")
     plt.close()
+
+
+# ------------------
+# Spitzer-DAOPHOT comparison
+
+
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+cc_match = dao_IR
+cc_match.where(cc_match!=99.999,np.nan,inplace=True)
+
+fig, ax = plt.subplots(2,1,dpi=300)
+lims = np.arange(8.5,16)
+print(len(cc_match[['mag3_6']].values))
+err = (cc_match[['d3_6m']].values**2+cc_match[['e_f335m']].values**2)**0.5
+c = ax[0].scatter(cc_match[['mag3_6']].values,cc_match[['f335m']].values,s=5,c=err,cmap='copper')
+divider = make_axes_locatable(ax[0])
+cax = divider.append_axes('right', size='5%', pad=0.05)
+ax[0].plot(lims,lims,'k',lw=0.3)
+ax[0].set_xlabel('IRAC2')
+ax[0].set_ylabel('F335M')
+ax[0].invert_xaxis()
+ax[0].invert_yaxis()
+plt.colorbar(mappable=c,cax=cax)
+
+err = (cc_match[['d4_5m']].values**2+cc_match[['e_f444w']].values**2)**0.5
+c2 = ax[1].scatter(cc_match[['mag4_5']].values,cc_match[['f444w']].values,s=5,c=err,cmap='copper')
+ax[1].plot(lims,lims,'k',lw=0.3)
+ax[1].set_ylim(9,16.5)
+ax[1].set_xlabel('IRAC3')
+ax[1].set_ylabel('F444W')
+ax[1].invert_xaxis()
+ax[1].invert_yaxis()
+divider = make_axes_locatable(ax[1])
+cax = divider.append_axes('right', size='5%', pad=0.05)
+plt.colorbar(mappable=c2,cax=cax)
+
+plt.savefig("Figures/spitz_dao_comp.png")

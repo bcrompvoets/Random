@@ -19,7 +19,7 @@ date = 'June192023'
 #        'isophotal_vegamag_err_f1130w', 'isophotal_vegamag_f1280w',
 #        'isophotal_vegamag_err_f1280w', 'isophotal_vegamag_f1800w',
 #        'isophotal_vegamag_err_f1800w','SPICY_Class_0/1','SPICY_Prob']]
-inp_df = pd.read_csv(f"DAOPHOT_Catalog_{date}_IR.csv")[['f090w', 'e_f090w', 'f187n', 'e_f187n',
+cols = ['f090w', 'e_f090w', 'f187n', 'e_f187n',
        'f200w', 'e_f200w', 'f335m', 'e_f335m', 'f444w', 'e_f444w', 'f470n',
        'e_f470n', 'f090w-f444w', 'e_f090w-f444w', 'f090w-f187n',
        'e_f090w-f187n', 'δ_f090w-f187n', 'e_δ_f090w-f187n', 'f187n-f200w',
@@ -29,12 +29,19 @@ inp_df = pd.read_csv(f"DAOPHOT_Catalog_{date}_IR.csv")[['f090w', 'e_f090w', 'f18
        'e_f444w-f470n', 'δ_f444w-f470n', 'e_δ_f444w-f470n',
        '(f090w-f200w)-(f200w-f444w)', 'e_(f090w-f200w)-(f200w-f444w)',
        'δ_(f090w-f200w)-(f200w-f444w)', 'e_δ_(f090w-f200w)-(f200w-f444w)',
-       'Sum1', 'e_Sum1','Prob','Class']].dropna()
+       'Sum1', 'e_Sum1','Prob','Class']
+inp_df = pd.read_csv(f"DAOPHOT_Catalog_{date}_IR.csv").dropna(subset=cols)
 print('loading data, Done!')
 
-cat_t= inp_df.copy().values
+inp_df, val_df = train_test_split(inp_df,train_size=.80,random_state=0)
+inp_df = inp_df[cols].copy()
+cat_t= inp_df.values
+cat_v= val_df[cols].copy().values
+print("Augmented data will be made based on ", len(cat_t[cat_t[:,-1]==0]), "YSOs and ",len(cat_t[cat_t[:,-1]==1])," contaminants.")
+print("This leaves ", len(cat_v[cat_v[:,-1]==0]), "YSOs and ",len(cat_v[cat_v[:,-1]==1])," contaminants for a validation set.")
+val_df.to_csv(f"Validation_data_prob_{date}.csv")
 
-# cat, cat_v = train_test_split(cat_t,train_size=.80,random_state=0)
+
 
 inds = np.arange(0,len(inp_df.columns)-2,2)
 
@@ -68,9 +75,10 @@ for i in inds+1:
 def BST(mag,prob, sig, n_sample, n_sig=1):
     bts=np.random.choice(len(mag),n_sample,replace=True)
     err = np.random.default_rng().random((n_sample,20))
+    sign = np.random.default_rng().choice([-1,1],(n_sample,20))
     mag_bts= mag[bts]
     prob_bts = prob[bts]
-    err = err*sig*n_sig
+    err = err*sig*n_sig*sign
     mag_dist= mag_bts+ err
     return mag_dist, err, prob_bts
     

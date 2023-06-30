@@ -21,9 +21,12 @@ dao.set_index('Index',inplace=True)
 dao.where(dao!=99.9999, np.nan,inplace=True)
 dao.where(dao!=9.9999, np.nan,inplace=True)
 
-# Correct ZPs
-# filters = ['f090w','f200w','f335m','f444w','f470n']
 filters = ['f090w','f187n','f200w','f335m','f444w','f470n']
+
+# Keep only objects with data in at least three bands
+dao.dropna(subset = filters, thresh = 3, inplace=True) 
+
+# Correct ZPs
 head = ['ID', 'x', 'y', 'mag_1','mag_2','mag_3','mag_4','mag_5','mag_6','mag_7','mag_8','mag_9','mag_10','mag_11','mag_12']
 zps= []
 for filt in filters:
@@ -96,21 +99,23 @@ writeto(dao_votab, filepath+f"DAOPHOT_{date}.xml")
 writeto(dao_votab, filepath_dat_sv+f"XML Files/DAOPHOT_{date}.xml")
 
 # Match to IR sources
-tol = 0.00005
-yso_IR = pd.read_csv('IR_YSOs_RADEC_NGC3324.csv')
-cont_IR = pd.read_csv("IR_Conts_RADEC_NGC3324.csv")
+tol = 0.0001
+yso_IR = pd.read_csv('IR_YSOs_NGC3324.csv')
+cont_IR = pd.read_csv("IR_Conts_NGC3324.csv")
 IR = pd.concat([yso_IR.copy(), cont_IR.copy()]) #[['RA','DEC','Prob']]
 IR.reset_index(inplace=True)
 
 ind, sep, _ = match_coordinates_sky(SkyCoord(IR.RA,IR.DEC,unit=u.deg),SkyCoord(dao.RA,dao.DEC,unit=u.deg))
 
-
+sp_bands = [c for c in IR.columns if c[:3]=='mag' or (c[0]=='d' and c[-1]=='m')]
+print(len(ind[sep<tol*u.deg]))
 dao_IR = dao.loc[ind[sep<tol*u.deg]]
 dao_IR['Prob'] = IR.loc[sep<tol*u.deg,'Prob'].values
 dao_IR['Class'] = [1]*len(dao_IR)
 dao_IR.loc[dao_IR.Prob>0.5,'Class'] = 0
 dao_IR['Survey'] = IR.loc[sep<tol*u.deg,'Survey'].values
 dao_IR['SPICY_ID'] = IR.loc[sep<tol*u.deg,'SPICY_ID'].values
+dao_IR[sp_bands] = IR.loc[sep<tol*u.deg,sp_bands].values
 
 # Save Spitzer and JWST matched data
 dao_IR.to_csv(f"DAOPHOT_Catalog_{date}_IR.csv",index=False)

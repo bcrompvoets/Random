@@ -68,10 +68,6 @@ def get_best_rf(tr, va, te):
     inp_tr, prob_tr = inp_tr[:,:-1], inp_tr[:,-1]
     inp_va, prob_va = inp_va[:,:-1], inp_va[:,-1]
 
-
-    inds = range(0,int(np.shape(inp_tr)[1]/2))
-    e_inds = range(int(np.shape(inp_tr)[1]/2),np.shape(inp_tr)[1])
-
     rf_cls = RandomForestClassifier(n_estimators=100)
     rf_cls.fit(inp_tr, tar_tr)
     pred_va = rf_cls.predict(inp_va)
@@ -143,20 +139,20 @@ np.savetxt("Data/Max_f1s_PRF"+date, max_f1_prf)
 # Make two columns: final class, and probability of being that class
 p_yso_rf = np.nanmean(pred_tes_rf,axis=0)
 preds_rf = np.zeros(len(p_yso_rf))
-preds_rf[p_yso_rf<0.5] = 1 
+preds_rf[p_yso_rf<=0.5] = 1 
 print("Number of YSOs with prob>50\% (rf):",len(preds_rf[p_yso_rf>0.5]))
 p_yso_prf = np.nanmean(pred_tes_prf,axis=0)
 preds_prf = np.zeros(len(p_yso_prf))
-preds_prf[p_yso_prf<0.5] = 1 
+preds_prf[p_yso_prf<=0.5] = 1 
 print("Number of YSOs with prob>50\% (prf):",len(preds_prf[p_yso_prf>0.5]))
 
 
 # Make and save predictions/probabilities in csv
 CC_Webb_Classified = pd.DataFrame()
 
+CC_Webb_Classified['Index'] = dao['Index']
 CC_Webb_Classified['RA'] = dao['RA']
 CC_Webb_Classified['DEC'] = dao[['DEC']].values
-# CC_Webb_Classified['size'] = webb_inp[['size']].values
 CC_Webb_Classified[np.array(bands)] = dao[bands].values
 CC_Webb_Classified['Class_PRF'] = preds_prf
 CC_Webb_Classified['Prob_PRF'] = p_yso_prf
@@ -166,8 +162,8 @@ CC_Webb_Classified['Prob_RF'] = [-99.999]*len(dao)
 CC_Webb_Classified.loc[dao.dropna().index,'Class_RF'] = preds_rf
 CC_Webb_Classified.loc[dao.dropna().index,'Prob_RF'] = p_yso_rf
 
-CC_Webb_Classified.to_csv(f"CC_Classified_{date}.csv",index=False)
-print("Saved CC_Webb_Classified in case of failure at next step.")
+# CC_Webb_Classified.to_csv(f"CC_Classified_{date}.csv",index=False)
+# print("Saved CC_Webb_Classified in case of failure at next step.")
 
 # Add IR classifications for ease of comparison
 ind, sep, _ = match_coordinates_sky(SkyCoord(dao_IR.RA,dao_IR.DEC,unit=u.deg),SkyCoord(CC_Webb_Classified.RA,CC_Webb_Classified.DEC,unit=u.deg))
@@ -178,6 +174,7 @@ CC_Webb_Classified['Survey'] = [np.nan]*len(CC_Webb_Classified)
 CC_Webb_Classified.loc[ind,'Survey'] = dao_IR.Survey.values
 CC_Webb_Classified['SPICY_ID'] = [np.nan]*len(CC_Webb_Classified)
 CC_Webb_Classified.loc[ind,'SPICY_ID'] = dao_IR.SPICY_ID.values
-
+print(len(dao_IR))
+print(len(CC_Webb_Classified.loc[(CC_Webb_Classified.Init_Class==0) | (CC_Webb_Classified.Init_Class==1)]))
 CC_Webb_Classified.to_csv(f"CC_Classified_{date}.csv",index=False)
 print("Classification finished and comparison to previous work added!")
