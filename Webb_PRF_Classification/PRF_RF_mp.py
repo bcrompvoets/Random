@@ -1,12 +1,13 @@
 import numpy as np
 import pandas as pd
-from custom_dataloader import replicate_data_single
+# from custom_dataloader import replicate_data_single
 import matplotlib.pyplot as plt
 from PRF import prf
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import f1_score
 from astropy.coordinates import match_coordinates_sky,SkyCoord
 import astropy.units as u
+from sklearn.metrics import f1_score,classification_report
+from sklearn.model_selection import train_test_split
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -15,12 +16,14 @@ date = 'June192023'
 dao = pd.read_csv(f'DAOPHOT_Catalog_{date}.csv')
 dao_IR = pd.read_csv(f'DAOPHOT_Catalog_{date}_IR.csv')
 dao_aug = pd.read_csv(f"Augmented_data_prob_{date}.csv")
+# dao_aug = pd.read_csv("Test_Delta_fitted_class.csv")
 
 date = 'DAOPHOT_'+ date
 cont = True
 amounts_te = []
 
-fcd_columns = [c for c in dao_aug.columns if c[0] == "f" or c[0]=='δ'or c[0]=='S']
+fcd_columns = [c for c in dao_aug.columns if (c[0] == "f" or c[0]=='δ') and ('f470n' not in c) and ('f187n' not in c)]#or c=='Sum1'
+print(fcd_columns)
 errs = ["e_"+f for f in fcd_columns]
 bands = fcd_columns+errs
 tars = ['Prob', 'Class']
@@ -29,12 +32,14 @@ tars = ['Prob', 'Class']
 def get_best_prf(tr, va, te):
     
     seed = int(np.random.default_rng().random()*np.random.default_rng().random()*10000)
-    inp_tr, tar_tr = replicate_data_single(tr[:,:-1],tr[:,-1],amounts=[len(tr[:,-1][tr[:,-1]==0]),len(tr[:,-1][tr[:,-1]==1])],seed=seed)
-    inp_va, tar_va = replicate_data_single(va[:,:-1],va[:,-1],amounts=[len(va[:,-1][va[:,-1]==0]),len(va[:,-1][va[:,-1]==1])],seed=seed)
-    # inp_tr, tar_tr = tr[:,:-1],tr[:,-1]
-    # inp_va, tar_va = va[:,:-1],va[:,-1]
+    tr, _ = train_test_split(tr,train_size=.8,random_state=seed)
+    # va, _ = train_test_split(va,train_size=1.)
+    # inp_tr, tar_tr = replicate_data_single(tr[:,:-1],tr[:,-1],amounts=[len(tr[:,-1][tr[:,-1]==0]),len(tr[:,-1][tr[:,-1]==1])],seed=seed)
+    # inp_va, tar_va = replicate_data_single(va[:,:-1],va[:,-1],amounts=[len(va[:,-1][va[:,-1]==0]),len(va[:,-1][va[:,-1]==1])],seed=seed)
+    inp_tr, tar_tr = tr[:,:-1],tr[:,-1]
+    inp_va, tar_va = va[:,:-1],va[:,-1]
     inp_tr, prob_tr = inp_tr[:,:-1], inp_tr[:,-1]
-    inp_va, prob_va = inp_va[:,:-1], inp_va[:,-1]
+    inp_va, _ = inp_va[:,:-1], inp_va[:,-1]
     dy_tr = np.array([np.array([x,1-x]) for x in prob_tr])
     # dy_va = np.array([np.array([x,1-x]) for x in prob_va])
 
@@ -42,14 +47,14 @@ def get_best_prf(tr, va, te):
     inds = range(0,int(np.shape(inp_tr)[1]/2))
     e_inds = range(int(np.shape(inp_tr)[1]/2),np.shape(inp_tr)[1])
     prf_cls = prf(n_estimators=100, bootstrap=False, keep_proba=0.5)
-    prf_cls.fit(X=inp_tr[:,inds], dX=inp_tr[:,e_inds], py=dy_tr)
+    prf_cls.fit(X=inp_tr[:,inds], dX=inp_tr[:,e_inds], py=dy_tr)#y=tar_tr
+    # prf_cls.fit(X=inp_tr[:,inds], dX=inp_tr[:,e_inds], py=dy_tr)
     pred_va = prf_cls.predict(X=inp_va[:,inds],dX=inp_va[:,e_inds])
-    pred_tr = prf_cls.predict(inp_tr[:,inds],inp_tr[:,e_inds])
+    # pred_tr = prf_cls.predict(inp_tr[:,inds],inp_tr[:,e_inds])
     
     max_f1 = f1_score(tar_va,pred_va,average=None)[0]
 
-    inp_te = te
-    pred_te = prf_cls.predict_proba(X=inp_te[:,inds], dX=inp_te[:,e_inds]) 
+    pred_te = prf_cls.predict_proba(X=te[:,inds], dX=te[:,e_inds]) 
     num_yso = len(np.array(pred_te)[np.transpose(pred_te)[0]>0.5])
 
     # print("F1-Scores:\n Training is ",f1_score(tar_tr,pred_tr,average=None)[0],"\n Validation (SPICY) is ",f1_score(tar_va,pred_va,average=None)[0])
@@ -61,22 +66,23 @@ def get_best_prf(tr, va, te):
 def get_best_rf(tr, va, te):
     
     seed = int(np.random.default_rng().random()*np.random.default_rng().random()*10000)
-    inp_tr, tar_tr = replicate_data_single(tr[:,:-1],tr[:,-1],amounts=[len(tr[:,-1][tr[:,-1]==0]),len(tr[:,-1][tr[:,-1]==1])],seed=seed)
-    inp_va, tar_va = replicate_data_single(va[:,:-1],va[:,-1],amounts=[len(va[:,-1][va[:,-1]==0]),len(va[:,-1][va[:,-1]==1])],seed=seed)
-    # inp_tr, tar_tr = tr[:,:-1],tr[:,-1]
-    # inp_va, tar_va = va[:,:-1],va[:,-1]
-    inp_tr, prob_tr = inp_tr[:,:-1], inp_tr[:,-1]
-    inp_va, prob_va = inp_va[:,:-1], inp_va[:,-1]
+    tr, _ = train_test_split(tr,train_size=.8,random_state=seed)
+    # va, _ = train_test_split(va,train_size=1.)
+    # inp_tr, tar_tr = replicate_data_single(tr[:,:-1],tr[:,-1],amounts=[len(tr[:,-1][tr[:,-1]==0]),len(tr[:,-1][tr[:,-1]==1])],seed=seed)
+    # inp_va, tar_va = replicate_data_single(va[:,:-1],va[:,-1],amounts=[len(va[:,-1][va[:,-1]==0]),len(va[:,-1][va[:,-1]==1])],seed=seed)
+    inp_tr, tar_tr = tr[:,:-1],tr[:,-1]
+    inp_va, tar_va = va[:,:-1],va[:,-1]
+    inp_tr = inp_tr[:,:-1] # Remove probability
+    inp_va = inp_va[:,:-1] # Remove probability
 
     rf_cls = RandomForestClassifier(n_estimators=100)
     rf_cls.fit(inp_tr, tar_tr)
     pred_va = rf_cls.predict(inp_va)
-    pred_tr = rf_cls.predict(inp_tr)
+    # pred_tr = rf_cls.predict(inp_tr)
     
     max_f1 = f1_score(tar_va,pred_va,average=None)[0]
 
-    inp_te = te
-    pred_te = rf_cls.predict_proba(inp_te) 
+    pred_te = rf_cls.predict_proba(te) 
     num_yso = len(pred_te[pred_te[:,0]>0.5])
 
     # print("F1-Scores:\n Training is ",f1_score(tar_tr,pred_tr,average=None)[0],"\n Validation (SPICY) is ",f1_score(tar_va,pred_va,average=None)[0])
@@ -87,7 +93,7 @@ def get_best_rf(tr, va, te):
 
 
 # Test once
-# _, n, f1 = get_best_prf(tr=dao_aug[fcd_columns+errs+tars].copy().values,va=dao_IR[fcd_columns+errs+tars].copy().values,te=dao[fcd_columns+errs].copy().values)
+# _, n, f1 = get_best_rf(dao_aug[fcd_columns+errs+tars].copy().dropna().values,dao_IR[fcd_columns+errs+tars].copy().dropna().values,dao[fcd_columns+errs].copy().dropna().values)
 # print(n, f1)
 
 
@@ -117,16 +123,10 @@ pred_tes_rf = list(map(list, zip(*ans_rf)))[0]
 num_yso_rf = list(map(list, zip(*ans_rf)))[1]
 max_f1_rf = list(map(list, zip(*ans_rf)))[2]
 
-np.savetxt("Data/Num_YSOs_RF"+date, num_yso_rf)
-np.savetxt("Data/Max_f1s_RF"+date, max_f1_rf)
-np.savetxt("Data/Num_YSOs_PRF"+date, num_yso_prf)
-np.savetxt("Data/Max_f1s_PRF"+date, max_f1_prf)
-
-
-
-
-
-
+# np.savetxt("Data/Num_YSOs_RF"+date, num_yso_rf)
+# np.savetxt("Data/Max_f1s_RF"+date, max_f1_rf)
+# np.savetxt("Data/Num_YSOs_PRF"+date, num_yso_prf)
+# np.savetxt("Data/Max_f1s_PRF"+date, max_f1_prf)
 
 
 
@@ -148,19 +148,20 @@ print("Number of YSOs with prob>50\% (prf):",len(preds_prf[p_yso_prf>0.5]))
 
 
 # Make and save predictions/probabilities in csv
-CC_Webb_Classified = pd.DataFrame()
+CC_Webb_Classified = dao.copy()[['Index','RA','DEC']+bands]
 
-CC_Webb_Classified['Index'] = dao['Index']
-CC_Webb_Classified['RA'] = dao['RA']
-CC_Webb_Classified['DEC'] = dao[['DEC']].values
-CC_Webb_Classified[np.array(bands)] = dao[bands].values
+
+# CC_Webb_Classified['Index'] = dao['Index']
+# CC_Webb_Classified['RA'] = dao['RA']
+# CC_Webb_Classified['DEC'] = dao[['DEC']].values
+# CC_Webb_Classified[np.array(bands)] = dao[bands].values
 CC_Webb_Classified['Class_PRF'] = preds_prf
 CC_Webb_Classified['Prob_PRF'] = p_yso_prf
 
 CC_Webb_Classified['Class_RF'] = [-99.999]*len(dao)
 CC_Webb_Classified['Prob_RF'] = [-99.999]*len(dao)
-CC_Webb_Classified.loc[dao.dropna().index,'Class_RF'] = preds_rf
-CC_Webb_Classified.loc[dao.dropna().index,'Prob_RF'] = p_yso_rf
+CC_Webb_Classified.loc[dao[fcd_columns+errs].dropna().index,'Class_RF'] = preds_rf
+CC_Webb_Classified.loc[dao[fcd_columns+errs].dropna().index,'Prob_RF'] = p_yso_rf
 
 # CC_Webb_Classified.to_csv(f"CC_Classified_{date}.csv",index=False)
 # print("Saved CC_Webb_Classified in case of failure at next step.")
@@ -174,7 +175,13 @@ CC_Webb_Classified['Survey'] = [np.nan]*len(CC_Webb_Classified)
 CC_Webb_Classified.loc[ind,'Survey'] = dao_IR.Survey.values
 CC_Webb_Classified['SPICY_ID'] = [np.nan]*len(CC_Webb_Classified)
 CC_Webb_Classified.loc[ind,'SPICY_ID'] = dao_IR.SPICY_ID.values
-print(len(dao_IR))
-print(len(CC_Webb_Classified.loc[(CC_Webb_Classified.Init_Class==0) | (CC_Webb_Classified.Init_Class==1)]))
+
 CC_Webb_Classified.to_csv(f"CC_Classified_{date}.csv",index=False)
 print("Classification finished and comparison to previous work added!")
+
+
+print("RF Classification Report")
+print(classification_report(CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns).Init_Class,CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns).Class_RF))
+
+print("PRF Classification Report")
+print(classification_report(CC_Webb_Classified.dropna(subset='Init_Class').Init_Class,CC_Webb_Classified.dropna(subset='Init_Class').Class_PRF))

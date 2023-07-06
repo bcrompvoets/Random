@@ -5,20 +5,8 @@ from sklearn.model_selection import train_test_split
 print('Loading from repository, Done!')
 
 date = 'June192023'
+num_objs = 1000 # Number of objects wanted from each class to end.
 
-# inp = pd.read_csv('catalog.csv' )
-# inp = pd.read_csv('/Users/breannacrompvoets/Documents/Star_Formation/YSO+Classification/Webb_PRF_Classification/CC_Webb_Predictions_Prob_Feb172023_Spitz_ONLY.csv')
-# inp = pd.read_csv('CC_Catalog_2_5sig'+date+'_SPICY_Preds.csv')[['isophotal_vegamag_f200w',
-#        'isophotal_vegamag_err_f200w', 'isophotal_vegamag_f090w',
-#        'isophotal_vegamag_err_f090w', 'isophotal_vegamag_f187n',
-#        'isophotal_vegamag_err_f187n', 'isophotal_vegamag_f335m',
-#        'isophotal_vegamag_err_f335m', 'isophotal_vegamag_f444w',
-#        'isophotal_vegamag_err_f444w', 'isophotal_vegamag_f444w-f470n',
-#        'isophotal_vegamag_err_f444w-f470n', 'isophotal_vegamag_f770w',
-#        'isophotal_vegamag_err_f770w', 'isophotal_vegamag_f1130w',
-#        'isophotal_vegamag_err_f1130w', 'isophotal_vegamag_f1280w',
-#        'isophotal_vegamag_err_f1280w', 'isophotal_vegamag_f1800w',
-#        'isophotal_vegamag_err_f1800w','SPICY_Class_0/1','SPICY_Prob']]
 cols = ['f090w', 'e_f090w', 'f187n', 'e_f187n',
        'f200w', 'e_f200w', 'f335m', 'e_f335m', 'f444w', 'e_f444w', 'f470n',
        'e_f470n', 'f090w-f444w', 'e_f090w-f444w', 'f090w-f187n',
@@ -27,13 +15,14 @@ cols = ['f090w', 'e_f090w', 'f187n', 'e_f187n',
        'e_f200w-f335m', 'δ_f200w-f335m', 'e_δ_f200w-f335m', 'f335m-f444w',
        'e_f335m-f444w', 'δ_f335m-f444w', 'e_δ_f335m-f444w', 'f444w-f470n',
        'e_f444w-f470n', 'δ_f444w-f470n', 'e_δ_f444w-f470n',
-       '(f090w-f200w)-(f200w-f444w)', 'e_(f090w-f200w)-(f200w-f444w)',
+        '(f090w-f200w)-(f200w-f444w)', 'e_(f090w-f200w)-(f200w-f444w)',
        'δ_(f090w-f200w)-(f200w-f444w)', 'e_δ_(f090w-f200w)-(f200w-f444w)',
        'Sum1', 'e_Sum1','Prob','Class']
 inp_df = pd.read_csv(f"DAOPHOT_Catalog_{date}_IR.csv").dropna(subset=cols)
+# inp_df = pd.read_csv(f"Test_Delta_fitted_class.csv").dropna(subset=cols)
 print('loading data, Done!')
 
-inp_df, val_df = train_test_split(inp_df,train_size=.80,random_state=0)
+inp_df, val_df = train_test_split(inp_df,train_size=.95,random_state=0)
 inp_df = inp_df[cols].copy()
 cat_t= inp_df.values
 cat_v= val_df[cols].copy().values
@@ -72,10 +61,11 @@ sig = []
 for i in inds+1:
     sig.append(n_sigma*np.nanmean(cat_t[:,i]))
 
+print(np.shape(sig))
 def BST(mag,prob, sig, n_sample, n_sig=1):
     bts=np.random.choice(len(mag),n_sample,replace=True)
-    err = np.random.default_rng().random((n_sample,20))
-    sign = np.random.default_rng().choice([-1,1],(n_sample,20))
+    err = np.random.default_rng().random((n_sample,np.shape(sig)[0]))
+    sign = np.random.default_rng().choice([-1,1],(n_sample,np.shape(sig)[0]))
     mag_bts= mag[bts]
     prob_bts = prob[bts]
     err = err*sig*n_sig*sign
@@ -89,7 +79,7 @@ tar=[]
 err = []
 prob = []
 
-for k1 in range(int(10000/n_sample)):
+for k1 in range(int(num_objs/n_sample)):
     mag0, err0, prob0 = BST(mag_0,prob_0,sig=sig,n_sample=n_sample,n_sig=n_sig)
     tar.append([0]*n_sample)
     inp.append(mag0) 
@@ -120,13 +110,13 @@ out_df = pd.DataFrame(data=np.hstack((inp,err,prob.reshape(-1,1),tar.reshape(-1,
        'f200w', 'f335m',  'f444w', 'f470n',
         'f090w-f444w','f090w-f187n', 'δ_f090w-f187n', 'f187n-f200w',
         'δ_f187n-f200w', 'f200w-f335m','δ_f200w-f335m','f335m-f444w',
-        'δ_f335m-f444w', 'f444w-f470n', 'δ_f444w-f470n',
-       '(f090w-f200w)-(f200w-f444w)', 'δ_(f090w-f200w)-(f200w-f444w)',
-       'Sum1', 'e_f090w','e_f187n','e_f200w', 'e_f335m', 'e_f444w','e_f470n',
+        'δ_f335m-f444w', 'f444w-f470n', 'δ_f444w-f470n',  '(f090w-f200w)-(f200w-f444w)',
+        'δ_(f090w-f200w)-(f200w-f444w)','Sum1', 
+        'e_f090w','e_f187n','e_f200w', 'e_f335m', 'e_f444w','e_f470n',
         'e_f090w-f444w', 'e_f090w-f187n', 'e_δ_f090w-f187n', 'e_f187n-f200w', 'e_δ_f187n-f200w','e_f200w-f335m', 
         'e_δ_f200w-f335m', 'e_f335m-f444w', 'e_δ_f335m-f444w', 
-       'e_f444w-f470n', 'e_δ_f444w-f470n','e_(f090w-f200w)-(f200w-f444w)', 'e_δ_(f090w-f200w)-(f200w-f444w)',
-       'e_Sum1','Prob','Class'])
+       'e_f444w-f470n', 'e_δ_f444w-f470n','e_(f090w-f200w)-(f200w-f444w)', 
+       'e_δ_(f090w-f200w)-(f200w-f444w)','e_Sum1','Prob','Class'])
 
 out_df.to_csv(f"Augmented_data_prob_{date}.csv")
 print(f'Augmented data has {len(out_df)}, with {len(out_df)/2} YSOs and {len(out_df)/2} contaminants')

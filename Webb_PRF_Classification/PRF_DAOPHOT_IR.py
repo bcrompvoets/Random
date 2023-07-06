@@ -23,8 +23,9 @@ bands = fcd_columns+errs
 # ----------------------------------------------------------------------------
 # Print classification reports
 print("RF Classification Report")
-
 print(classification_report(CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns).Init_Class,CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns).Class_RF))
+
+print("PRF Classification Report")
 print(classification_report(CC_Webb_Classified.dropna(subset='Init_Class').Init_Class,CC_Webb_Classified.dropna(subset='Init_Class').Class_PRF))
 
 # ----------------------------------------------------------------------------
@@ -51,13 +52,13 @@ for i, m in enumerate(matched_inds):
     df_tmp = CC_Webb_Classified.iloc[m]
     # df_tmp_ir = dao_IR.iloc[i]
     if df_tmp[['Class_RF']].values[0]==0 and df_tmp[['Class_PRF']].values[0]==0:
-        y_or_s = 'YSO - PRF and RF'
+        y_or_s = f'YSO {m} - PRF and RF'
     elif df_tmp[['Class_RF']].values[0]==0:
-        y_or_s = 'YSO - RF'
+        y_or_s = f'YSO {m} - RF'
     elif df_tmp[['Class_PRF']].values[0]==0:
-        y_or_s = 'YSO - PRF'
+        y_or_s = f'YSO {m} - PRF'
     else:
-        y_or_s = 'C'
+        y_or_s = f'C - {m}'
     if m in r_inds:
         if m in sp_inds:
             tab_preds.write(f"{df_tmp.Survey} - SPICY {df_tmp.SPICY_ID} & {reit_name[i]} & {y_or_s} \\\ \n")
@@ -68,12 +69,35 @@ for i, m in enumerate(matched_inds):
 
 tab_preds.close()
 
+print("Table of comparison to other works completed!")
 
 # #TMP - Make matches to Reiter have those RA/DEC
 # CC_Webb_Classified.iloc[r_inds].RA = r_1.ra
 # CC_Webb_Classified.iloc[r_inds].DEC = r_1.dec
 
 # #----------------------------------------------------------------------------
+# Latex table of YSOs for paper
+columns = ['RA', 'DEC', 'f090w', 'f187n','f200w', 'f335m', 'f444w','f470n', 'Prob_PRF','Prob_RF']
+new_cols = ['RA', 'DEC', 'F090w','F187n','F200w','F335m','F444w','F470n',  'Prob YSO PRF', 'Prob YSO RF'] #'F770w', 'F1130w', 'F1280w', 'F1800w',
+
+csv_yso = CC_Webb_Classified[(CC_Webb_Classified.Class_RF==0)|(CC_Webb_Classified.Class_PRF==0)].reset_index()
+csv_yso = csv_yso.loc[csv_yso.isnull().sum(1).sort_values(ascending=1).index,columns]
+
+
+file_out = 'CC_Classified_DAOPHOT_latex_ysos.txt'
+print("Printing to ", file_out)
+f = open(file_out,'w')
+
+for j in range(0,len(columns)):
+    f.write(new_cols[j]+'&')
+f.write('\\hline \\\ \n')
+for i in range(0,len(csv_yso)):
+    for j in range(0,len(columns)):
+        str_tmp = str("%.4f" %csv_yso[columns[j]].values[i])+"&"
+        f.write(str_tmp)
+    f.write('\\\ \n')
+
+f.close()
 # #----------------------------------------------------------------------------
 
 # Make Plots
@@ -82,7 +106,8 @@ plt.style.use('ggplot')
 plt.rcParams['font.size'] = 12
 plt.rcParams['font.family'] = 'serif'
 
-
+prf_col = 'maroon'
+rf_col = 'salmon'
 # #----------------------------------------------------------------------------
 # Scatter plot with hists for number of YSOs vs F1-Score
 num_yso_rf = np.loadtxt("Data/Num_YSOs_RFDAOPHOT_June192023")
@@ -109,21 +134,21 @@ ax_histy = fig.add_subplot(gs[1, 1], sharey=ax)
 
 ax_histx.tick_params(axis="x", labelbottom=False)
 ax_histy.tick_params(axis="y", labelleft=False)
-ax.scatter(num_yso_rf,max_f1_rf,label='RF')
-ax.scatter(num_yso_prf,max_f1_prf,label='PRF')
+ax.scatter(num_yso_rf,max_f1_rf,c=rf_col,label='RF')
+ax.scatter(num_yso_prf,max_f1_prf,c=prf_col,label='PRF')
 xmin,xmax = ax.get_xlim()
 ymin,ymax = ax.get_ylim()
-ax_histx.hist(num_yso_rf,bins=np.arange(xmin,xmax,5),histtype='step')#
-ax_histx.hist(num_yso_prf,bins=np.arange(xmin,xmax,5),histtype='step')#
-ax_histy.hist(max_f1_rf,bins=np.arange(ymin,ymax,0.005), orientation='horizontal',histtype='step')
-ax_histy.hist(max_f1_prf,bins=np.arange(ymin,ymax,0.005), orientation='horizontal',histtype='step')
+ax_histx.hist(num_yso_rf,bins=np.arange(xmin,xmax,5),color=rf_col,histtype='step')#
+ax_histx.hist(num_yso_prf,bins=np.arange(xmin,xmax,5),color=prf_col,histtype='step')#
+ax_histy.hist(max_f1_rf,bins=np.arange(ymin,ymax,0.005),color=rf_col, orientation='horizontal',histtype='step')
+ax_histy.hist(max_f1_prf,bins=np.arange(ymin,ymax,0.005),color=prf_col, orientation='horizontal',histtype='step')
 ax.set_xlabel('Amount of objects classified as YSOs')
 ax.set_ylabel('F1-Score of YSOs')
 # ax.set_xscale('log')
 ax.legend(loc='upper right')
 plt.savefig("Figures/F1-Scoresvs_Num_YSOs_"+date+".png",dpi=300)
-
-
+plt.close()
+print("Plot of f1 scores vs number of YSOs created!")
 # #----------------------------------------
 # # Just hist
 
@@ -154,11 +179,31 @@ ConfusionMatrixDisplay.from_predictions(tar_va,pred_va,cmap='Reds',display_label
 plt.grid(False)
 plt.savefig('Figures/CM_va_PRF_SPICY_'+date+'.png',dpi=300,facecolor=fig.get_facecolor())
 plt.close()
+
+print("Confusion matrices created!")
+
+
+# #----------------------------------------------------------------------------
+# AUC Curve
+from sklearn.metrics import RocCurveDisplay
+prf_roc = RocCurveDisplay.from_predictions(CC_Webb_Classified.dropna(subset='Init_Class')['Init_Class'],CC_Webb_Classified.dropna(subset='Init_Class')['Prob_PRF'],pos_label=0,name='PRF')
+plt.close()
+ax = plt.gca()
+rf_roc = RocCurveDisplay.from_predictions(CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns)['Init_Class'],CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns)['Prob_RF'],pos_label=0,name='RF')
+plt.close()
+rf_roc.plot(ax=ax,c=rf_col)
+prf_roc.plot(ax=ax,c=prf_col,alpha=0.8)
+# plt.show()
+plt.savefig('Figures/ROC_Curve_'+date+'.png',dpi=300)
+plt.close()
+
+print('ROC curves created!')
 #----------------------------------------
 # JWST field image
 from astropy.io import fits
 from astropy.wcs import WCS
 
+import matplotlib.lines as mlines
 
 # Plot image
 filter = "f090w"
@@ -182,23 +227,27 @@ ra_yso_rf = CC_Webb_Classified.RA.values[CC_Webb_Classified.Class_RF == 0]
 dec_yso_rf = CC_Webb_Classified.DEC.values[CC_Webb_Classified.Class_RF == 0]
 ra_yso_prf = CC_Webb_Classified.RA.values[CC_Webb_Classified.Class_PRF == 0]
 dec_yso_prf = CC_Webb_Classified.DEC.values[CC_Webb_Classified.Class_PRF == 0]
+ra_yso_both = CC_Webb_Classified.RA.values[(CC_Webb_Classified.Class_PRF == 0)&(CC_Webb_Classified.Class_RF == 0)]
+dec_yso_both = CC_Webb_Classified.DEC.values[(CC_Webb_Classified.Class_PRF == 0)&(CC_Webb_Classified.Class_RF == 0)]
 
-plt.scatter(ra_yso_rf,dec_yso_rf, marker='*', s=150,alpha=0.8,transform=ax.get_transform('fk5'),label='Our YSOs (RF)')
-plt.scatter(ra_yso_prf,dec_yso_prf, marker='*', s=150,alpha=0.8,transform=ax.get_transform('fk5'),label='Our YSOs (PRF)')
-plt.scatter(ra_ir,dec_ir, marker='s',s=150, alpha=0.8,transform=ax.get_transform('fk5'),label='SPICY (2021) or Ohlendorf (2013) YSOs')
-plt.scatter(ra_1,dec_1, marker='o',s=150, alpha=0.8,transform=ax.get_transform('fk5'),label='Reiter et al. 2022 YSOs')
+plt.plot(ra_yso_rf,dec_yso_rf, marker='*',linestyle='none', markersize=15,alpha=0.8,c=rf_col,transform=ax.get_transform('fk5'),label='Our YSOs (RF)')
+plt.plot(ra_yso_prf,dec_yso_prf, marker='*', linestyle='none', markersize=15,alpha=0.8,c=prf_col,transform=ax.get_transform('fk5'),label='Our YSOs (PRF)')
+plt.plot(ra_yso_both,dec_yso_both, marker='*',linestyle='none', markersize=15,alpha=0.8,fillstyle='left',c=rf_col,markerfacecoloralt=prf_col,markeredgecolor='none',transform=ax.get_transform('fk5'),label='Our YSOs (PRF)')
+plt.plot(ra_ir,dec_ir, marker='s',linestyle='none', markersize=15, markeredgecolor='k',fillstyle='none',alpha=0.8,transform=ax.get_transform('fk5'),label='SPICY (2021) or Ohlendorf (2013) YSOs')
+plt.plot(ra_1,dec_1, marker='o',linestyle='none', markersize=15,markeredgecolor='k',fillstyle='none', alpha=0.8,transform=ax.get_transform('fk5'),label='Reiter et al. 2022 YSOs')
 ax.set_ylim(ymax, ymin)
 ax.set_xlim(xmax, xmin)
-plt.legend(loc=1)
+plt.legend(loc='lower left')
 ax.grid(False)
-# plt.xticks()
-# plt.yticks()
-# plt.xlabel('RA')
-# plt.ylabel('DEC')
-
+plt.xticks()
+plt.yticks()
+plt.xlabel('RA')
+plt.ylabel('DEC')
+plt.tight_layout()
 plt.savefig(f"Figures/field_image_{filter}_"+date+".png",dpi=300)
+plt.close()
 
-
+print("Field image created!")
 #--------------------------------------------------------------------
 # Compare SEDs and number of bands available for validation set. 
 a = CC_Webb_Classified[CC_Webb_Classified.Class_RF==0][CC_Webb_Classified['Init_Class']==0].index # Correctly classified as YSO
@@ -293,7 +342,8 @@ axs[2][1].set_xlim(0,11)
 axs[3][1].set_xlabel('Bands Available')
 
 plt.savefig('Figures/seds_'+date+'.png',dpi=300)
-
+plt.close()
+print("Plot of SEDs created!")
 #--------------------------------------------------------------------
 # Plot of Prob YSO vs recall/precision
 
@@ -315,7 +365,7 @@ recs_prf = []
 pres_prf = []
 nums_prf = []
 
-cuts = np.arange(0.0,1.05,0.05)
+cuts = np.arange(0.0,1.0,0.01)
 for i in cuts:
     preds = np.array([1]*len(CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns)[['Class_RF']].values))
     # print(np.where(prob_yso_rf_ir>i)[0])
@@ -336,23 +386,24 @@ for i in cuts:
     preds[np.where(prob_yso_prf>i)[0]] = 0
     nums_prf.append(len(preds[preds==0]))
 
-fig, ax = plt.subplots(2,1,sharex=True,dpi=300,figsize=(5,10))
+fig, ax = plt.subplots(2,1,dpi=300,figsize=(5,10))
 
-ax[0].plot(cuts,f1s_rf,c='firebrick',label='F1-Score (RF)')
-ax[0].plot(cuts,pres_rf,c='orangered',label='Precision (RF)')
-ax[0].plot(cuts,recs_rf,c='lightcoral',label='Recall (RF)')
+ax[0].plot(cuts,f1s_rf,c=rf_col,label='F1-Score (RF)')
+ax[0].plot(cuts,pres_rf,'--',c=rf_col,label='Precision (RF)')
+ax[0].plot(cuts,recs_rf,'-.',c=rf_col,label='Recall (RF)')
 
-ax[0].plot(cuts,f1s_prf,'--',c='firebrick',label='F1-Score (PRF)')
-ax[0].plot(cuts,pres_prf,'--',c='orangered',label='Precision (PRF)')
-ax[0].plot(cuts,recs_prf,'--',c='lightcoral',label='Recall (PRF)')
+ax[0].plot(cuts,f1s_prf,c=prf_col,label='F1-Score (PRF)')
+ax[0].plot(cuts,pres_prf,'--',c=prf_col,label='Precision (PRF)')
+ax[0].plot(cuts,recs_prf,'-.',c=prf_col,label='Recall (PRF)')
+# ax[0].set_xlabel('Probability YSO Cut')
 ax[1].set_xlabel('Probability YSO Cut')
 ax[0].set_ylabel('Metric Score')
 ax[1].set_xticks(np.arange(0,1.1,0.1))
 ax[0].set_xticks(np.arange(0,1.1,0.1))
 
 # ax2 = ax.twinx()
-ax[1].plot(cuts[:-1],nums_rf[:-1],c='darkgrey',label='Number YSOs (RF)')
-ax[1].plot(cuts[:-1],nums_prf[:-1],linestyle='--',c='darkgrey',label='Number YSOs (PRF)')
+ax[1].plot(cuts[:-1],nums_rf[:-1],c=rf_col,label='Number YSOs (RF)')
+ax[1].plot(cuts[:-1],nums_prf[:-1],linestyle='--',c=prf_col,label='Number YSOs (PRF)')
 ax[1].set_ylabel('Number of YSOs')
 # ax[1].grid(False)  
 ax[1].set_yscale('log')
@@ -361,9 +412,10 @@ ax[1].set_yscale('log')
 ax[0].legend(loc='lower left')
 ax[1].legend(loc='lower left')
 plt.savefig('Figures/Prob_YSO_vs_metric_'+date+'.png',dpi=300)
+plt.close()
 
 
-
+print("Plot of number of YSOs and all metrics created!")
 # --------------------------------------------------------------------
 # Histogram of brightnesses with wavelength
 
@@ -377,8 +429,9 @@ for i in range(0,3):
         axs[i][j].set_title(webb_bands[f])
         f += 1
 plt.savefig("Figures/Brightness_Band_YSO_"+date+".png",dpi=300)
+plt.close()
 
-
+print("Histogram of brightnesses with wavelength created!")
 #  --------------------------------------------------------------------
 # CMDs and CCDs with labelled YSOs
 
@@ -393,10 +446,10 @@ for f in fcd_columns:
 
     CC_rf = CC_tmp.copy()
     CC_rf = CC_rf[CC_rf.Class_RF==0]
-    plt.scatter(CC_rf['f090w-f444w'],CC_rf[f],marker='s',s=15,c='orangered',label='RF YSOs')
+    plt.scatter(CC_rf['f090w-f444w'],CC_rf[f],marker='s',s=15,c=rf_col,label='RF YSOs')
     CC_prf = CC_tmp.copy()
     CC_prf = CC_prf[CC_prf.Class_PRF==0]
-    plt.scatter(CC_prf['f090w-f444w'],CC_prf[f],marker='*',s=15,c='maroon', label = 'PRF YSOs')
+    plt.scatter(CC_prf['f090w-f444w'],CC_prf[f],marker='*',s=15,c=prf_col, label = 'PRF YSOs')
 
     plt.xlabel("F090W-F444W")
     plt.ylabel(f.upper())
@@ -406,6 +459,7 @@ for f in fcd_columns:
     plt.close()
 
 
+print("CMDs and CCDs with labelled YSOs created!")
 # ------------------
 # Spitzer-DAOPHOT comparison
 
@@ -422,22 +476,27 @@ c = ax[0].scatter(cc_match[['mag3_6']].values,cc_match[['f335m']].values,s=5,c=e
 divider = make_axes_locatable(ax[0])
 cax = divider.append_axes('right', size='5%', pad=0.05)
 ax[0].plot(lims,lims,'k',lw=0.3)
-ax[0].set_xlabel('IRAC2')
+ax[0].set_xlabel('IRAC1')
 ax[0].set_ylabel('F335M')
 ax[0].invert_xaxis()
 ax[0].invert_yaxis()
+ax[0].set_yticks(np.arange(8,22,2))
 plt.colorbar(mappable=c,cax=cax)
 
 err = (cc_match[['d4_5m']].values**2+cc_match[['e_f444w']].values**2)**0.5
 c2 = ax[1].scatter(cc_match[['mag4_5']].values,cc_match[['f444w']].values,s=5,c=err,cmap='copper')
 ax[1].plot(lims,lims,'k',lw=0.3)
 ax[1].set_ylim(9,16.5)
-ax[1].set_xlabel('IRAC3')
+ax[1].set_xlabel('IRAC2')
 ax[1].set_ylabel('F444W')
 ax[1].invert_xaxis()
 ax[1].invert_yaxis()
 divider = make_axes_locatable(ax[1])
 cax = divider.append_axes('right', size='5%', pad=0.05)
 plt.colorbar(mappable=c2,cax=cax)
+fig.tight_layout()
 
 plt.savefig("Figures/spitz_dao_comp.png")
+plt.close()
+
+print("Spitzer-DAOPHOT comparison created!")
