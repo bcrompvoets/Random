@@ -22,11 +22,26 @@ date = 'DAOPHOT_'+ date
 cont = True
 amounts_te = []
 
+filters = [c for c in dao_aug.columns if ((c[0] == "f") and ('-' not in c))]
 fcd_columns = [c for c in dao_aug.columns if ((c[0] == "f") and ('-' in c)) or c[0]=='δ' or c[0]=='(' or c=='Sum1' or c[0]=='s']# and ('f470n' not in c) and ('f187n' not in c)]#or c=='Sum1'
 print(fcd_columns)
 errs = ["e_"+f for f in fcd_columns]
 bands = fcd_columns+errs
 tars = ['Prob', 'Class']
+
+# Normalize data
+max_fcde = np.array([np.nanmax(dao[c].values) for c in fcd_columns])
+dao_aug_norm = dao_aug.copy()
+dao_aug_norm[fcd_columns] = dao_aug_norm[fcd_columns].values/max_fcde
+dao_aug_norm[errs] = dao_aug_norm[errs].values/max_fcde
+
+dao_norm = dao.copy()
+dao_norm[fcd_columns] = dao_norm[fcd_columns].values/max_fcde
+dao_norm[errs] = dao_norm[errs].values/max_fcde
+
+dao_IR_norm = dao_IR.copy()
+dao_IR_norm[fcd_columns] = dao_IR_norm[fcd_columns].values/max_fcde
+dao_IR_norm[errs] = dao_IR_norm[errs].values/max_fcde
 
 
 def get_best_prf(tr, va, te):
@@ -100,8 +115,8 @@ def get_best_rf(tr, va, te):
 
 # -------------------------------------------
 # Parallelize
-prf_inds = np.array([dao_aug[fcd_columns+errs+tars].copy().values,dao_IR[fcd_columns+errs+tars].copy().values,dao[fcd_columns+errs].copy().values])
-rf_inds = np.array([dao_aug[fcd_columns+errs+tars].copy().dropna().values,dao_IR[fcd_columns+errs+tars].copy().dropna().values,dao[fcd_columns+errs].copy().dropna().values])
+prf_inds = np.array([dao_aug_norm[fcd_columns+errs+tars].copy().values,dao_IR_norm[fcd_columns+errs+tars].copy().values,dao_norm[fcd_columns+errs].copy().values])
+rf_inds = np.array([dao_aug_norm[fcd_columns+errs+tars].copy().dropna().values,dao_IR_norm[fcd_columns+errs+tars].copy().dropna().values,dao_norm[fcd_columns+errs].copy().dropna().values])
 print("Starting bootstrapping!")
 import multiprocess as mp
 import time
@@ -181,7 +196,7 @@ print("Classification finished and comparison to previous work added!")
 
 
 print("RF Classification Report")
-print(classification_report(CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns).Init_Class,CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns).Class_RF))
+print(classification_report(CC_Webb_Classified.dropna(subset=['Init_Class']+filters).Init_Class,CC_Webb_Classified.dropna(subset=['Init_Class']+filters).Class_RF))
 
 print("PRF Classification Report")
 print(classification_report(CC_Webb_Classified.dropna(subset='Init_Class').Init_Class,CC_Webb_Classified.dropna(subset='Init_Class').Class_PRF))
