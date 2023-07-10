@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-# from custom_dataloader import replicate_data_single
+from custom_dataloader import replicate_data_single
 import matplotlib.pyplot as plt
 from PRF import prf
 from sklearn.ensemble import RandomForestClassifier
@@ -22,7 +22,7 @@ date = 'DAOPHOT_'+ date
 cont = True
 amounts_te = []
 
-fcd_columns = [c for c in dao_aug.columns if (c[0] == "f" or c[0]=='δ') and ('f470n' not in c) and ('f187n' not in c)]#or c=='Sum1'
+fcd_columns = [c for c in dao_aug.columns if ((c[0] == "f") and ('-' in c)) or c[0]=='δ' or c[0]=='(' or c=='Sum1' or c[0]=='s']# and ('f470n' not in c) and ('f187n' not in c)]#or c=='Sum1'
 print(fcd_columns)
 errs = ["e_"+f for f in fcd_columns]
 bands = fcd_columns+errs
@@ -32,12 +32,12 @@ tars = ['Prob', 'Class']
 def get_best_prf(tr, va, te):
     
     seed = int(np.random.default_rng().random()*np.random.default_rng().random()*10000)
-    tr, _ = train_test_split(tr,train_size=.8,random_state=seed)
+    # tr, _ = train_test_split(tr,train_size=.9,random_state=seed)
     # va, _ = train_test_split(va,train_size=1.)
-    # inp_tr, tar_tr = replicate_data_single(tr[:,:-1],tr[:,-1],amounts=[len(tr[:,-1][tr[:,-1]==0]),len(tr[:,-1][tr[:,-1]==1])],seed=seed)
-    # inp_va, tar_va = replicate_data_single(va[:,:-1],va[:,-1],amounts=[len(va[:,-1][va[:,-1]==0]),len(va[:,-1][va[:,-1]==1])],seed=seed)
+    inp_tr, tar_tr = replicate_data_single(tr[:,:-1],tr[:,-1],amounts=[len(tr[:,-1][tr[:,-1]==0]),len(tr[:,-1][tr[:,-1]==1])],seed=seed)
+    inp_va, tar_va = replicate_data_single(va[:,:-1],va[:,-1],amounts=[len(va[:,-1][va[:,-1]==0]),len(va[:,-1][va[:,-1]==1])],seed=seed)
     inp_tr, tar_tr = tr[:,:-1],tr[:,-1]
-    inp_va, tar_va = va[:,:-1],va[:,-1]
+    # inp_va, tar_va = va[:,:-1],va[:,-1]
     inp_tr, prob_tr = inp_tr[:,:-1], inp_tr[:,-1]
     inp_va, _ = inp_va[:,:-1], inp_va[:,-1]
     dy_tr = np.array([np.array([x,1-x]) for x in prob_tr])
@@ -47,7 +47,7 @@ def get_best_prf(tr, va, te):
     inds = range(0,int(np.shape(inp_tr)[1]/2))
     e_inds = range(int(np.shape(inp_tr)[1]/2),np.shape(inp_tr)[1])
     prf_cls = prf(n_estimators=100, bootstrap=False, keep_proba=0.5)
-    prf_cls.fit(X=inp_tr[:,inds], dX=inp_tr[:,e_inds], py=dy_tr)#y=tar_tr
+    prf_cls.fit(X=inp_tr[:,inds], dX=inp_tr[:,e_inds], y=tar_tr)#py=dy_tr)#
     # prf_cls.fit(X=inp_tr[:,inds], dX=inp_tr[:,e_inds], py=dy_tr)
     pred_va = prf_cls.predict(X=inp_va[:,inds],dX=inp_va[:,e_inds])
     # pred_tr = prf_cls.predict(inp_tr[:,inds],inp_tr[:,e_inds])
@@ -66,12 +66,12 @@ def get_best_prf(tr, va, te):
 def get_best_rf(tr, va, te):
     
     seed = int(np.random.default_rng().random()*np.random.default_rng().random()*10000)
-    tr, _ = train_test_split(tr,train_size=.8,random_state=seed)
+    # tr, _ = train_test_split(tr,train_size=.9,random_state=seed)
     # va, _ = train_test_split(va,train_size=1.)
-    # inp_tr, tar_tr = replicate_data_single(tr[:,:-1],tr[:,-1],amounts=[len(tr[:,-1][tr[:,-1]==0]),len(tr[:,-1][tr[:,-1]==1])],seed=seed)
-    # inp_va, tar_va = replicate_data_single(va[:,:-1],va[:,-1],amounts=[len(va[:,-1][va[:,-1]==0]),len(va[:,-1][va[:,-1]==1])],seed=seed)
+    inp_tr, tar_tr = replicate_data_single(tr[:,:-1],tr[:,-1],amounts=[len(tr[:,-1][tr[:,-1]==0]),len(tr[:,-1][tr[:,-1]==1])],seed=seed)
+    inp_va, tar_va = replicate_data_single(va[:,:-1],va[:,-1],amounts=[len(va[:,-1][va[:,-1]==0]),len(va[:,-1][va[:,-1]==1])],seed=seed)
     inp_tr, tar_tr = tr[:,:-1],tr[:,-1]
-    inp_va, tar_va = va[:,:-1],va[:,-1]
+    # inp_va, tar_va = va[:,:-1],va[:,-1]
     inp_tr = inp_tr[:,:-1] # Remove probability
     inp_va = inp_va[:,:-1] # Remove probability
 
@@ -106,7 +106,7 @@ print("Starting bootstrapping!")
 import multiprocess as mp
 import time
 tic = time.perf_counter()
-n = 100
+n = 50
 
 with mp.Pool(6) as pool:
     ans_prf = pool.starmap(get_best_prf,[prf_inds] * n)
@@ -148,7 +148,7 @@ print("Number of YSOs with prob>50\% (prf):",len(preds_prf[p_yso_prf>0.5]))
 
 
 # Make and save predictions/probabilities in csv
-CC_Webb_Classified = dao.copy()[['Index','RA','DEC']+bands]
+CC_Webb_Classified = dao.copy()[['Index','RA','DEC']+[c for c in dao_aug.columns if (c[0] == "f" or c[0]=='δ'or c=='Sum1' or c[0]=='e'or c[0]=='(')]]
 
 
 # CC_Webb_Classified['Index'] = dao['Index']

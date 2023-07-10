@@ -23,8 +23,10 @@ dao.where(dao!=9.9999, np.nan,inplace=True)
 
 filters = ['f090w','f187n','f200w','f335m','f444w','f470n']
 
-# Keep only objects with data in at least three bands
-dao.dropna(subset = filters, thresh = 3, inplace=True) 
+# Keep only objects with data in at least four bands
+dao.dropna(subset = filters, thresh = 4, inplace=True) 
+dao.dropna(subset = ['f335m','f444w','f470n'], thresh = 2, inplace=True) 
+print("Size of catalog: ",len(dao))
 
 # Correct ZPs
 head = ['ID', 'x', 'y', 'mag_1','mag_2','mag_3','mag_4','mag_5','mag_6','mag_7','mag_8','mag_9','mag_10','mag_11','mag_12']
@@ -45,7 +47,8 @@ veg_zp = [26.29,22.37,25.60,23.78,24.30,20.22]
 for f, filt in enumerate(filters):
     dao[filt] = veg_zp[f]+(dao[filt]-zps[f])
 
-# Add in colours and deltas
+# Add in colours and deltas and slopes
+filt_vals = [0.9, 1.87, 2.00, 3.35, 4.44, 4.70]
 dao_tmp =dao.copy()
 dao_tmp.dropna(inplace=True)
 for filt in filters:
@@ -58,6 +61,8 @@ for f, filt in enumerate(filters):
     lin_fit = np.polyfit(dao_tmp['f090w'] - dao_tmp['f444w'], dao_tmp[filt]-dao_tmp[filters[f+1]], 1)
     dao["δ_"+filt+"-"+filters[f+1]] = dao[filt]-dao[filters[f+1]] - (lin_fit[0] * (dao['f090w'] - dao['f444w']) + lin_fit[1])
     dao["e_δ_"+filt+"-"+filters[f+1]] = np.sqrt(dao['e_'+filt].values**2+dao['e_'+filters[f+1]].values**2)
+    dao['slope_'+filt+'-'+filters[f+1]] = (dao[filt]-dao[filters[f+1]])/(filt_vals[f]-filt_vals[f+1])
+    dao['e_slope_'+filt+'-'+filters[f+1]] = dao["e_"+filt+"-"+filters[f+1]]/(filt_vals[f]-filt_vals[f+1])
     if f == len(filters)-2:
         break
 

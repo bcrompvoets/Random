@@ -11,16 +11,25 @@ import warnings
 warnings.filterwarnings('ignore')
 
 date = 'June192023'
-CC_Webb_Classified = pd.read_csv(f'CC_Classified_DAOPHOT_{date}.csv')#f'CC_Classified_DAOPHOT_{date}.csv'
+CC_Webb_Classified = pd.read_csv(f'CC_Classified_DAOPHOT_{date}.csv')
 dao_IR = pd.read_csv(f'DAOPHOT_Catalog_{date}_IR.csv')
 
 date = 'DAOPHOT_'+ date
 
-fcd_columns = [c for c in dao_IR.columns if c[0] == "f" or c[0]=='δ'or c[:3]=='Sum']
+filters = [c for c in CC_Webb_Classified.columns if c[0] == "f"]
+print(filters)
+fcd_columns = [c for c in CC_Webb_Classified.columns if c[0] == "f" or c[0]=='δ' or c[0]=='(' or c.lower()=='s']
 errs = ["e_"+f for f in fcd_columns]
 bands = fcd_columns+errs
 
 # ----------------------------------------------------------------------------
+
+
+# plt.scatter(CC_Webb_Classified.dropna(subset='Init_Class').Prob_PRF,dao_IR.Prob.values)
+# plt.xlabel('Prob PRF')
+# plt.ylabel('Prob Init')
+# plt.show()
+# 
 # Print classification reports
 print("RF Classification Report")
 print(classification_report(CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns).Init_Class,CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns).Class_RF))
@@ -77,8 +86,8 @@ print("Table of comparison to other works completed!")
 
 # #----------------------------------------------------------------------------
 # Latex table of YSOs for paper
-columns = ['RA', 'DEC', 'f090w', 'f187n','f200w', 'f335m', 'f444w','f470n', 'Prob_PRF','Prob_RF']
-new_cols = ['RA', 'DEC', 'F090w','F187n','F200w','F335m','F444w','F470n',  'Prob YSO PRF', 'Prob YSO RF'] #'F770w', 'F1130w', 'F1280w', 'F1800w',
+columns = ['RA', 'DEC'] + filters + ['Prob_PRF','Prob_RF']
+new_cols = ['RA', 'DEC'] + [f.upper() for f in filters] + ['Prob YSO PRF', 'Prob YSO RF'] #'F770w', 'F1130w', 'F1280w', 'F1800w',
 
 csv_yso = CC_Webb_Classified[(CC_Webb_Classified.Class_RF==0)|(CC_Webb_Classified.Class_PRF==0)].reset_index()
 csv_yso = csv_yso.loc[csv_yso.isnull().sum(1).sort_values(ascending=1).index,columns]
@@ -231,7 +240,7 @@ ra_yso_both = CC_Webb_Classified.RA.values[(CC_Webb_Classified.Class_PRF == 0)&(
 dec_yso_both = CC_Webb_Classified.DEC.values[(CC_Webb_Classified.Class_PRF == 0)&(CC_Webb_Classified.Class_RF == 0)]
 
 plt.plot(ra_yso_rf,dec_yso_rf, marker='*',linestyle='none', markersize=15,alpha=0.8,c=rf_col,transform=ax.get_transform('fk5'),label='Our YSOs (RF)')
-plt.plot(ra_yso_prf,dec_yso_prf, marker='*', linestyle='none', markersize=15,alpha=0.8,c=prf_col,transform=ax.get_transform('fk5'),label='Our YSOs (PRF)')
+# plt.plot(ra_yso_prf,dec_yso_prf, marker='*', linestyle='none', markersize=15,alpha=0.8,c=prf_col,transform=ax.get_transform('fk5'),label='Our YSOs (PRF)')
 plt.plot(ra_yso_both,dec_yso_both, marker='*',linestyle='none', markersize=15,alpha=0.8,fillstyle='left',c=rf_col,markerfacecoloralt=prf_col,markeredgecolor='none',transform=ax.get_transform('fk5'),label='Our YSOs (PRF)')
 plt.plot(ra_ir,dec_ir, marker='s',linestyle='none', markersize=15, markeredgecolor='k',fillstyle='none',alpha=0.8,transform=ax.get_transform('fk5'),label='SPICY (2021) or Ohlendorf (2013) YSOs')
 plt.plot(ra_1,dec_1, marker='o',linestyle='none', markersize=15,markeredgecolor='k',fillstyle='none', alpha=0.8,transform=ax.get_transform('fk5'),label='Reiter et al. 2022 YSOs')
@@ -294,8 +303,6 @@ def sed_plot_mu(ax, ind, cat,title=None,correction=0):
 
     return ax
 
-
-webb_bands = [idx for idx in CC_Webb_Classified.columns.values if (idx[0].lower() == 'f' and len(idx) == 5)]
     
 fig, axs = plt.subplots(4,2,figsize=(10,10),dpi=300)
 
@@ -334,10 +341,10 @@ axs[3][0].set_xlabel('Wavelength')
 axs[1][0].set_ylabel('Magnitude (Vega)')
 
 
-axs[0][1].hist([np.count_nonzero(~CC_Webb_Classified[webb_bands].iloc[i].isna()) for i in a],bins=np.arange(1,11,1))
-axs[1][1].hist([np.count_nonzero(~CC_Webb_Classified[webb_bands].iloc[i].isna()) for i in b],bins=np.arange(1,11,1))
-axs[2][1].hist([np.count_nonzero(~CC_Webb_Classified[webb_bands].iloc[i].isna()) for i in c],bins=np.arange(1,11,1))
-axs[3][1].hist([np.count_nonzero(~CC_Webb_Classified[webb_bands].iloc[i].isna()) for i in d],bins=np.arange(1,11,1))
+axs[0][1].hist([np.count_nonzero(~CC_Webb_Classified[filters].iloc[i].isna()) for i in a],bins=np.arange(1,11,1))
+axs[1][1].hist([np.count_nonzero(~CC_Webb_Classified[filters].iloc[i].isna()) for i in b],bins=np.arange(1,11,1))
+axs[2][1].hist([np.count_nonzero(~CC_Webb_Classified[filters].iloc[i].isna()) for i in c],bins=np.arange(1,11,1))
+axs[3][1].hist([np.count_nonzero(~CC_Webb_Classified[filters].iloc[i].isna()) for i in d],bins=np.arange(1,11,1))
 axs[2][1].set_xlim(0,11)
 axs[3][1].set_xlabel('Bands Available')
 
@@ -400,6 +407,7 @@ ax[1].set_xlabel('Probability YSO Cut')
 ax[0].set_ylabel('Metric Score')
 ax[1].set_xticks(np.arange(0,1.1,0.1))
 ax[0].set_xticks(np.arange(0,1.1,0.1))
+ax[0].set_yticks(np.arange(0,1.1,0.1))
 
 # ax2 = ax.twinx()
 ax[1].plot(cuts[:-1],nums_rf[:-1],c=rf_col,label='Number YSOs (RF)')
@@ -425,8 +433,8 @@ bins =np.arange(6,24,2)
 f = 0
 for i in range(0,3):
     for j in range(0,2):
-        axs[i][j].hist(CC_Webb_Classified.loc[CC_Webb_Classified.Class_RF==0,webb_bands[f]],bins=bins,label=webb_bands[f])
-        axs[i][j].set_title(webb_bands[f])
+        axs[i][j].hist(CC_Webb_Classified.loc[CC_Webb_Classified.Class_RF==0,filters[f]],bins=bins,label=filters[f])
+        axs[i][j].set_title(filters[f])
         f += 1
 plt.savefig("Figures/Brightness_Band_YSO_"+date+".png",dpi=300)
 plt.close()
