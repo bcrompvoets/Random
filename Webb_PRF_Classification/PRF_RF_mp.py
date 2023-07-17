@@ -163,13 +163,8 @@ print("Number of YSOs with prob>50\% (prf):",len(preds_prf[p_yso_prf>0.5]))
 
 
 # Make and save predictions/probabilities in csv
-CC_Webb_Classified = dao.copy()[['Index','RA','DEC']+[c for c in dao_aug.columns if (c[0] == "f" or c[0]=='δ'or c=='Sum1' or c[0]=='e'or c[0]=='(')]]
+CC_Webb_Classified = dao.copy()[['Index','RA','DEC','x','y']+[c for c in dao_aug.columns if (c[0] == "f" or c[0]=='δ'or c=='Sum1' or c[0]=='e' or 'slope' in c or c[0]=='(')]]
 
-
-# CC_Webb_Classified['Index'] = dao['Index']
-# CC_Webb_Classified['RA'] = dao['RA']
-# CC_Webb_Classified['DEC'] = dao[['DEC']].values
-# CC_Webb_Classified[np.array(bands)] = dao[bands].values
 CC_Webb_Classified['Class_PRF'] = preds_prf
 CC_Webb_Classified['Prob_PRF'] = p_yso_prf
 

@@ -39,5 +39,5 @@ IR (Ohlendorf et al. 2013) - SPICY 7474.0 & - & YSO 15605 - PRF and RF \\
 IR (Ohlendorf et al. 2013) - SPICY 7480.0 & - & YSO 16973 - PRF \\ 
 IR (Ohlendorf et al. 2013) - SPICY nan & - & C - 16981 \\ 
 SPICY (Kuhn et al. 2021) - SPICY 7472.0 & - & C - 17522 \\ 
-SPICY (Kuhn et al. 2021) - SPICY 7475.0 & - & YSO 17556 - PRF and RF \\ 
+SPICY (Kuhn et al. 2021) - SPICY 7475.0 & - & YSO 17556 - PRF \\ 
 SPICY (Kuhn et al. 2021) - SPICY 7481.0 & - & YSO 17690 - PRF and RF \\ 

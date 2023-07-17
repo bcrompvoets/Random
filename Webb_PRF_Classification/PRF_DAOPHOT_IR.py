@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+# import matplotlib as mpl
 
 from sklearn.metrics import ConfusionMatrixDisplay,accuracy_score,f1_score,classification_report,f1_score,recall_score,precision_score
 
@@ -18,11 +19,13 @@ date = 'DAOPHOT_'+ date
 
 filters = [c for c in CC_Webb_Classified.columns if c[0] == "f"]
 print(filters)
-fcd_columns = [c for c in CC_Webb_Classified.columns if c[0] == "f" or c[0]=='δ' or c[0]=='(' or c.lower()=='s']
+fcd_columns = [c for c in CC_Webb_Classified.columns if c[0] == "f" or c[0]=='δ' or c[0]=='(' or c=='Sum1' or (('slope' in c) and c[0]!='e')]
+print(CC_Webb_Classified.columns)
 errs = ["e_"+f for f in fcd_columns]
 bands = fcd_columns+errs
 
 # ----------------------------------------------------------------------------
+# Update threshold
 thresh = 0.9
 CC_Webb_Classified.loc[CC_Webb_Classified.Prob_RF<thresh,'Class_RF'] = 1
 CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF<thresh,'Class_PRF'] = 1
@@ -111,14 +114,15 @@ for i in range(0,len(csv_yso)):
 f.close()
 # #----------------------------------------------------------------------------
 
-# Make Plots
-
+# Make Plots, define plot details
+plt.rcParams['figure.dpi'] = 300
 plt.style.use('ggplot')
 plt.rcParams['font.size'] = 12
 plt.rcParams['font.family'] = 'serif'
 
 prf_col = 'maroon'
 rf_col = 'salmon'
+colormap = 'Greys'
 # #----------------------------------------------------------------------------
 # Scatter plot with hists for number of YSOs vs F1-Score
 num_yso_rf = np.loadtxt("Data/Num_YSOs_RFDAOPHOT_June192023")
@@ -451,7 +455,7 @@ for f in fcd_columns:
     err = np.sqrt(CC_Webb_Classified['e_f090w-f444w'].values**2+CC_Webb_Classified['e_'+f].values**2)
     CC_tmp = CC_Webb_Classified[err<0.2]
 
-    plt.scatter(CC_tmp['f090w-f444w'], CC_tmp[f],c=err[err<0.2],marker='.', s=1,cmap='copper')
+    plt.scatter(CC_tmp['f090w-f444w'], CC_tmp[f],c=err[err<0.2],marker='.', s=1,cmap=colormap+'_r')
     plt.colorbar(label='Propogated Error')
 
     CC_rf = CC_tmp.copy()
@@ -482,7 +486,7 @@ fig, ax = plt.subplots(2,1,dpi=300)
 lims = np.arange(8.5,16)
 print(len(cc_match[['mag3_6']].values))
 err = (cc_match[['d3_6m']].values**2+cc_match[['e_f335m']].values**2)**0.5
-c = ax[0].scatter(cc_match[['mag3_6']].values,cc_match[['f335m']].values,s=5,c=err,cmap='copper')
+c = ax[0].scatter(cc_match[['mag3_6']].values,cc_match[['f335m']].values,s=5,c=err,cmap=colormap)
 divider = make_axes_locatable(ax[0])
 cax = divider.append_axes('right', size='5%', pad=0.05)
 ax[0].plot(lims,lims,'k',lw=0.3)
@@ -494,7 +498,7 @@ ax[0].set_yticks(np.arange(8,22,2))
 plt.colorbar(mappable=c,cax=cax)
 
 err = (cc_match[['d4_5m']].values**2+cc_match[['e_f444w']].values**2)**0.5
-c2 = ax[1].scatter(cc_match[['mag4_5']].values,cc_match[['f444w']].values,s=5,c=err,cmap='copper')
+c2 = ax[1].scatter(cc_match[['mag4_5']].values,cc_match[['f444w']].values,s=5,c=err,cmap=colormap)
 ax[1].plot(lims,lims,'k',lw=0.3)
 ax[1].set_ylim(9,16.5)
 ax[1].set_xlabel('IRAC2')
@@ -510,3 +514,38 @@ plt.savefig("Figures/spitz_dao_comp.png")
 plt.close()
 
 print("Spitzer-DAOPHOT comparison created!")
+
+# ------------------------------------------------------------------------
+# Surface Density Figure
+
+grid = 0 
+# xy = wcs_main.all_world2pix(np.transpose([CC_Webb_Classified.RA,CC_Webb_Classified.DEC]),1)
+# x = xy[:,0]
+# y = xy[:,1]
+X = CC_Webb_Classified.x
+Y = CC_Webb_Classified.y
+xgrid = np.linspace(min(X),max(X),20)
+ygrid = np.linspace(min(Y),max(Y),20)
+grid_norm, _, _ = np.histogram2d(X, Y, bins=[xgrid, ygrid])
+
+
+for i in range(1,1001):
+    random_ths = np.random.default_rng().random(len(CC_Webb_Classified))
+    CC_tmp_th = CC_Webb_Classified[CC_Webb_Classified.Prob_PRF>random_ths]
+    x = CC_tmp_th.x
+    y = CC_tmp_th.y
+    grid_tmp, _, _ = np.histogram2d(x, y, bins=[xgrid, ygrid])
+    grid = grid+grid_tmp
+grid = grid/i # Take avg
+grid = grid.T/grid_norm.T # Normalize, transpose due to inversion of x and y
+
+plt.pcolormesh(xgrid,ygrid,grid,cmap=colormap)
+plt.colorbar(label='Normalized Surface Density of cYSOs')
+plt.scatter(CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF>0.9,'x'],CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF>0.9,'y'],s=10,c='maroon',edgecolors='w',linewidth=0.1,marker='*',label='YSOs (Prob > 90%)')
+plt.xlabel('Pixels')
+plt.ylabel('Pixels')
+plt.legend()
+plt.savefig("Figures/Surf_dens_norm.png",dpi=300)
+plt.close()
+
+print("Surface density plot saved!")
