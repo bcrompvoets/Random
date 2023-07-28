@@ -12,7 +12,7 @@ from sklearn.model_selection import train_test_split
 import warnings
 warnings.filterwarnings('ignore')
 
-date = 'June192023'
+date = 'July242023'
 dao = pd.read_csv(f'DAOPHOT_Catalog_{date}.csv')
 dao_IR = pd.read_csv(f'DAOPHOT_Catalog_{date}_IR.csv')
 dao_aug = pd.read_csv(f"Augmented_data_prob_{date}.csv")
@@ -22,8 +22,55 @@ date = 'DAOPHOT_'+ date
 cont = True
 amounts_te = []
 
-filters = [c for c in dao_aug.columns if ((c[0] == "f") and ('-' not in c))]
-fcd_columns = [c for c in dao_aug.columns if ((c[0] == "f") and ('-' in c)) or c[0]=='δ' or c[0]=='(' or c=='Sum1' or c[0]=='s']# and ('f470n' not in c) and ('f187n' not in c)]#or c=='Sum1'
+filters = [c for c in dao_aug.columns if ((c[0] == "f") and ('-' not in c) and ('f187n' not in c))]
+
+# Data processing:
+# Add in colours and deltas and slopes
+def add_fcds(dao_fcd,dao,filters):
+    filt_vals = [int(f[1:-1])/100 for f in filters]
+    dao_tmp =dao.copy()
+    dao_tmp.dropna(inplace=True)
+    for filt in filters:
+        dao_tmp = dao_tmp[dao_tmp['e_'+filt]<0.05]
+
+    dao_fcd["f090w-f444w"] = dao_fcd['f090w'] - dao_fcd['f444w']
+    dao_fcd["e_f090w-f444w"] = np.sqrt(dao_fcd['e_f090w'].values**2+dao_fcd['e_f444w'].values**2)
+
+    for f, filt in enumerate(filters):
+        col = filt+"-"+filters[f+1]
+        dao_fcd[col] = dao_fcd[filt] - dao_fcd[filters[f+1]]
+        dao_fcd["e_"+col] = np.sqrt(dao_fcd["e_"+filt].values**2 + dao_fcd["e_"+filters[f+1]].values**2)
+        lin_fit = np.polyfit(dao_tmp['f090w'] - dao_tmp['f444w'], dao_tmp[filt]-dao_tmp[filters[f+1]], 1)
+        dao_fcd["δ_"+col] = dao_fcd[filt]-dao_fcd[filters[f+1]] - (lin_fit[0] * (dao_fcd['f090w'] - dao_fcd['f444w']) + lin_fit[1])
+        dao_fcd["e_δ_"+col] = np.sqrt(dao_fcd['e_'+filt].values**2+dao_fcd['e_'+filters[f+1]].values**2)
+        dao_fcd['slope_'+col] = (dao_fcd[filt]-dao_fcd[filters[f+1]])/(filt_vals[f]-filt_vals[f+1])
+        dao_fcd['e_slope_'+col] = dao_fcd["e_"+col]/(filt_vals[f]-filt_vals[f+1])
+        if f == len(filters)-2:
+            break
+
+    dao_fcd["(f090w-f200w)-(f200w-f444w)"] = dao_fcd['f090w']-2*dao_fcd['f200w']+dao_fcd['f444w']
+    dao_fcd["e_(f090w-f200w)-(f200w-f444w)"] = np.sqrt(dao_fcd['e_f090w'].values**2+2*dao_fcd['e_f200w'].values**2+dao_fcd['e_f444w'].values**2)
+    lin_fit = np.polyfit(dao_tmp['f090w'] - dao_tmp['f444w'], dao_tmp['f090w']-2*dao_tmp['f200w']+dao_tmp['f444w'], 1)
+    dao_fcd["δ_(f090w-f200w)-(f200w-f444w)"] = dao_fcd['f090w']-2*dao_fcd['f200w']+dao_fcd['f444w'] - (lin_fit[0] * (dao_fcd['f090w'] - dao_fcd['f444w']) + lin_fit[1])
+    dao_fcd["e_δ_(f090w-f200w)-(f200w-f444w)"] = np.sqrt(dao_fcd['e_f090w'].values**2+2*dao_fcd['e_f200w'].values**2+dao_fcd['e_f444w'].values**2)
+
+    if 'f187n' in filters:
+        dao_fcd['Sum1'] = dao_fcd['δ_(f090w-f200w)-(f200w-f444w)']+dao_fcd['δ_f090w-f187n']-dao_fcd['δ_f200w-f335m']-dao_fcd['δ_f335m-f444w']
+        dao_fcd['e_Sum1'] = np.sqrt(dao_fcd['e_δ_(f090w-f200w)-(f200w-f444w)']**2+dao_fcd['e_δ_f090w-f187n']**2+dao_fcd['e_δ_f200w-f335m']**2+dao_fcd['e_δ_f335m-f444w']**2)
+    else:
+        dao_fcd['Sum1'] = dao_fcd['δ_(f090w-f200w)-(f200w-f444w)']-dao_fcd['δ_f200w-f335m']-dao_fcd['δ_f335m-f444w']
+        dao_fcd['e_Sum1'] = np.sqrt(dao_fcd['e_δ_(f090w-f200w)-(f200w-f444w)']**2+dao_fcd['e_δ_f200w-f335m']**2+dao_fcd['e_δ_f335m-f444w']**2)
+    
+    return dao_fcd
+
+dao = add_fcds(dao.copy(),dao.copy(),filters)
+dao_IR = add_fcds(dao_IR.copy(),dao.copy(),filters)
+dao_aug = add_fcds(dao_aug.copy(),dao.copy(),filters)
+# print(dao_IR[dao_IR.Class==0].info())
+
+
+#------------------------------------------------------
+fcd_columns = [c for c in dao_aug.columns if (((c[0] == "f") and ('-' in c)) or c[0]=='δ' or c[0]=='(' or c=='Sum1' or c[0]=='s')and ('f187n' not in c)]# and ('f187n' not in c) and ('f470n' not in c)]# and ('f470n' not in c) and ('f187n' not in c)]#or c=='Sum1'
 print(fcd_columns)
 errs = ["e_"+f for f in fcd_columns]
 bands = fcd_columns+errs
@@ -121,7 +168,7 @@ print("Starting bootstrapping!")
 import multiprocess as mp
 import time
 tic = time.perf_counter()
-n = 50
+n = 100
 
 with mp.Pool(6) as pool:
     ans_prf = pool.starmap(get_best_prf,[prf_inds] * n)
@@ -154,12 +201,12 @@ max_f1_rf = list(map(list, zip(*ans_rf)))[2]
 # Make two columns: final class, and probability of being that class
 p_yso_rf = np.nanmean(pred_tes_rf,axis=0)
 preds_rf = np.zeros(len(p_yso_rf))
-preds_rf[p_yso_rf<=0.5] = 1 
-print("Number of YSOs with prob>50\% (rf):",len(preds_rf[p_yso_rf>0.5]))
+preds_rf[p_yso_rf<0.9] = 1 
+print("Number of YSOs with prob>90\% (rf):",len(preds_rf[p_yso_rf>0.9]))
 p_yso_prf = np.nanmean(pred_tes_prf,axis=0)
 preds_prf = np.zeros(len(p_yso_prf))
-preds_prf[p_yso_prf<=0.5] = 1 
-print("Number of YSOs with prob>50\% (prf):",len(preds_prf[p_yso_prf>0.5]))
+preds_prf[p_yso_prf<0.9] = 1 
+print("Number of YSOs with prob>90\% (prf):",len(preds_prf[p_yso_prf>0.9]))
 
 
 # Make and save predictions/probabilities in csv
@@ -189,6 +236,8 @@ CC_Webb_Classified.loc[ind,'SPICY_ID'] = dao_IR.SPICY_ID.values
 CC_Webb_Classified.to_csv(f"CC_Classified_{date}.csv",index=False)
 print("Classification finished and comparison to previous work added!")
 
+
+print("F1-RF: ", f1_score(CC_Webb_Classified.dropna(subset=['Init_Class']+filters).Init_Class,CC_Webb_Classified.dropna(subset=['Init_Class']+filters).Class_RF), "F1-PRF: ", f1_score(CC_Webb_Classified.dropna(subset='Init_Class').Init_Class,CC_Webb_Classified.dropna(subset='Init_Class').Class_PRF))
 
 print("RF Classification Report")
 print(classification_report(CC_Webb_Classified.dropna(subset=['Init_Class']+filters).Init_Class,CC_Webb_Classified.dropna(subset=['Init_Class']+filters).Class_RF))

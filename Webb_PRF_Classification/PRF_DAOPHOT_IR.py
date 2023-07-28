@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib import ticker
 # import matplotlib as mpl
 
 from sklearn.metrics import ConfusionMatrixDisplay,accuracy_score,f1_score,classification_report,f1_score,recall_score,precision_score
@@ -45,19 +46,21 @@ print(classification_report(CC_Webb_Classified.dropna(subset='Init_Class').Init_
 # ----------------------------------------------------------------------------
 # Make table of Reiter, SPICY, and our own classifications
 
-reit = ["10:36:42.3 -58:38:04", "10:36:48.0 -58:38:19", "10:36:47.3 -58:38:10", "10:36:46.7 -58:38:05", "10:36:51.5 -58:37:54", "10:36:50.5 -58:37:52",\
-    "10:36:51.4 -58:37:48", "10:36:53.8 -58:37:48", "10:36:51.5 -58:37:10", "10:36:54.2 -58:36:26", "10:36:54.4 -58:36:18", "10:36:54.0 -58:37:20",\
-        "10:36:53.6 -58:35:20", "10:36:53.1 -58:37:37", "10:36:53.3 -58:37:54", "10:36:52.7 -58:38:05", "10:36:53.1 -58:37:08", "10:36:51.6 -58:36:58",\
-        "10:36:52.3 -58:38:09", "10:36:53.9 -58:36:29", "10:37:01.5 -58:37:51", "10:37:02.1 -58:36:58", "10:36:53.9 -58:36:32"]# End of third row is the end of MHO-only sources
-r_1 = SkyCoord(reit,unit=(u.hourangle, u.deg))
+# reit = ["10:36:42.3 -58:38:04", "10:36:48.0 -58:38:19", "10:36:47.3 -58:38:10", "10:36:46.7 -58:38:05", "10:36:51.5 -58:37:54", "10:36:50.5 -58:37:52",\
+#     "10:36:51.4 -58:37:48", "10:36:53.8 -58:37:48", "10:36:51.5 -58:37:10", "10:36:54.2 -58:36:26", "10:36:54.4 -58:36:18", "10:36:54.0 -58:37:20",\
+#         "10:36:53.6 -58:35:20", "10:36:53.1 -58:37:37", "10:36:53.3 -58:37:54", "10:36:52.7 -58:38:05", "10:36:53.1 -58:37:08", "10:36:51.6 -58:36:58",\
+#         "10:36:52.3 -58:38:09", "10:36:53.9 -58:36:29", "10:37:01.5 -58:37:51", "10:37:02.1 -58:36:58", "10:36:53.9 -58:36:32"]# End of third row is the end of MHO-only sources
+# r_1 = SkyCoord(reit,unit=(u.hourangle, u.deg))
 
-reit_name = ['MHO1632','MHO1633','MHO1634','MHO1635','MHO1636','MHO1637','MHO1638','MHO1639, HH1221, HH1003A','MHO1640','MHO1643, HH1218','MHO1645, MHO1646','MHO1647, HH1002C','MHO1649','MHO1650',\
-    'MHO1651','MHO1652','MHO1641a','MHO1641b','HH1219','HH1223','HHc-3','HHc-4','HHc-5']
+# reit_name = ['MHO1632','MHO1633','MHO1634','MHO1635','MHO1636','MHO1637','MHO1638','MHO1639, HH1221, HH1003A','MHO1640','MHO1643, HH1218','MHO1645, MHO1646','MHO1647, HH1002C','MHO1649','MHO1650',\
+#     'MHO1651','MHO1652','MHO1641a','MHO1641b','HH1219','HH1223','HHc-3','HHc-4','HHc-5']
+reit_df = pd.read_csv("Reiter2022_cYSOs.csv")
+
 
 tab_preds = open("Table_Reiter_SPICY_YSO.txt",'w')
 tab_preds.write("\citet{Kuhn2021} & \citet{Reiter2022} & Our Work \\\ \hline \n")
 
-r_inds, sep2d, _ = match_coordinates_sky(r_1, SkyCoord(CC_Webb_Classified.RA,CC_Webb_Classified.DEC,unit=u.deg), nthneighbor=1, storekdtree='kdtree_sky')
+r_inds, sep2d, _ = match_coordinates_sky(SkyCoord(reit_df.RA,reit_df.DEC,unit=u.deg), SkyCoord(CC_Webb_Classified.RA,CC_Webb_Classified.DEC,unit=u.deg), nthneighbor=1, storekdtree='kdtree_sky')
 sp_inds = CC_Webb_Classified[CC_Webb_Classified.Init_Class==0].index
 _, inds_of_match = np.unique(np.r_[r_inds,sp_inds], return_index=True)
 matched_inds = np.r_[r_inds,sp_inds][np.sort(inds_of_match)]
@@ -66,28 +69,24 @@ for i, m in enumerate(matched_inds):
     df_tmp = CC_Webb_Classified.iloc[m]
     # df_tmp_ir = dao_IR.iloc[i]
     if df_tmp[['Class_RF']].values[0]==0 and df_tmp[['Class_PRF']].values[0]==0:
-        y_or_s = f'YSO {m} - PRF and RF'
+        y_or_s = f'YSO {m} - PRF {"%.2f" %df_tmp.Prob_PRF} and RF {"%.2f" %df_tmp.Prob_RF}'
     elif df_tmp[['Class_RF']].values[0]==0:
-        y_or_s = f'YSO {m} - RF'
+        y_or_s = f'YSO {m} - RF {"%.2f" %df_tmp.Prob_RF}'
     elif df_tmp[['Class_PRF']].values[0]==0:
-        y_or_s = f'YSO {m} - PRF'
+        y_or_s = f'YSO {m} - PRF {"%.2f" %df_tmp.Prob_PRF}'
     else:
-        y_or_s = f'C - {m}'
+        y_or_s = f'C {m} - PRF {"%.2f" %df_tmp.Prob_PRF}'
     if m in r_inds:
         if m in sp_inds:
-            tab_preds.write(f"{df_tmp.Survey} - SPICY {df_tmp.SPICY_ID} & {reit_name[i]} & {y_or_s} \\\ \n")
+            tab_preds.write(f"{df_tmp.Survey} - SPICY {df_tmp.SPICY_ID} & {reit_df.loc[i,'Name']} & {y_or_s} \\\ \n")
         else:
-            tab_preds.write(f"- & {reit_name[i]} & {y_or_s} \\\ \n")
+            tab_preds.write(f"- & {reit_df.loc[i,'Name']} & {y_or_s} \\\ \n")
     else:
         tab_preds.write(f"{df_tmp.Survey} - SPICY {df_tmp.SPICY_ID} & - & {y_or_s} \\\ \n")
 
 tab_preds.close()
 
 print("Table of comparison to other works completed!")
-
-# #TMP - Make matches to Reiter have those RA/DEC
-# CC_Webb_Classified.iloc[r_inds].RA = r_1.ra
-# CC_Webb_Classified.iloc[r_inds].DEC = r_1.dec
 
 # #----------------------------------------------------------------------------
 # Latex table of YSOs for paper
@@ -231,8 +230,8 @@ plt.imshow(f[0].data,cmap='gray_r',vmax=1300,origin='lower')
 ymax, ymin = ax.get_ylim()
 xmax, xmin = ax.get_xlim()
 
-ra_1 = r_1.ra
-dec_1 = r_1.dec
+ra_1 = reit_df.RA
+dec_1 = reit_df.DEC
 
 ra_ir = CC_Webb_Classified.RA.values[CC_Webb_Classified['Init_Class']==0]
 dec_ir = CC_Webb_Classified.DEC.values[CC_Webb_Classified['Init_Class']==0]
@@ -516,17 +515,18 @@ plt.close()
 print("Spitzer-DAOPHOT comparison created!")
 
 # ------------------------------------------------------------------------
-# Surface Density Figure
+# Surface/Column Density Figure
 
 grid = 0 
+grid_pix = (179,107) #Pixel size corresponding to approximate Herschel resolution.
 # xy = wcs_main.all_world2pix(np.transpose([CC_Webb_Classified.RA,CC_Webb_Classified.DEC]),1)
 # x = xy[:,0]
 # y = xy[:,1]
 X = CC_Webb_Classified.x
 Y = CC_Webb_Classified.y
-xgrid = np.linspace(min(X),max(X),20)
-ygrid = np.linspace(min(Y),max(Y),20)
-grid_norm, _, _ = np.histogram2d(X, Y, bins=[xgrid, ygrid])
+xgrid = np.linspace(min(X),max(X),grid_pix[0])
+ygrid = np.linspace(min(Y),max(Y),grid_pix[1])
+grid_to_norm, _, _ = np.histogram2d(X, Y, bins=[xgrid, ygrid])
 
 
 for i in range(1,1001):
@@ -537,15 +537,93 @@ for i in range(1,1001):
     grid_tmp, _, _ = np.histogram2d(x, y, bins=[xgrid, ygrid])
     grid = grid+grid_tmp
 grid = grid/i # Take avg
-grid = grid.T/grid_norm.T # Normalize, transpose due to inversion of x and y
+grid_norm = grid.T/grid_to_norm.T # Normalize, transpose due to inversion of x and y
 
-plt.pcolormesh(xgrid,ygrid,grid,cmap=colormap)
-plt.colorbar(label='Normalized Surface Density of cYSOs')
-plt.scatter(CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF>0.9,'x'],CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF>0.9,'y'],s=10,c='maroon',edgecolors='w',linewidth=0.1,marker='*',label='YSOs (Prob > 90%)')
-plt.xlabel('Pixels')
-plt.ylabel('Pixels')
+# Column density
+
+levels = np.arange(20.5,22.2,0.1)
+col_dens = fits.open("Gum31_new.fits")
+cdata = col_dens[0].data
+
+
+x_col = np.arange(np.shape(cdata)[1])
+y_col = np.arange(np.shape(cdata)[0])
+
+
+fig, ax2 = plt.subplots(figsize=(8,9))
+cd = ax2.contour(x_col,y_col,cdata,[10**l for l in levels],locator=ticker.LogLocator(), cmap='gist_heat_r',alpha=0.5)
+cba = plt.colorbar(cd,label="Column Density",location="bottom", pad=0.05)
+sd = ax2.pcolormesh(xgrid,ygrid,grid_norm,cmap='Greys')
+cbb = plt.colorbar(sd,label="Normalized Surface Density of YSOs",location="bottom", pad=0.1)
+ax2.scatter(CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF>0.9,'x'],CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF>0.9,'y'],s=35,c='maroon',edgecolors='w',linewidth=0.1,marker='*',label='YSOs (Prob > 90%)')#, transform=tr_webb_wo)
 plt.legend()
-plt.savefig("Figures/Surf_dens_norm.png",dpi=300)
+
+
+# col_dens = fits.open("Gum31-Herschel-NH.fits")
+# col_dens_wcs = WCS(col_dens[0].header)
+# x_col = np.arange(np.shape(col_dens[0].data)[1])
+# y_col = np.arange(np.shape(col_dens[0].data)[0])
+
+# fig = plt.figure(figsize=(8,9))
+# plt.tight_layout()
+# ax2 = plt.subplot(projection=wcs)
+# ax2.set_xlabel('RA')
+# ax2.set_ylabel('DEC')
+# tr_hersch_wo = ax2.get_transform(col_dens_wcs)
+# tr_webb_wo = ax2.get_transform(wcs)
+
+# cd = ax2.contour(x_col,y_col,col_dens[0].data,20,transform=tr_hersch_wo,cmap='gist_heat_r')
+# cba = plt.colorbar(cd,label="Column Density",location="bottom", pad=0.05)
+# sd = ax2.pcolormesh(xgrid,ygrid,grid,cmap='Greys', transform=tr_webb_wo)
+# cbb = plt.colorbar(sd,label="Normalized Surface Density of YSOs",location="bottom", pad=0.1)
+# ax2.scatter(CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF>0.9,'x'],CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF>0.9,'y'],s=35,c='maroon',edgecolors='w',linewidth=0.1,marker='*',label='YSOs (Prob > 90%)', transform=tr_webb_wo)
+# plt.legend()
+plt.savefig("Figures/Surf_col_dens_norm.png",dpi=300)
 plt.close()
 
-print("Surface density plot saved!")
+print("Surface/Column density plot saved!")
+
+
+# ------------------------------------------------------------------------
+# Surface/Column Density Figure 2 - per contour level
+
+n=80
+col_dens_dat = col_dens[0].data[::n,::n]
+# Collect average surface density and column density from within each contour
+pts = []
+for l in range(len(levels)):
+    if l+1 < len(levels):
+        mask = (col_dens_dat>10**levels[l])&(col_dens_dat<10**levels[l+1]) 
+    else: 
+        mask = (col_dens_dat>10**levels[l])
+
+    mu_sd = np.mean(grid.T[mask])
+    mu_cd = np.mean(col_dens_dat[mask])
+    pts.append((mu_cd,mu_sd))
+
+
+# Various conversion factors
+pix_to_parsec_x = 178/(2*2800*np.tan(7.4/120*np.pi/180)) # pixels/pc in the x direction
+pix_to_parsec_y = 106/(2*2800*np.tan(4.4/120*np.pi/180)) # pixels/pc in the y direction
+pix_to_parsec2 = pix_to_parsec_x*pix_to_parsec_y
+cm2_to_pix = (3.086e18)**2/pix_to_parsec2
+nh2_to_sig_gas = 2*(1.67e-24/1.98847e33)/0.71
+sd_to_sfr = 0.5/2
+
+
+# Plot
+fig, axs = plt.subplots(2,1,sharex=True)
+axs[0].plot(np.log(np.transpose(pts)[0]*cm2_to_pix*pix_to_parsec2*nh2_to_sig_gas),np.log10(np.transpose(pts)[1]*pix_to_parsec2),c=prf_col)
+axs[0].set_ylabel('$\log \Sigma_{\mathrm{SFR}}/\mathrm{pc}^2$')
+ym, yM = axs[0].get_ylim()
+# axs[0].vlines(5.,ymin=ym,ymax=yM,color='k',alpha=0.1)
+
+axs[1].plot(np.log(np.transpose(pts)[0]*cm2_to_pix*pix_to_parsec2*nh2_to_sig_gas),np.log10(np.transpose(pts)[1]*pix_to_parsec2*sd_to_sfr),c=prf_col)
+axs[1].set_xlabel('$\log \Sigma_{gas}$ $\mathrm{M_\odot/pc}^2$')
+axs[1].set_ylabel('$\log \Sigma_{SFR}$ $\mathrm{M_\odot/Myr/pc}^2$')
+ym, yM = axs[1].get_ylim()
+# axs[1].vlines(5.,ymin=ym,ymax=yM,color='k',alpha=0.1)
+fig.tight_layout()
+
+plt.savefig('Figures/surf_vs_col_dens_'+date+'.png',dpi=300)
+print("Surface/Column density plot 2 saved!")

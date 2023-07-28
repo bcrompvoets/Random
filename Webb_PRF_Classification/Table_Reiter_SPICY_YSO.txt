@@ -1,43 +1,40 @@
 \citet{Kuhn2021} & \citet{Reiter2022} & Our Work \\ \hline 
-- & MHO1632 & C - 7258 \\ 
-- & MHO1633 & C - 6998 \\ 
-- & MHO1634 & YSO 7268 - PRF \\ 
-- & MHO1635 & C - 7552 \\ 
-- & MHO1636 & C - 8160 \\ 
-IR (Ohlendorf et al. 2013) - SPICY nan & MHO1637 & YSO 8136 - PRF and RF \\ 
-- & MHO1638 & C - 8346 \\ 
-- & MHO1639, HH1221, HH1003A & C - 8385 \\ 
-- & MHO1640 & C - 9854 \\ 
-- & MHO1643, HH1218 & C - 12058 \\ 
-- & MHO1645, MHO1646 & C - 12347 \\ 
-IR (Ohlendorf et al. 2013) - SPICY nan & MHO1647, HH1002C & C - 9583 \\ 
-- & MHO1649 & C - 14713 \\ 
-- & MHO1650 & YSO 8851 - PRF \\ 
-IR (Ohlendorf et al. 2013) - SPICY 7437.0 & MHO1651 & C - 8248 \\ 
-- & MHO1652 & C - 7850 \\ 
-- & MHO1641a & C - 10132 \\ 
-- & MHO1641b & C - 10439 \\ 
-IR (Ohlendorf et al. 2013) - SPICY nan & HH1219 & YSO 7674 - PRF and RF \\ 
-- & HH1223 & C - 11971 \\ 
-- & HHc-3 & C - 8918 \\ 
-SPICY (Kuhn et al. 2021) - SPICY 7466.0 & HHc-4 & YSO 11292 - PRF and RF \\ 
-- & HHc-5 & C - 11610 \\ 
-IR (Ohlendorf et al. 2013) - SPICY nan & - & YSO 7046 - PRF \\ 
-SPICY (Kuhn et al. 2021) - SPICY 7461.0 & - & YSO 7477 - PRF and RF \\ 
-IR (Ohlendorf et al. 2013) - SPICY 7427.0 & - & YSO 7606 - PRF and RF \\ 
-IR (Ohlendorf et al. 2013) - SPICY 7434.0 & - & YSO 9261 - PRF and RF \\ 
-SPICY (Kuhn et al. 2021) - SPICY 7443.0 & - & YSO 10781 - PRF and RF \\ 
-IR (Ohlendorf et al. 2013) - SPICY nan & - & YSO 11123 - PRF and RF \\ 
-SPICY (Kuhn et al. 2021) - SPICY 7476.0 & - & YSO 11775 - PRF and RF \\ 
-SPICY (Kuhn et al. 2021) - SPICY 7478.0 & - & YSO 11912 - PRF \\ 
-SPICY (Kuhn et al. 2021) - SPICY 7447.0 & - & YSO 12690 - PRF and RF \\ 
-SPICY (Kuhn et al. 2021) - SPICY 7464.0 & - & YSO 12739 - PRF and RF \\ 
-SPICY (Kuhn et al. 2021) - SPICY 7463.0 & - & YSO 14308 - PRF and RF \\ 
-SPICY (Kuhn et al. 2021) - SPICY 7460.0 & - & YSO 14856 - PRF and RF \\ 
-SPICY (Kuhn et al. 2021) - SPICY 7453.0 & - & YSO 14919 - PRF and RF \\ 
-IR (Ohlendorf et al. 2013) - SPICY 7474.0 & - & YSO 15605 - PRF and RF \\ 
-IR (Ohlendorf et al. 2013) - SPICY 7480.0 & - & YSO 16973 - PRF \\ 
-IR (Ohlendorf et al. 2013) - SPICY nan & - & C - 16981 \\ 
-SPICY (Kuhn et al. 2021) - SPICY 7472.0 & - & C - 17522 \\ 
-SPICY (Kuhn et al. 2021) - SPICY 7475.0 & - & YSO 17556 - PRF \\ 
-SPICY (Kuhn et al. 2021) - SPICY 7481.0 & - & YSO 17690 - PRF and RF \\ 
+IR (Ohlendorf et al. 2013) - SPICY nan & HH 1219 & YSO 7674 - PRF 1.00 and RF 1.00 \\ 
+- & HH 1223a & C 12058 - PRF 0.15 \\ 
+- & HH c-3 & C 8918 - PRF 0.15 \\ 
+SPICY (Kuhn et al. 2021) - SPICY 7466.0 & HH c-4 & YSO 11292 - PRF 1.00 and RF 1.00 \\ 
+- & HH c-5 & C 11610 - PRF 0.06 \\ 
+- & MHO 1632 & C 7258 - PRF 0.67 \\ 
+- & MHO 1633 & C 6998 - PRF 0.04 \\ 
+- & MHO 1634 & YSO 7268 - PRF 0.98 \\ 
+- & MHO 1635 & YSO 7560 - PRF 0.93 \\ 
+- & MHO 1636 & C 8160 - PRF 0.00 \\ 
+IR (Ohlendorf et al. 2013) - SPICY nan & MHO 1637 & YSO 8136 - PRF 1.00 and RF 1.00 \\ 
+- & MHO 1638 & C 8338 - PRF 0.00 \\ 
+- & MHO 1639, HH 1221, HH 1003 Aa & C 8385 - PRF 0.41 \\ 
+- & MHO 1640 & C 9854 - PRF 0.00 \\ 
+- & MHO 1643 & C 12347 - PRF 0.24 \\ 
+IR (Ohlendorf et al. 2013) - SPICY nan & MHO 1645, MHO 1646 & C 9583 - PRF 0.45 \\ 
+- & MHO 1647, HH 1002a & C 14713 - PRF 0.58 \\ 
+- & MHO 1649 & YSO 8851 - PRF 0.98 \\ 
+IR (Ohlendorf et al. 2013) - SPICY 7437.0 & MHO 1650 & C 8248 - PRF 0.89 \\ 
+- & MHO 1651, HH 1003 B, Ca & C 7850 - PRF 0.11 \\ 
+IR (Ohlendorf et al. 2013) - SPICY nan & - & YSO 7046 - PRF 1.00 and RF 0.93 \\ 
+SPICY (Kuhn et al. 2021) - SPICY 7461.0 & - & YSO 7477 - PRF 0.97 and RF 0.98 \\ 
+IR (Ohlendorf et al. 2013) - SPICY 7427.0 & - & YSO 7606 - PRF 1.00 \\ 
+IR (Ohlendorf et al. 2013) - SPICY 7434.0 & - & YSO 9261 - PRF 0.99 and RF 0.99 \\ 
+SPICY (Kuhn et al. 2021) - SPICY 7443.0 & - & YSO 10781 - PRF 1.00 and RF 1.00 \\ 
+IR (Ohlendorf et al. 2013) - SPICY nan & - & YSO 11123 - PRF 1.00 and RF 0.93 \\ 
+SPICY (Kuhn et al. 2021) - SPICY 7476.0 & - & YSO 11775 - PRF 1.00 and RF 0.99 \\ 
+SPICY (Kuhn et al. 2021) - SPICY 7478.0 & - & YSO 11912 - PRF 1.00 and RF 0.90 \\ 
+SPICY (Kuhn et al. 2021) - SPICY 7447.0 & - & YSO 12690 - PRF 1.00 and RF 1.00 \\ 
+SPICY (Kuhn et al. 2021) - SPICY 7464.0 & - & YSO 12739 - PRF 0.98 and RF 0.99 \\ 
+SPICY (Kuhn et al. 2021) - SPICY 7463.0 & - & YSO 14308 - PRF 1.00 and RF 1.00 \\ 
+SPICY (Kuhn et al. 2021) - SPICY 7460.0 & - & YSO 14856 - PRF 1.00 \\ 
+SPICY (Kuhn et al. 2021) - SPICY 7453.0 & - & YSO 14919 - PRF 1.00 and RF 1.00 \\ 
+IR (Ohlendorf et al. 2013) - SPICY 7474.0 & - & YSO 15605 - PRF 1.00 and RF 1.00 \\ 
+IR (Ohlendorf et al. 2013) - SPICY 7480.0 & - & YSO 16973 - PRF 1.00 \\ 
+IR (Ohlendorf et al. 2013) - SPICY nan & - & C 16981 - PRF 0.44 \\ 
+SPICY (Kuhn et al. 2021) - SPICY 7472.0 & - & C 17522 - PRF 0.77 \\ 
+SPICY (Kuhn et al. 2021) - SPICY 7475.0 & - & YSO 17556 - PRF 1.00 and RF 0.96 \\ 
+SPICY (Kuhn et al. 2021) - SPICY 7481.0 & - & YSO 17690 - PRF 1.00 and RF 1.00 \\ 

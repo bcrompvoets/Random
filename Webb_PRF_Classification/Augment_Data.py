@@ -4,26 +4,17 @@ import matplotlib.pyplot as plt  # suitable for plotting
 from sklearn.model_selection import train_test_split
 print('Loading from repository, Done!')
 
-date = 'June192023'
+date = 'July242023'
 num_objs = 10000 # Number of objects wanted from each class to end.
 
 cols = ['f090w', 'e_f090w', 'f187n', 'e_f187n',
-       'f200w', 'e_f200w', 'f335m', 'e_f335m', 'f444w', 'e_f444w', 'f470n',
-    #    'e_f470n', 'f090w-f444w', 'e_f090w-f444w', 'f090w-f187n',
-    #    'e_f090w-f187n', 'δ_f090w-f187n', 'e_δ_f090w-f187n', 'f187n-f200w',
-    #    'e_f187n-f200w', 'δ_f187n-f200w', 'e_δ_f187n-f200w', 'f200w-f335m',
-    #    'e_f200w-f335m', 'δ_f200w-f335m', 'e_δ_f200w-f335m', 'f335m-f444w',
-    #    'e_f335m-f444w', 'δ_f335m-f444w', 'e_δ_f335m-f444w', 'f444w-f470n',
-    #    'e_f444w-f470n', 'δ_f444w-f470n', 'e_δ_f444w-f470n',
-    #     '(f090w-f200w)-(f200w-f444w)', 'e_(f090w-f200w)-(f200w-f444w)',
-    #    'δ_(f090w-f200w)-(f200w-f444w)', 'e_δ_(f090w-f200w)-(f200w-f444w)',
-    #    'Sum1', 'e_Sum1',
+       'f200w', 'e_f200w', 'f335m', 'e_f335m', 'f444w', 'e_f444w', 'f470n','e_f470n', 
        'Prob','Class']
-inp_df = pd.read_csv(f"DAOPHOT_Catalog_{date}_IR.csv").dropna(subset=cols)
+inp_df = pd.read_csv(f"DAOPHOT_Catalog_{date}_IR.csv").dropna(subset=['f090w','f200w','f335m','f444w','f470n'])
 # inp_df = pd.read_csv(f"Test_Delta_fitted_class.csv").dropna(subset=cols)
 print('loading data, Done!')
 
-inp_df, val_df = train_test_split(inp_df,train_size=.9,random_state=0)
+inp_df, val_df = train_test_split(inp_df,train_size=.95,random_state=0)
 inp_df = inp_df[cols].copy()
 cat_t= inp_df.values
 cat_v= val_df[cols].copy().values
@@ -68,14 +59,14 @@ for i in inds+1:
     sig.append(n_sigma*np.nanmean(cat_t[:,i]))
     sig_v.append(n_sigma*np.nanmean(cat_v[:,i]))
 
-print(np.shape(sig))
+# print(np.shape(sig))
 def BST(mag,prob, sig, n_sample, n_sig=1):
     bts=np.random.choice(len(mag),n_sample,replace=True)
     err = np.random.default_rng().random((n_sample,np.shape(sig)[0]))
     sign = np.random.default_rng().choice([-1,1],(n_sample,np.shape(sig)[0]))
     mag_bts= mag[bts]
     prob_bts = prob[bts]
-    err = err*sig*n_sig*sign
+    err = abs(err*sig*n_sig*sign)
     mag_dist= mag_bts+ err
     return mag_dist, err, prob_bts
     
@@ -151,40 +142,40 @@ v_df = pd.DataFrame(data=np.hstack((inp_v,err_v,prob_v.reshape(-1,1),tar_v.resha
     'Prob','Class','Train'])
 out_df = pd.concat([t_df,v_df])
 
-# Add in colours and deltas and slopes
-filt_vals = [0.9, 1.87, 2.00, 3.35, 4.44, 4.70]
-print("Adding colours and deltas in")
-dao = pd.read_csv(f'DAOPHOT_Catalog_{date}.csv')
-filters = [f for f in dao.columns if (f[0]=='f') and ('-' not in f)]
-print(filters)
-dao_tmp =dao.copy()
-dao_tmp.dropna(inplace=True)
-for filt in filters:
-    dao_tmp = dao_tmp[dao_tmp['e_'+filt]<0.05]
-out_df["f090w-f444w"] = out_df['f090w'] - out_df['f444w']
-out_df["e_f090w-f444w"] = np.sqrt(out_df['e_f090w'].values**2+out_df['e_f444w'].values**2)
-for f, filt in enumerate(filters):
-    out_df[filt+"-"+filters[f+1]] = out_df[filt] - out_df[filters[f+1]]
-    out_df["e_"+filt+"-"+filters[f+1]] = np.sqrt(out_df["e_"+filt].values**2 + out_df["e_"+filters[f+1]].values**2)
-    lin_fit = np.polyfit(dao_tmp['f090w'] - dao_tmp['f444w'], dao_tmp[filt]-dao_tmp[filters[f+1]], 1)
-    out_df["δ_"+filt+"-"+filters[f+1]] = out_df[filt]-out_df[filters[f+1]] - (lin_fit[0] * (out_df['f090w'] - out_df['f444w']) + lin_fit[1])
-    out_df["e_δ_"+filt+"-"+filters[f+1]] = np.sqrt(out_df['e_'+filt].values**2+out_df['e_'+filters[f+1]].values**2)
-    out_df['slope_'+filt+'-'+filters[f+1]] = (out_df[filt]-out_df[filters[f+1]])/(filt_vals[f]-filt_vals[f+1])
-    out_df['e_slope_'+filt+'-'+filters[f+1]] = out_df["e_"+filt+"-"+filters[f+1]]/(filt_vals[f]-filt_vals[f+1])
-    if f == len(filters)-2:
-        break
+# # Add in colours and deltas and slopes
+# filt_vals = [0.9, 1.87, 2.00, 3.35, 4.44, 4.70]
+# print("Adding colours and deltas in")
+# dao = pd.read_csv(f'DAOPHOT_Catalog_{date}.csv')
+# filters = [f for f in dao.columns if (f[0]=='f') and ('-' not in f)]
+# print(filters)
+# dao_tmp =dao.copy()
+# dao_tmp.dropna(inplace=True)
+# for filt in filters:
+#     dao_tmp = dao_tmp[dao_tmp['e_'+filt]<0.05]
+# out_df["f090w-f444w"] = out_df['f090w'] - out_df['f444w']
+# out_df["e_f090w-f444w"] = np.sqrt(out_df['e_f090w'].values**2+out_df['e_f444w'].values**2)
+# for f, filt in enumerate(filters):
+#     out_df[filt+"-"+filters[f+1]] = out_df[filt] - out_df[filters[f+1]]
+#     out_df["e_"+filt+"-"+filters[f+1]] = np.sqrt(out_df["e_"+filt].values**2 + out_df["e_"+filters[f+1]].values**2)
+#     lin_fit = np.polyfit(dao_tmp['f090w'] - dao_tmp['f444w'], dao_tmp[filt]-dao_tmp[filters[f+1]], 1)
+#     out_df["δ_"+filt+"-"+filters[f+1]] = out_df[filt]-out_df[filters[f+1]] - (lin_fit[0] * (out_df['f090w'] - out_df['f444w']) + lin_fit[1])
+#     out_df["e_δ_"+filt+"-"+filters[f+1]] = np.sqrt(out_df['e_'+filt].values**2+out_df['e_'+filters[f+1]].values**2)
+#     out_df['slope_'+filt+'-'+filters[f+1]] = (out_df[filt]-out_df[filters[f+1]])/(filt_vals[f]-filt_vals[f+1])
+#     out_df['e_slope_'+filt+'-'+filters[f+1]] = out_df["e_"+filt+"-"+filters[f+1]]/(filt_vals[f]-filt_vals[f+1])
+#     if f == len(filters)-2:
+#         break
 
-out_df["(f090w-f200w)-(f200w-f444w)"] = out_df['f090w']-2*out_df['f200w']+out_df['f444w']
-out_df["e_(f090w-f200w)-(f200w-f444w)"] = np.sqrt(out_df['e_f090w'].values**2+2*out_df['e_f200w'].values**2+out_df['e_f444w'].values**2)
-lin_fit = np.polyfit(dao_tmp['f090w'] - dao_tmp['f444w'], dao_tmp['f090w']-2*dao_tmp['f200w']+dao_tmp['f444w'], 1)
-out_df["δ_(f090w-f200w)-(f200w-f444w)"] = out_df['f090w']-2*out_df['f200w']+out_df['f444w'] - (lin_fit[0] * (out_df['f090w'] - out_df['f444w']) + lin_fit[1])
-out_df["e_δ_(f090w-f200w)-(f200w-f444w)"] = np.sqrt(out_df['e_f090w'].values**2+2*out_df['e_f200w'].values**2+out_df['e_f444w'].values**2)
+# out_df["(f090w-f200w)-(f200w-f444w)"] = out_df['f090w']-2*out_df['f200w']+out_df['f444w']
+# out_df["e_(f090w-f200w)-(f200w-f444w)"] = np.sqrt(out_df['e_f090w'].values**2+2*out_df['e_f200w'].values**2+out_df['e_f444w'].values**2)
+# lin_fit = np.polyfit(dao_tmp['f090w'] - dao_tmp['f444w'], dao_tmp['f090w']-2*dao_tmp['f200w']+dao_tmp['f444w'], 1)
+# out_df["δ_(f090w-f200w)-(f200w-f444w)"] = out_df['f090w']-2*out_df['f200w']+out_df['f444w'] - (lin_fit[0] * (out_df['f090w'] - out_df['f444w']) + lin_fit[1])
+# out_df["e_δ_(f090w-f200w)-(f200w-f444w)"] = np.sqrt(out_df['e_f090w'].values**2+2*out_df['e_f200w'].values**2+out_df['e_f444w'].values**2)
 
 
-# dao['Sum1'] = dao['δ_(f090w-f200w)-(f200w-f444w)']-dao['δ_f200w-f335m']-dao['δ_f335m-f444w']
-# dao['e_Sum1'] = np.sqrt(dao['e_δ_(f090w-f200w)-(f200w-f444w)']**2+dao['e_δ_f200w-f335m']**2+dao['e_δ_f335m-f444w']**2)
-out_df['Sum1'] = out_df['δ_(f090w-f200w)-(f200w-f444w)']+out_df['δ_f090w-f187n']-out_df['δ_f200w-f335m']-out_df['δ_f335m-f444w']
-out_df['e_Sum1'] = np.sqrt(out_df['e_δ_(f090w-f200w)-(f200w-f444w)']**2+out_df['e_δ_f090w-f187n']**2+out_df['e_δ_f200w-f335m']**2+out_df['e_δ_f335m-f444w']**2)
+# # dao['Sum1'] = dao['δ_(f090w-f200w)-(f200w-f444w)']-dao['δ_f200w-f335m']-dao['δ_f335m-f444w']
+# # dao['e_Sum1'] = np.sqrt(dao['e_δ_(f090w-f200w)-(f200w-f444w)']**2+dao['e_δ_f200w-f335m']**2+dao['e_δ_f335m-f444w']**2)
+# out_df['Sum1'] = out_df['δ_(f090w-f200w)-(f200w-f444w)']+out_df['δ_f090w-f187n']-out_df['δ_f200w-f335m']-out_df['δ_f335m-f444w']
+# out_df['e_Sum1'] = np.sqrt(out_df['e_δ_(f090w-f200w)-(f200w-f444w)']**2+out_df['e_δ_f090w-f187n']**2+out_df['e_δ_f200w-f335m']**2+out_df['e_δ_f335m-f444w']**2)
 
 
 
