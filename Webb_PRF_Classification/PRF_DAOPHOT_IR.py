@@ -12,7 +12,7 @@ import astropy.units as u
 import warnings
 warnings.filterwarnings('ignore')
 
-date = 'June192023'
+date = 'July242023'
 CC_Webb_Classified = pd.read_csv(f'CC_Classified_DAOPHOT_{date}.csv')
 dao_IR = pd.read_csv(f'DAOPHOT_Catalog_{date}_IR.csv')
 

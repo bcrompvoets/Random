@@ -38,8 +38,6 @@ w_jwst = wcs.WCS(hdu[0].header)
 SkyCoords_tmp_dao = w_jwst.pixel_to_world(dao.x,dao.y)
 dao['RA'] = [float((SkyCoords_tmp_dao.ra/u.deg)[i]) for i in range(0,len(dao))]
 dao['DEC'] = [float((SkyCoords_tmp_dao.dec/u.deg)[i]) for i in range(0,len(dao))]
-dao.reset_index(inplace=True)
-dao.to_csv(f'DAOPHOT_Catalog_{date}.csv',index=False)
 
 
 # Correct ZPs
@@ -61,6 +59,8 @@ veg_zp = [26.29,22.37,25.60,23.78,24.30,20.22]
 for f, filt in enumerate(filters):
     dao[filt] = veg_zp[f]+(dao[filt]-zps[f])
 
+dao.reset_index(inplace=True)
+dao.to_csv(f'DAOPHOT_Catalog_{date}.csv',index=False)
 # MOVED TO JUST PRIOR TO RUNNING ALGORITHM FOR EASE OF REMOVAL OF BANDS/MAKING DIFFERENT COLOURS
 # # Add in colours and deltas and slopes
 # filt_vals = [0.9, 1.87, 2.00, 3.35, 4.44, 4.70]
