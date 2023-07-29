@@ -124,10 +124,10 @@ rf_col = 'salmon'
 colormap = 'Greys'
 # #----------------------------------------------------------------------------
 # Scatter plot with hists for number of YSOs vs F1-Score
-num_yso_rf = np.loadtxt("Data/Num_YSOs_RFDAOPHOT_June192023")
-num_yso_prf = np.loadtxt("Data/Num_YSOs_PRFDAOPHOT_June192023")
-max_f1_rf = np.loadtxt("Data/Max_f1s_RFDAOPHOT_June192023")
-max_f1_prf = np.loadtxt("Data/Max_f1s_PRFDAOPHOT_June192023")
+num_yso_rf = np.loadtxt(f"Data/Num_YSOs_RF{date}")
+num_yso_prf = np.loadtxt(f"Data/Num_YSOs_PRF{date}")
+max_f1_rf = np.loadtxt(f"Data/Max_f1s_RF{date}")
+max_f1_prf = np.loadtxt(f"Data/Max_f1s_PRF{date}")
 
 # print('Mean number of YSOs:',np.mean(num_yso), 'Median number of YSOs:', np.median(num_yso))
 # print('Mean F1-Score:',np.mean(max_f1), 'Median F1-Score:', np.median(max_f1), 'Standard deviation F1-Score:', np.std(max_f1))

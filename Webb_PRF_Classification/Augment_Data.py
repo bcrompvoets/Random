@@ -10,11 +10,11 @@ num_objs = 10000 # Number of objects wanted from each class to end.
 cols = ['f090w', 'e_f090w', 'f187n', 'e_f187n',
        'f200w', 'e_f200w', 'f335m', 'e_f335m', 'f444w', 'e_f444w', 'f470n','e_f470n', 
        'Prob','Class']
-inp_df = pd.read_csv(f"DAOPHOT_Catalog_{date}_IR.csv").dropna(subset=['f090w','f200w','f335m','f444w','f470n'])
+inp_df = pd.read_csv(f"DAOPHOT_Catalog_{date}_IR.csv").dropna(subset=cols)#['f090w','f200w','f335m','f444w','f470n'])
 # inp_df = pd.read_csv(f"Test_Delta_fitted_class.csv").dropna(subset=cols)
 print('loading data, Done!')
 
-inp_df, val_df = train_test_split(inp_df,train_size=.95,random_state=0)
+inp_df, val_df = train_test_split(inp_df,train_size=.9,random_state=0)
 inp_df = inp_df[cols].copy()
 cat_t= inp_df.values
 cat_v= val_df[cols].copy().values

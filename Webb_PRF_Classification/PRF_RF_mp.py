@@ -15,15 +15,14 @@ warnings.filterwarnings('ignore')
 date = 'July242023'
 dao = pd.read_csv(f'DAOPHOT_Catalog_{date}.csv')
 dao_IR = pd.read_csv(f'DAOPHOT_Catalog_{date}_IR.csv')
-dao_aug = pd.read_csv(f"Augmented_data_prob_{date}.csv")
+dao_aug = pd.read_csv(f"Augmented_data_prob_{date}.csv")#
 # dao_aug = pd.read_csv("Test_Delta_fitted_class.csv")
 
 date = 'DAOPHOT_'+ date
 cont = True
 amounts_te = []
 
-filters = [c for c in dao_aug.columns if ((c[0] == "f") and ('-' not in c) and ('f187n' not in c))]
-
+filters = [c for c in dao_aug.columns if ((c[0] == "f") and ('-' not in c)) and ('f187n' not in c)]
 # Data processing:
 # Add in colours and deltas and slopes
 def add_fcds(dao_fcd,dao,filters):
@@ -70,7 +69,7 @@ dao_aug = add_fcds(dao_aug.copy(),dao.copy(),filters)
 
 
 #------------------------------------------------------
-fcd_columns = [c for c in dao_aug.columns if (((c[0] == "f") and ('-' in c)) or c[0]=='δ' or c[0]=='(' or c=='Sum1' or c[0]=='s')and ('f187n' not in c)]# and ('f187n' not in c) and ('f470n' not in c)]# and ('f470n' not in c) and ('f187n' not in c)]#or c=='Sum1'
+fcd_columns = [c for c in dao_aug.columns if (((c[0] == "f") and ('-' in c)) or c[0]=='δ' or c[0]=='(' or c=='Sum1' or c[0]=='s')and ('f187n' not in c)]# and ('f187n' not in c) and ('f470n' not in c)]
 print(fcd_columns)
 errs = ["e_"+f for f in fcd_columns]
 bands = fcd_columns+errs
@@ -168,7 +167,7 @@ print("Starting bootstrapping!")
 import multiprocess as mp
 import time
 tic = time.perf_counter()
-n = 100
+n = 10
 
 with mp.Pool(6) as pool:
     ans_prf = pool.starmap(get_best_prf,[prf_inds] * n)
@@ -185,10 +184,10 @@ pred_tes_rf = list(map(list, zip(*ans_rf)))[0]
 num_yso_rf = list(map(list, zip(*ans_rf)))[1]
 max_f1_rf = list(map(list, zip(*ans_rf)))[2]
 
-# np.savetxt("Data/Num_YSOs_RF"+date, num_yso_rf)
-# np.savetxt("Data/Max_f1s_RF"+date, max_f1_rf)
-# np.savetxt("Data/Num_YSOs_PRF"+date, num_yso_prf)
-# np.savetxt("Data/Max_f1s_PRF"+date, max_f1_prf)
+np.savetxt("Data/Num_YSOs_RF"+date, num_yso_rf)
+np.savetxt("Data/Max_f1s_RF"+date, max_f1_rf)
+np.savetxt("Data/Num_YSOs_PRF"+date, num_yso_prf)
+np.savetxt("Data/Max_f1s_PRF"+date, max_f1_prf)
 
 
 
@@ -210,7 +209,7 @@ print("Number of YSOs with prob>90\% (prf):",len(preds_prf[p_yso_prf>0.9]))
 
 
 # Make and save predictions/probabilities in csv
-CC_Webb_Classified = dao.copy()[['Index','RA','DEC','x','y']+[c for c in dao_aug.columns if (c[0] == "f" or c[0]=='δ'or c=='Sum1' or c[0]=='e' or 'slope' in c or c[0]=='(')]]
+CC_Webb_Classified = dao.copy()[['Index','RA','DEC','x','y']+filters+["e_"+f for f in filters]+fcd_columns+errs]
 
 CC_Webb_Classified['Class_PRF'] = preds_prf
 CC_Webb_Classified['Prob_PRF'] = p_yso_prf
