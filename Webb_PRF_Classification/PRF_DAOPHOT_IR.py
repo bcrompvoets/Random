@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import ticker
+from astropy.table import Table
+from astropy.io.votable import from_table, writeto
 # import matplotlib as mpl
 
 from sklearn.metrics import ConfusionMatrixDisplay,accuracy_score,f1_score,classification_report,f1_score,recall_score,precision_score
@@ -28,21 +30,26 @@ bands = fcd_columns+errs
 # ----------------------------------------------------------------------------
 # Update threshold
 thresh = 0.9
-CC_Webb_Classified.loc[CC_Webb_Classified.Prob_RF<thresh,'Class_RF'] = 1
-CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF<thresh,'Class_PRF'] = 1
+CC_Webb_Classified.loc[CC_Webb_Classified.Prob_RF<=thresh,'Class_RF'] = 1
+CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF<=thresh,'Class_PRF'] = 1
+CC_Webb_Classified.loc[CC_Webb_Classified.Prob_RF>thresh,'Class_RF'] = 0
+CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF>thresh,'Class_PRF'] = 0
 print(len(CC_Webb_Classified[CC_Webb_Classified.Class_RF==0]),len(CC_Webb_Classified[CC_Webb_Classified.Class_PRF==0]))
 # plt.scatter(CC_Webb_Classified.dropna(subset='Init_Class').Prob_PRF,dao_IR.Prob.values)
 # plt.xlabel('Prob PRF')
 # plt.ylabel('Prob Init')
 # plt.show()
 # 
+print("Total objects in catalogue: ", len(CC_Webb_Classified))
+print("Total YSOs in catalogue (PRF): ", len(CC_Webb_Classified[CC_Webb_Classified.Class_PRF==0]))
+print("Total new YSOs in catalogue (PRF): ", len(CC_Webb_Classified[(CC_Webb_Classified.Class_PRF==0)&(CC_Webb_Classified.Init_Class.isna())]))
 # Print classification reports
 print("RF Classification Report")
 print(classification_report(CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns).Init_Class,CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns).Class_RF))
 
 print("PRF Classification Report")
 print(classification_report(CC_Webb_Classified.dropna(subset='Init_Class').Init_Class,CC_Webb_Classified.dropna(subset='Init_Class').Class_PRF))
-
+writeto(from_table(Table.from_pandas(CC_Webb_Classified,units={'RA':u.deg,'DEC':u.deg})), f"Data/XML Files/YSOs_IR.xml")
 # ----------------------------------------------------------------------------
 # Make table of Reiter, SPICY, and our own classifications
 
@@ -178,7 +185,7 @@ print("Plot of f1 scores vs number of YSOs created!")
 
 tar_va = CC_Webb_Classified.dropna(subset='Init_Class').dropna(subset=fcd_columns)[['Init_Class']].values.astype(int)
 pred_va = CC_Webb_Classified.dropna(subset='Init_Class').dropna(subset=fcd_columns)[['Class_RF']].values
-ConfusionMatrixDisplay.from_predictions(tar_va,pred_va,cmap='Reds',display_labels=['YSO', 'Contaminant'],normalize='true')
+ConfusionMatrixDisplay.from_predictions(tar_va,pred_va,cmap='Reds',display_labels=['YSO', 'Contaminant'])
 # print(f1_score(tar_va,pred_va))
 # print(classification_report(tar_va,pred_va))
 plt.grid(False)
@@ -187,7 +194,7 @@ plt.close()
 
 tar_va = CC_Webb_Classified.dropna(subset='Init_Class')[['Init_Class']].values.astype(int)
 pred_va = CC_Webb_Classified.dropna(subset='Init_Class')[['Class_PRF']].values
-ConfusionMatrixDisplay.from_predictions(tar_va,pred_va,cmap='Reds',display_labels=['YSO', 'Contaminant'],normalize='true')
+ConfusionMatrixDisplay.from_predictions(tar_va,pred_va,cmap='Reds',display_labels=['YSO', 'Contaminant'])
 # print(f1_score(tar_va,pred_va))
 # print(classification_report(tar_va,pred_va))
 plt.grid(False)
@@ -613,17 +620,30 @@ sd_to_sfr = 0.5/2
 
 # Plot
 fig, axs = plt.subplots(2,1,sharex=True)
-axs[0].plot(np.log(np.transpose(pts)[0]*cm2_to_pix*pix_to_parsec2*nh2_to_sig_gas),np.log10(np.transpose(pts)[1]*pix_to_parsec2),c=prf_col)
+axs[0].scatter(np.log10(np.transpose(pts)[0]*cm2_to_pix*pix_to_parsec2*nh2_to_sig_gas),np.log10(np.transpose(pts)[1]*pix_to_parsec2),c=prf_col)
+axs[0].plot(np.log10(np.transpose(pts)[0]*cm2_to_pix*pix_to_parsec2*nh2_to_sig_gas),np.log10(np.transpose(pts)[1]*pix_to_parsec2),'--',c=prf_col,alpha=0.6)
 axs[0].set_ylabel('$\log \Sigma_{\mathrm{SFR}}/\mathrm{pc}^2$')
-ym, yM = axs[0].get_ylim()
-# axs[0].vlines(5.,ymin=ym,ymax=yM,color='k',alpha=0.1)
+cd_pts = [cd_pt for cd_pt in np.log10(np.transpose(pts)[0]*cm2_to_pix*pix_to_parsec2*nh2_to_sig_gas) if ~np.isnan(cd_pt)]
+sd_pts= [sd_pt for sd_pt in np.log10(np.transpose(pts)[1]*pix_to_parsec2) if ~np.isnan(sd_pt)]
+lin_fit = np.polyfit(cd_pts, sd_pts, 1)
+print(lin_fit)
+axs[0].plot(cd_pts,lin_fit[0]*np.array(cd_pts)+lin_fit[1],c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1])
+axs[0].legend()
 
-axs[1].plot(np.log(np.transpose(pts)[0]*cm2_to_pix*pix_to_parsec2*nh2_to_sig_gas),np.log10(np.transpose(pts)[1]*pix_to_parsec2*sd_to_sfr),c=prf_col)
+axs[1].scatter(np.log10(np.transpose(pts)[0]*cm2_to_pix*pix_to_parsec2*nh2_to_sig_gas),np.log10(np.transpose(pts)[1]*pix_to_parsec2*sd_to_sfr),c=prf_col)
+axs[1].plot(np.log10(np.transpose(pts)[0]*cm2_to_pix*pix_to_parsec2*nh2_to_sig_gas),np.log10(np.transpose(pts)[1]*pix_to_parsec2*sd_to_sfr),'--',c=prf_col,alpha=0.6)
+sd_pts= [sd_pt for sd_pt in np.log10(np.transpose(pts)[1]*pix_to_parsec2*sd_to_sfr) if ~np.isnan(sd_pt)]
+# print(cd_pts,sd_pts)
+lin_fit = np.polyfit(cd_pts, sd_pts, 1)
+print(lin_fit)
+axs[1].plot(cd_pts,lin_fit[0]*np.array(cd_pts)+lin_fit[1],c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1])
 axs[1].set_xlabel('$\log \Sigma_{gas}$ $\mathrm{M_\odot/pc}^2$')
 axs[1].set_ylabel('$\log \Sigma_{SFR}$ $\mathrm{M_\odot/Myr/pc}^2$')
-ym, yM = axs[1].get_ylim()
-# axs[1].vlines(5.,ymin=ym,ymax=yM,color='k',alpha=0.1)
+axs[1].legend()
+
 fig.tight_layout()
 
 plt.savefig('Figures/surf_vs_col_dens_'+date+'.png',dpi=300)
 print("Surface/Column density plot 2 saved!")
+
+print("Total star formation rate for region:", "%.3f"%np.nanmean(np.transpose(pts)[1]*sd_to_sfr), "$\pm$", "%.3f"%np.nanstd(np.transpose(pts)[1]*sd_to_sfr),"M$_\odot$/yr")

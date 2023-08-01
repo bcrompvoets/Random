@@ -116,7 +116,7 @@ def get_best_prf(tr, va, te):
     max_f1 = f1_score(tar_va,pred_va,average=None)[0]
 
     pred_te = prf_cls.predict_proba(X=te[:,inds], dX=te[:,e_inds]) 
-    num_yso = len(np.array(pred_te)[np.transpose(pred_te)[0]>0.5])
+    num_yso = len(np.array(pred_te)[np.transpose(pred_te)[0]>0.9])
 
     # print("F1-Scores:\n Training is ",f1_score(tar_tr,pred_tr,average=None)[0],"\n Validation (SPICY) is ",f1_score(tar_va,pred_va,average=None)[0])
 
@@ -144,7 +144,7 @@ def get_best_rf(tr, va, te):
     max_f1 = f1_score(tar_va,pred_va,average=None)[0]
 
     pred_te = rf_cls.predict_proba(te) 
-    num_yso = len(pred_te[pred_te[:,0]>0.5])
+    num_yso = len(pred_te[pred_te[:,0]>0.9])
 
     # print("F1-Scores:\n Training is ",f1_score(tar_tr,pred_tr,average=None)[0],"\n Validation (SPICY) is ",f1_score(tar_va,pred_va,average=None)[0])
 
@@ -167,7 +167,7 @@ print("Starting bootstrapping!")
 import multiprocess as mp
 import time
 tic = time.perf_counter()
-n = 10
+n = 100
 
 with mp.Pool(6) as pool:
     ans_prf = pool.starmap(get_best_prf,[prf_inds] * n)

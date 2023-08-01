@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Produced with astropy.io.votable version 5.1
+     http://www.astropy.org/ -->
+<VOTABLE version="1.4" xmlns="http://www.ivoa.net/xml/VOTable/v1.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.ivoa.net/xml/VOTable/v1.3 http://www.ivoa.net/xml/VOTable/VOTable-1.4.xsd">
+ <RESOURCE type="results">
+  <TABLE>
+   <FIELD ID="RA" datatype="double" name="RA" unit="deg"/>
+   <FIELD ID="DEC" datatype="double" name="DEC" unit="deg"/>
+   <FIELD ID="Prob_PRF" datatype="double" name="Prob_PRF"/>
+   <FIELD ID="Prob_RF" datatype="double" name="Prob_RF"/>
+   <FIELD ID="Name" arraysize="9" datatype="unicodeChar" name="Name"/>
+   <DATA>
+    <TABLEDATA>
+     <TR>
+      <TD>159.20357509144984</TD>
+      <TD>-58.63459757918864</TD>
+      <TD>0.9998404936074706</TD>
+      <TD>0.978</TD>
+      <TD>X-RAY 27</TD>
+     </TR>
+     <TR>
+      <TD>159.21830005699863</TD>
+      <TD>-58.60750843007992</TD>
+      <TD>0.9986341875111228</TD>
+      <TD>0.97</TD>
+      <TD>X-RAY 34</TD>
+     </TR>
+     <TR>
+      <TD>159.2223484561111</TD>
+      <TD>-58.67443063993935</TD>
+      <TD>0.50686266912575</TD>
+      <TD>0.4679999999999999</TD>
+      <TD>X-RAY 35</TD>
+     </TR>
+     <TR>
+      <TD>159.22313362289944</TD>
+      <TD>-58.60955645487928</TD>
+      <TD>0.9066109226709246</TD>
+      <TD>0.7139999999999999</TD>
+      <TD>X-RAY 36</TD>
+     </TR>
+     <TR>
+      <TD>159.22466246328747</TD>
+      <TD>-58.681911012373725</TD>
+      <TD>0.5549472309465752</TD>
+      <TD>0.446</TD>
+      <TD>X-RAY 39</TD>
+     </TR>
+     <TR>
+      <TD>159.22820707908463</TD>
+      <TD>-58.62572714017175</TD>
+      <TD>0.8626669894796869</TD>
+      <TD>0.5959999999999999</TD>
+      <TD>X-RAY 40</TD>
+     </TR>
+     <TR>
+      <TD>159.2435391894954</TD>
+      <TD>-58.58339905046801</TD>
+      <TD>0.8443791098771154</TD>
+      <TD>0.806</TD>
+      <TD>X-RAY 51</TD>
+     </TR>
+     <TR>
+      <TD>159.24414839160883</TD>
+      <TD>-58.58772209419936</TD>
+      <TD>0.7887233240197791</TD>
+      <TD>0.5780000000000001</TD>
+      <TD>X-RAY 53</TD>
+     </TR>
+     <TR>
+      <TD>159.2447616542261</TD>
+      <TD>-58.588353108927095</TD>
+      <TD>0.5982477936886507</TD>
+      <TD>0.544</TD>
+      <TD>X-RAY 56</TD>
+     </TR>
+     <TR>
+      <TD>159.25142800382335</TD>
+      <TD>-58.64157628381297</TD>
+      <TD>0.9946087920718032</TD>
+      <TD>0.998</TD>
+      <TD>X-RAY 64</TD>
+     </TR>
+     <TR>
+      <TD>159.26708159164335</TD>
+      <TD>-58.58340665353796</TD>
+      <TD>0.6447163404336542</TD>
+      <TD>0.6080000000000001</TD>
+      <TD>X-RAY 85</TD>
+     </TR>
+     <TR>
+      <TD>159.2746357263997</TD>
+      <TD>-58.58826962693694</TD>
+      <TD>0.927900823612703</TD>
+      <TD>0.8459999999999999</TD>
+      <TD>X-RAY 95</TD>
+     </TR>
+     <TR>
+      <TD>159.27891537419717</TD>
+      <TD>-58.61536095607321</TD>
+      <TD>0.9997496323346834</TD>
+      <TD>0.998</TD>
+      <TD>X-RAY 105</TD>
+     </TR>
+     <TR>
+      <TD>159.2972224997389</TD>
+      <TD>-58.57926161671433</TD>
+      <TD>0.9999254263218356</TD>
+      <TD>1</TD>
+      <TD>X-RAY 134</TD>
+     </TR>
+    </TABLEDATA>
+   </DATA>
+  </TABLE>
+ </RESOURCE>
+</VOTABLE>
