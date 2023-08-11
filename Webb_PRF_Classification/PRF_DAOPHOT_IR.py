@@ -552,16 +552,23 @@ xgrid = np.linspace(min(X),max(X),grid_pix[0])
 ygrid = np.linspace(min(Y),max(Y),grid_pix[1])
 grid_to_norm, _, _ = np.histogram2d(X, Y, bins=[xgrid, ygrid])
 
+if input('Re-run Surface density computation? (y) or (n)') == 'y':
+    for i in range(1,1001):
+        random_ths = np.random.default_rng().random(len(CC_Webb_Classified))
+        CC_tmp_th = CC_Webb_Classified[CC_Webb_Classified.Prob_PRF>random_ths]
+        x = CC_tmp_th.x
+        y = CC_tmp_th.y
+        grid_tmp, _, _ = np.histogram2d(x, y, bins=[xgrid, ygrid])
+        grid = grid+grid_tmp
+    grid = grid/i # Take avg
+    np.save("sd_grid", grid)
+    np.save("sd_grid_norm",grid_to_norm)
+else: 
+    grid = np.load("sd_grid.npy")
+    grid_to_norm = np.load("sd_grid_norm.npy")
 
-for i in range(1,1001):
-    random_ths = np.random.default_rng().random(len(CC_Webb_Classified))
-    CC_tmp_th = CC_Webb_Classified[CC_Webb_Classified.Prob_PRF>random_ths]
-    x = CC_tmp_th.x
-    y = CC_tmp_th.y
-    grid_tmp, _, _ = np.histogram2d(x, y, bins=[xgrid, ygrid])
-    grid = grid+grid_tmp
-grid = grid/i # Take avg
 grid_norm = grid.T/grid_to_norm.T # Normalize, transpose due to inversion of x and y
+
 
 # Column density
 col_dens = fits.open("Gum31_new.fits")
@@ -569,7 +576,7 @@ cdata = col_dens[0].data
 n=80
 col_dens_dat = col_dens[0].data[::n,::n]
 levels = np.arange(min(col_dens_dat.ravel()),max(col_dens_dat.ravel()),5e20)
-levels[:-10]
+levels[:-10] # Keep only layers until there are no longer anymore YSOs within them
 
 
 x_col = np.arange(np.shape(cdata)[1])
@@ -628,44 +635,55 @@ mask_cd = ~np.isnan(col_dens_dat.ravel())
 
 import time
 tic = time.perf_counter()
-
-# Collect average surface density and column density from within each contour
-pts = []
-xy_cyso = [(CC_Webb_Classified.iloc[q].x, CC_Webb_Classified.iloc[q].y) for q in CC_Webb_Classified[CC_Webb_Classified.Class_PRF==0].index]
-grid_of_points = [[(i,j) for i in range(len(x_col))] for j in range(len(y_col))]
-for l in range(len(levels)):
-    if l+1 < len(levels):
-        mask = (col_dens_dat>(levels[l]))&((col_dens_dat<levels[l+1])) 
-        mask2 = (col_dens[0].data>(levels[l]))&((col_dens[0].data<levels[l+1])) 
-    else: 
-        mask = (col_dens_dat>(levels[l]))
-        mask2 = (col_dens[0].data>(levels[l]))
-
-
-    grid_of_pts_masked = [tuple(g) for g in np.array(grid_of_points)[mask2]]
-    nps2 = 0
-    for xy in xy_cyso:
-        if (round(xy[0]),round(xy[1])) in grid_of_pts_masked:
-            nps2+=1
+if input("Rerun sfr within contour calculations? (y) or (n) ") == 'y':
+    # Collect average surface density and column density from within each contour
+    pts = []
+    xy_cyso = [(CC_Webb_Classified.iloc[q].x, CC_Webb_Classified.iloc[q].y) for q in CC_Webb_Classified[CC_Webb_Classified.Class_PRF==0].index]
+    grid_of_points = [[(i,j) for i in range(len(x_col))] for j in range(len(y_col))]
+    for l in range(len(levels)):
+        if l+1 < len(levels):
+            mask = (col_dens_dat>(levels[l]))&((col_dens_dat<levels[l+1])) 
+            mask2 = (col_dens[0].data>(levels[l]))&((col_dens[0].data<levels[l+1])) 
+        else: 
+            mask = (col_dens_dat>(levels[l]))
+            mask2 = (col_dens[0].data>(levels[l]))
 
 
-    # mu_sd = np.mean(grid.T[mask])
+        grid_of_pts_masked = [tuple(g) for g in np.array(grid_of_points)[mask2]]
+        nps2 = 0
+        for xy in xy_cyso:
+            if (round(xy[0]),round(xy[1])) in grid_of_pts_masked:
+                nps2+=1
 
-    nps = np.sum(grid.T[mask])
-    area = len(mask[mask==True])/pix_to_parsec2 # Num px / (px/pc) = pc
-    mgas = np.sum(col_dens_dat[mask])*cm2_to_pix*nh2_to_m_gas # Sum of all column densities in all pixels, converted from gas 
-    # mu_cd = np.mean(col_dens_dat[mask])
-    # pts.append((mu_cd,nps,mgas,sig_sfr,sig_cd,area,nps2,sig_sfr2))
-    pts.append((nps,nps2,mgas,area))
 
-pts = np.array(pts)
+        # mu_sd = np.mean(grid.T[mask])
 
-toc = time.perf_counter()
-print(f"Completed contour searching in {(toc - tic)/60:0.2f} minutes!\n\n")
-N_PS = pts.T[0]
-N_PS_PRF = pts.T[1]
-M_GAS = pts.T[2]
-A = pts.T[3]
+        nps = np.sum(grid.T[mask])
+        area = len(mask[mask==True])/pix_to_parsec2 # Num px / (px/pc) = pc
+        mgas = np.sum(col_dens_dat[mask])*cm2_to_pix*nh2_to_m_gas # Sum of all column densities in all pixels, converted from gas 
+        # mu_cd = np.mean(col_dens_dat[mask])
+        # pts.append((mu_cd,nps,mgas,sig_sfr,sig_cd,area,nps2,sig_sfr2))
+        pts.append((nps,nps2,mgas,area))
+
+    pts = np.array(pts)
+
+    toc = time.perf_counter()
+    print(f"Completed contour searching in {(toc - tic)/60:0.2f} minutes!\n\n")
+    N_PS = pts.T[0]
+    N_PS_PRF = pts.T[1]
+    M_GAS = pts.T[2]
+    A = pts.T[3]
+
+    np.save('N_PS_SD',N_PS)
+    np.save('N_PS_PRF',N_PS_PRF)
+    np.save('M_GAS',M_GAS)
+    np.save('A',A)
+
+else: 
+    N_PS = np.load("N_PS_SD.npy")
+    N_PS_PRF = np.load("N_PS_PRF.npy")
+    M_GAS = np.load("M_GAS.npy")
+    A = np.load("A.npy")
 
 SIG_GAS = M_GAS/A
 SFR = N_PS*sd_to_sfr
@@ -675,10 +693,6 @@ SIG_SFR_PRF = SFR_PRF/A
 RHO = (3*np.sqrt(np.pi)*M_GAS/(4*(A**1.5)))*2e30*((3.24078e-17)**3)
 T_FF = np.sqrt(3*np.pi/(32*(6.6743e-11)*RHO))/(3.15576e13)
 
-np.save('N_PS_SD',N_PS)
-np.save('N_PS_PRF',N_PS_PRF)
-np.save('M_GAS',M_GAS)
-np.save('A',A)
 
 # Plot
 # plt.scatter(col_dens_dat.ravel()*cm2_to_pix*nh2_to_m_gas/(1/pix_to_parsec2),grid.T.ravel()*sd_to_sfr/(1/pix_to_parsec2),c=rf_col)
@@ -694,7 +708,7 @@ np.save('A',A)
 # plt.plot(np.log10(SIG_GAS),lin_fit[0]*np.array(np.log10(SIG_GAS))+lin_fit[1],c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1])
 # plt.legend()
 
-fig, axs = plt.subplots(1,2,sharey=True,figsize=(12,8))
+fig, axs = plt.subplots(1,2,sharey=True,figsize=(8,4))
 axs[0].scatter(np.log10(col_dens_dat.ravel()*cm2_to_pix*nh2_to_m_gas/(1/pix_to_parsec2)),np.log10(grid.T.ravel()*sd_to_sfr/(1/pix_to_parsec2)),c=rf_col)
 axs[0].fill_between(np.log10(SIG_GAS),2*np.log10(SIG_GAS)-4.11-0.3,2*np.log10(SIG_GAS)-4.11+0.3,alpha=0.3)
 axs[0].plot(np.log10(SIG_GAS),2*np.log10(SIG_GAS)-4.11,ls=':',alpha=0.6,label='Pokhrel et al. 2021 relation')
@@ -747,8 +761,8 @@ plt.savefig('Figures/surf_vs_col_dens_'+date+'.png',dpi=300)
 plt.close()
 print("Surface/Column density plot 2 saved!")
 
-print("Total star formation rate for region (SD):", "%.3f"%np.mean(SFR/(A*pix_to_parsec2)))#, "$\pm$", "%.3f"%np.nanstd(SIG_SFR),"M$_\odot$/yr")
-print("Total star formation rate for region (PRF):", "%.3f"%np.mean(SFR_PRF/(A*pix_to_parsec2)))#, "$\pm$", "%.3f"%np.nanstd(SIG_SFR_PRF),"M$_\odot$/yr")
+print("Total star formation rate for region (SD):", "%.7f"%np.sum(SFR/1e6))#, "$\pm$", "%.3f"%np.nanstd(SIG_SFR),"M$_\odot$/yr")
+print("Total star formation rate for region (PRF):", "%.7f"%np.sum(SFR_PRF/1e6))#, "$\pm$", "%.3f"%np.nanstd(SIG_SFR_PRF),"M$_\odot$/yr")
 print("Star formation efficiency (PRF) ε = M*/Mgas = ", len(CC_Webb_Classified[CC_Webb_Classified.Class_PRF==0])*0.5/np.sum(M_GAS))
 print("Star formation efficiency (SD) ε = M*/Mgas = ", np.sum(N_PS)*0.5/np.sum(M_GAS))
 
