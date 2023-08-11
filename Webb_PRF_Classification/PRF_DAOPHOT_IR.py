@@ -41,8 +41,15 @@ print(len(CC_Webb_Classified[CC_Webb_Classified.Class_RF==0]),len(CC_Webb_Classi
 # plt.show()
 # 
 print("Total objects in catalogue: ", len(CC_Webb_Classified))
-print("Total YSOs in catalogue (PRF): ", len(CC_Webb_Classified[CC_Webb_Classified.Class_PRF==0]))
+print("Total YSOs in catalogue (PRF > 0.9): ", len(CC_Webb_Classified[CC_Webb_Classified.Class_PRF==0]))
+print("Total YSOs in catalogue (PRF >0.67): ", len(CC_Webb_Classified[CC_Webb_Classified.Prob_PRF>0.67]))
+print("Total YSOs in catalogue (PRF >0.5): ", len(CC_Webb_Classified[CC_Webb_Classified.Prob_PRF>0.5]))
 print("Total new YSOs in catalogue (PRF): ", len(CC_Webb_Classified[(CC_Webb_Classified.Class_PRF==0)&(CC_Webb_Classified.Init_Class.isna())]))
+print("Total new YSOs in catalogue (PRF and RF): ", len(CC_Webb_Classified[(CC_Webb_Classified.Class_PRF==0)&(CC_Webb_Classified.Class_RF==0)&(CC_Webb_Classified.Init_Class.isna())]))
+print("Total new YSOs in catalogue (PRF no RF): ", len(CC_Webb_Classified[(CC_Webb_Classified.Class_PRF==0)&(CC_Webb_Classified.Prob_RF<0)&(CC_Webb_Classified.Init_Class.isna())]))
+print("Total new YSOs in catalogue (PRF and RF > 0.5): ", len(CC_Webb_Classified[(CC_Webb_Classified.Class_PRF==0)&(CC_Webb_Classified.Prob_RF>0.5)&(CC_Webb_Classified.Init_Class.isna())]))
+print("Total new YSOs in catalogue (PRF and RF > 0.67): ", len(CC_Webb_Classified[(CC_Webb_Classified.Class_PRF==0)&(CC_Webb_Classified.Prob_RF>0.67)&(CC_Webb_Classified.Init_Class.isna())]))
+print("Total new YSOs in catalogue (PRF and RF > 0.8): ", len(CC_Webb_Classified[(CC_Webb_Classified.Class_PRF==0)&(CC_Webb_Classified.Prob_RF>0.8)&(CC_Webb_Classified.Init_Class.isna())]))
 # Print classification reports
 print("RF Classification Report")
 print(classification_report(CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns).Init_Class,CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns).Class_RF))
@@ -405,33 +412,43 @@ for i in cuts:
     preds[np.where(prob_yso_prf>i)[0]] = 0
     nums_prf.append(len(preds[preds==0]))
 
-fig, ax = plt.subplots(2,1,dpi=300,figsize=(5,10))
+fig, ax = plt.subplots(dpi=300,figsize=(5,5))
 
-ax[0].plot(cuts,f1s_rf,c=rf_col,label='F1-Score (RF)')
-ax[0].plot(cuts,pres_rf,'--',c=rf_col,label='Precision (RF)')
-ax[0].plot(cuts,recs_rf,'-.',c=rf_col,label='Recall (RF)')
+ax.plot(cuts,f1s_rf,c=rf_col,label='F1-Score (RF)')
+ax.plot(cuts,pres_rf,'--',c=rf_col,label='Precision (RF)')
+ax.plot(cuts,recs_rf,'-.',c=rf_col,label='Recall (RF)')
 
-ax[0].plot(cuts,f1s_prf,c=prf_col,label='F1-Score (PRF)')
-ax[0].plot(cuts,pres_prf,'--',c=prf_col,label='Precision (PRF)')
-ax[0].plot(cuts,recs_prf,'-.',c=prf_col,label='Recall (PRF)')
+ax.plot(cuts,f1s_prf,c=prf_col,label='F1-Score (PRF)')
+ax.plot(cuts,pres_prf,'--',c=prf_col,label='Precision (PRF)')
+ax.plot(cuts,recs_prf,'-.',c=prf_col,label='Recall (PRF)')
 # ax[0].set_xlabel('Probability YSO Cut')
-ax[1].set_xlabel('Probability YSO Cut')
-ax[0].set_ylabel('Metric Score')
-ax[1].set_xticks(np.arange(0,1.1,0.1))
-ax[0].set_xticks(np.arange(0,1.1,0.1))
-ax[0].set_yticks(np.arange(0,1.1,0.1))
+ax.set_xlabel('Probability YSO Cut')
+ax.set_ylabel('Metric Score')
+ax.set_xticks(np.arange(0,1.1,0.1))
+ax.set_yticks(np.arange(0,1.1,0.1))
+ax.legend(loc='lower left')
+plt.savefig('Figures/Prob_YSO_vs_metric_'+date+'.png',dpi=300)
+plt.close()
+
+
 
 # ax2 = ax.twinx()
-ax[1].plot(cuts[:-1],nums_rf[:-1],c=rf_col,label='Number YSOs (RF)')
-ax[1].plot(cuts[:-1],nums_prf[:-1],linestyle='--',c=prf_col,label='Number YSOs (PRF)')
-ax[1].set_ylabel('Number of YSOs')
+fig, ax = plt.subplots(dpi=300,figsize=(5,5))
+ax.hlines(y=380, xmin = 0, xmax = 1.0,colors=['grey'],linestyle='dotted',alpha=0.5)
+ax.vlines(x=0.5, ymin = 0, ymax = max(nums_prf),colors=['grey'],linestyle='dotted',alpha=0.5)
+ax.vlines(x=0.67, ymin = 0, ymax = max(nums_prf), colors=['grey'],linestyle='dotted',alpha=0.5)
+ax.vlines(x=0.9, ymin = 0, ymax = max(nums_prf), colors=['grey'],linestyle='dotted',alpha=0.5)
+ax.plot(cuts[:-1],nums_rf[:-1],c=rf_col,label='Number YSOs (RF)')
+ax.plot(cuts[:-1],nums_prf[:-1],linestyle='--',c=prf_col,label='Number YSOs (PRF)')
+ax.set_ylabel('Number of YSOs')
+ax.set_xlabel('Probability YSO Cut')
+ax.set_xticks(np.arange(0,1.1,0.1))
 # ax[1].grid(False)  
-ax[1].set_yscale('log')
+ax.set_yscale('log')
 
 # lns = [a1, a2, a3, a4]
-ax[0].legend(loc='lower left')
-ax[1].legend(loc='lower left')
-plt.savefig('Figures/Prob_YSO_vs_metric_'+date+'.png',dpi=300)
+ax.legend(loc='lower left')
+plt.savefig('Figures/Prob_YSO_vs_number_'+date+'.png',dpi=300)
 plt.close()
 
 
@@ -547,10 +564,12 @@ grid = grid/i # Take avg
 grid_norm = grid.T/grid_to_norm.T # Normalize, transpose due to inversion of x and y
 
 # Column density
-
-levels = np.arange(20.5,22.2,0.1)
 col_dens = fits.open("Gum31_new.fits")
 cdata = col_dens[0].data
+n=80
+col_dens_dat = col_dens[0].data[::n,::n]
+levels = np.arange(min(col_dens_dat.ravel()),max(col_dens_dat.ravel()),5e20)
+levels[:-10]
 
 
 x_col = np.arange(np.shape(cdata)[1])
@@ -558,7 +577,7 @@ y_col = np.arange(np.shape(cdata)[0])
 
 
 fig, ax2 = plt.subplots(figsize=(8,9))
-cd = ax2.contour(x_col,y_col,cdata,[10**l for l in levels],locator=ticker.LogLocator(), cmap='gist_heat_r',alpha=0.5)
+cd = ax2.contour(x_col,y_col,cdata,levels,locator=ticker.LogLocator(), cmap='gist_heat_r',alpha=0.5)
 cba = plt.colorbar(cd,label="Column Density",location="bottom", pad=0.05)
 sd = ax2.pcolormesh(xgrid,ygrid,grid_norm,cmap='Greys')
 cbb = plt.colorbar(sd,label="Normalized Surface Density of YSOs",location="bottom", pad=0.1)
@@ -596,54 +615,191 @@ print("Surface/Column density plot saved!")
 
 n=80
 col_dens_dat = col_dens[0].data[::n,::n]
-# Collect average surface density and column density from within each contour
-pts = []
-for l in range(len(levels)):
-    if l+1 < len(levels):
-        mask = (col_dens_dat>10**levels[l])&(col_dens_dat<10**levels[l+1]) 
-    else: 
-        mask = (col_dens_dat>10**levels[l])
-
-    mu_sd = np.mean(grid.T[mask])
-    mu_cd = np.mean(col_dens_dat[mask])
-    pts.append((mu_cd,mu_sd))
-
-
 # Various conversion factors
-pix_to_parsec_x = 178/(2*2800*np.tan(7.4/120*np.pi/180)) # pixels/pc in the x direction
-pix_to_parsec_y = 106/(2*2800*np.tan(4.4/120*np.pi/180)) # pixels/pc in the y direction
+pix_to_parsec_x = 178/(2*2500*np.tan(7.4/120*np.pi/180)) # pixels/pc in the x direction
+pix_to_parsec_y = 106/(2*2500*np.tan(4.4/120*np.pi/180)) # pixels/pc in the y direction
 pix_to_parsec2 = pix_to_parsec_x*pix_to_parsec_y
 cm2_to_pix = (3.086e18)**2/pix_to_parsec2
-nh2_to_sig_gas = 2*(1.67e-24/1.98847e33)/0.71
+nh2_to_m_gas = 2*(1.67e-24/1.98847e33)/0.71
+nh2_to_mdotpc = nh2_to_m_gas*cm2_to_pix*pix_to_parsec2#15/(0.94*10**21)
 sd_to_sfr = 0.5/2
 
+mask_cd = ~np.isnan(col_dens_dat.ravel())
+
+import time
+tic = time.perf_counter()
+
+# Collect average surface density and column density from within each contour
+pts = []
+xy_cyso = [(CC_Webb_Classified.iloc[q].x, CC_Webb_Classified.iloc[q].y) for q in CC_Webb_Classified[CC_Webb_Classified.Class_PRF==0].index]
+grid_of_points = [[(i,j) for i in range(len(x_col))] for j in range(len(y_col))]
+for l in range(len(levels)):
+    if l+1 < len(levels):
+        mask = (col_dens_dat>(levels[l]))&((col_dens_dat<levels[l+1])) 
+        mask2 = (col_dens[0].data>(levels[l]))&((col_dens[0].data<levels[l+1])) 
+    else: 
+        mask = (col_dens_dat>(levels[l]))
+        mask2 = (col_dens[0].data>(levels[l]))
+
+
+    grid_of_pts_masked = [tuple(g) for g in np.array(grid_of_points)[mask2]]
+    nps2 = 0
+    for xy in xy_cyso:
+        if (round(xy[0]),round(xy[1])) in grid_of_pts_masked:
+            nps2+=1
+
+
+    # mu_sd = np.mean(grid.T[mask])
+
+    nps = np.sum(grid.T[mask])
+    area = len(mask[mask==True])/pix_to_parsec2 # Num px / (px/pc) = pc
+    mgas = np.sum(col_dens_dat[mask])*cm2_to_pix*nh2_to_m_gas # Sum of all column densities in all pixels, converted from gas 
+    # mu_cd = np.mean(col_dens_dat[mask])
+    # pts.append((mu_cd,nps,mgas,sig_sfr,sig_cd,area,nps2,sig_sfr2))
+    pts.append((nps,nps2,mgas,area))
+
+pts = np.array(pts)
+
+toc = time.perf_counter()
+print(f"Completed contour searching in {(toc - tic)/60:0.2f} minutes!\n\n")
+N_PS = pts.T[0]
+N_PS_PRF = pts.T[1]
+M_GAS = pts.T[2]
+A = pts.T[3]
+
+SIG_GAS = M_GAS/A
+SFR = N_PS*sd_to_sfr
+SFR_PRF = N_PS_PRF*sd_to_sfr
+SIG_SFR = SFR/A
+SIG_SFR_PRF = SFR_PRF/A
+RHO = (3*np.sqrt(np.pi)*M_GAS/(4*(A**1.5)))*2e30*((3.24078e-17)**3)
+T_FF = np.sqrt(3*np.pi/(32*(6.6743e-11)*RHO))/(3.15576e13)
+
+np.save('N_PS_SD',N_PS)
+np.save('N_PS_PRF',N_PS_PRF)
+np.save('M_GAS',M_GAS)
+np.save('A',A)
 
 # Plot
-fig, axs = plt.subplots(2,1,sharex=True)
-axs[0].scatter(np.log10(np.transpose(pts)[0]*cm2_to_pix*pix_to_parsec2*nh2_to_sig_gas),np.log10(np.transpose(pts)[1]*pix_to_parsec2),c=prf_col)
-axs[0].plot(np.log10(np.transpose(pts)[0]*cm2_to_pix*pix_to_parsec2*nh2_to_sig_gas),np.log10(np.transpose(pts)[1]*pix_to_parsec2),'--',c=prf_col,alpha=0.6)
-axs[0].set_ylabel('$\log \Sigma_{\mathrm{SFR}}/\mathrm{pc}^2$')
-cd_pts = [cd_pt for cd_pt in np.log10(np.transpose(pts)[0]*cm2_to_pix*pix_to_parsec2*nh2_to_sig_gas) if ~np.isnan(cd_pt)]
-sd_pts= [sd_pt for sd_pt in np.log10(np.transpose(pts)[1]*pix_to_parsec2) if ~np.isnan(sd_pt)]
-lin_fit = np.polyfit(cd_pts, sd_pts, 1)
-print(lin_fit)
-axs[0].plot(cd_pts,lin_fit[0]*np.array(cd_pts)+lin_fit[1],c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1])
+# plt.scatter(col_dens_dat.ravel()*cm2_to_pix*nh2_to_m_gas/(1/pix_to_parsec2),grid.T.ravel()*sd_to_sfr/(1/pix_to_parsec2),c=rf_col)
+# plt.fill_between(np.log10(SIG_GAS),2*np.log10(SIG_GAS)-4.11-0.3,2*np.log10(SIG_GAS)-4.11+0.3,alpha=0.3)
+# plt.plot(np.log10(SIG_GAS),2*np.log10(SIG_GAS)-4.11,ls=':',alpha=0.6,label='Pokhrel et al. 2021 relation')
+
+# pts 3 = Sigma SFR (Surface density); pts 4 = Sigma gas; pts 7 = Sigma SFR (YSO count)
+# plt.scatter(np.log10(SIG_GAS),np.log10(SIG_SFR),marker='o',c=prf_col,label = 'Via Surface density')
+# plt.scatter(np.log10(SIG_GAS),np.log10(SIG_SFR_PRF),marker='s',c=prf_col, label='Via YSO Count')
+# plt.ylabel('$\log \Sigma_{\mathrm{SFR}} \mathrm{M_\odot/Myr}/\mathrm{pc}^2$')
+# plt.xlabel('$\log \Sigma_{gas}$ $\mathrm{M_\odot/pc}^2$')
+# lin_fit = np.polyfit(np.log10(SIG_GAS), np.log10(SIG_SFR), 1)
+# plt.plot(np.log10(SIG_GAS),lin_fit[0]*np.array(np.log10(SIG_GAS))+lin_fit[1],c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1])
+# plt.legend()
+
+fig, axs = plt.subplots(1,2,sharey=True,figsize=(12,8))
+axs[0].scatter(np.log10(col_dens_dat.ravel()*cm2_to_pix*nh2_to_m_gas/(1/pix_to_parsec2)),np.log10(grid.T.ravel()*sd_to_sfr/(1/pix_to_parsec2)),c=rf_col)
+axs[0].fill_between(np.log10(SIG_GAS),2*np.log10(SIG_GAS)-4.11-0.3,2*np.log10(SIG_GAS)-4.11+0.3,alpha=0.3)
+axs[0].plot(np.log10(SIG_GAS),2*np.log10(SIG_GAS)-4.11,ls=':',alpha=0.6,label='Pokhrel et al. 2021 relation')
+axs[0].scatter(np.log10(SIG_GAS),np.log10(SIG_SFR),marker='o',c=prf_col,label = 'Via Surface density')
+axs[0].scatter(np.log10(SIG_GAS),np.log10(SIG_SFR_PRF),marker='s',c=prf_col, label='Via YSO Count')
+axs[0].set_ylabel('$\log \Sigma_{\mathrm{SFR}}~ \mathrm{M_\odot/Myr}/\mathrm{pc}^2$')
+axs[0].set_xlabel('$\log \Sigma_{gas}$ $\mathrm{M_\odot/pc}^2$')
+lin_fit = np.polyfit(np.log10(SIG_GAS)[~np.isinf(np.log10(SIG_SFR))][np.log10(SIG_GAS)[~np.isinf(np.log10(SIG_SFR))]<2.3], np.log10(SIG_SFR)[~np.isinf(np.log10(SIG_SFR))][np.log10(SIG_GAS)[~np.isinf(np.log10(SIG_SFR))]<2.3], 1)
+axs[0].plot(np.log10(SIG_GAS),lin_fit[0]*np.array(np.log10(SIG_GAS))+lin_fit[1],c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1])
+lin_fit = np.polyfit(np.log10(SIG_GAS[~np.isinf(np.log10(SIG_SFR_PRF))]), np.log10(SIG_SFR_PRF[~np.isinf(np.log10(SIG_SFR_PRF))]), 1)
+axs[0].plot(np.log10(SIG_GAS),lin_fit[0]*np.array(np.log10(SIG_GAS))+lin_fit[1],ls='--',c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1])
 axs[0].legend()
 
-axs[1].scatter(np.log10(np.transpose(pts)[0]*cm2_to_pix*pix_to_parsec2*nh2_to_sig_gas),np.log10(np.transpose(pts)[1]*pix_to_parsec2*sd_to_sfr),c=prf_col)
-axs[1].plot(np.log10(np.transpose(pts)[0]*cm2_to_pix*pix_to_parsec2*nh2_to_sig_gas),np.log10(np.transpose(pts)[1]*pix_to_parsec2*sd_to_sfr),'--',c=prf_col,alpha=0.6)
-sd_pts= [sd_pt for sd_pt in np.log10(np.transpose(pts)[1]*pix_to_parsec2*sd_to_sfr) if ~np.isnan(sd_pt)]
-# print(cd_pts,sd_pts)
-lin_fit = np.polyfit(cd_pts, sd_pts, 1)
-print(lin_fit)
-axs[1].plot(cd_pts,lin_fit[0]*np.array(cd_pts)+lin_fit[1],c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1])
-axs[1].set_xlabel('$\log \Sigma_{gas}$ $\mathrm{M_\odot/pc}^2$')
-axs[1].set_ylabel('$\log \Sigma_{SFR}$ $\mathrm{M_\odot/Myr/pc}^2$')
+axs[1].fill_between(np.log10(SIG_GAS/T_FF),2*np.log10(SIG_GAS/T_FF)-4.11-0.3,2*np.log10(SIG_GAS/T_FF)-4.11+0.3,alpha=0.3)
+axs[1].plot(np.log10(SIG_GAS/T_FF),2*np.log10(SIG_GAS/T_FF)-4.11,ls=':',alpha=0.6,label='Pokhrel et al. 2021 relation')
+axs[1].scatter(np.log10(SIG_GAS/T_FF),np.log10(SIG_SFR),marker='o',c=prf_col,label = 'Via Surface density')
+axs[1].scatter(np.log10(SIG_GAS/T_FF),np.log10(SIG_SFR_PRF),marker='s',c=prf_col, label='Via YSO Count')
+# axs[1].set_ylabel('$\log \Sigma_{\mathrm{SFR}}~ \mathrm{M_\odot/Myr}/\mathrm{pc}^2$')
+axs[1].set_xlabel('$\log \Sigma_{gas}/t_{ff}$ $\mathrm{M_\odot/pc}^2$')
+lin_fit = np.polyfit(np.log10(SIG_GAS/T_FF)[~np.isinf(np.log10(SIG_SFR))][np.log10(SIG_GAS)[~np.isinf(np.log10(SIG_SFR))]<2.3], np.log10(SIG_SFR)[~np.isinf(np.log10(SIG_SFR))][np.log10(SIG_GAS)[~np.isinf(np.log10(SIG_SFR))]<2.3], 1)
+axs[1].plot(np.log10(SIG_GAS/T_FF),lin_fit[0]*np.array(np.log10(SIG_GAS/T_FF))+lin_fit[1],c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1])
+lin_fit = np.polyfit(np.log10(SIG_GAS/T_FF)[~np.isinf(np.log10(SIG_SFR_PRF))], np.log10(SIG_SFR_PRF[~np.isinf(np.log10(SIG_SFR_PRF))]), 1)
+axs[1].plot(np.log10(SIG_GAS/T_FF),lin_fit[0]*np.array(np.log10(SIG_GAS/T_FF))+lin_fit[1],ls='--',c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1])
 axs[1].legend()
+
+# fig, axs = plt.subplots(2,1,sharex=True)
+# axs[0].scatter(np.log10(np.transpose(pts)[4]),np.log10(np.transpose(pts)[3]),c=prf_col)
+# axs[0].plot(np.log10(np.transpose(pts)[4]),np.log10(np.transpose(pts)[3]),'--',c=prf_col,alpha=0.6)
+# axs[0].set_ylabel('$\log \Sigma_{\mathrm{SFR}}/\mathrm{pc}^2$')
+# # cd_pts = [cd_pt for cd_pt in np.log10(np.transpose(pts)[0]*nh2_to_mdotpc)]# if ~np.isnan(cd_pt)]
+# # sd_pts= [sd_pt for sd_pt in np.log10(np.transpose(pts)[1]*pix_to_parsec2)]# if ~np.isnan(cd_pt)]
+# # lin_fit = np.polyfit(cd_pts, sd_pts, 1)
+# # axs[0].plot(cd_pts,lin_fit[0]*np.array(cd_pts)+lin_fit[1],c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1])
+# axs[0].legend()
+
+# print(np.log10(col_dens_dat.ravel()*nh2_to_mdotpc))
+# axs[1].scatter(np.log10(col_dens_dat.ravel()*nh2_to_mdotpc),np.log10(grid.T.ravel()*pix_to_parsec2*sd_to_sfr),c=rf_col,alpha=0.5,s=5)
+# axs[1].scatter(np.log10(np.transpose(pts)[0]*nh2_to_mdotpc),np.log10(np.transpose(pts)[1]*pix_to_parsec2*sd_to_sfr),c=prf_col)
+# axs[1].plot(np.log10(np.transpose(pts)[0]*nh2_to_mdotpc),np.log10(np.transpose(pts)[1]*pix_to_parsec2*sd_to_sfr),'--',c=prf_col,alpha=0.6)
+# # sd_pts= [sd_pt for sd_pt in np.log10(np.transpose(pts)[1]*pix_to_parsec2*sd_to_sfr)]# if ~np.isnan(cd_pt)]
+# # lin_fit = np.polyfit(cd_pts, sd_pts, 1)
+# # axs[1].plot(cd_pts,lin_fit[0]*np.array(cd_pts)+lin_fit[1],c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1])
+# axs[1].set_xlabel('$\log \Sigma_{gas}$ $\mathrm{M_\odot/pc}^2$')
+# axs[1].set_ylabel('$\log \Sigma_{SFR}$ $\mathrm{M_\odot/Myr/pc}^2$')
+# axs[1].legend()
 
 fig.tight_layout()
 
 plt.savefig('Figures/surf_vs_col_dens_'+date+'.png',dpi=300)
+plt.close()
 print("Surface/Column density plot 2 saved!")
 
-print("Total star formation rate for region:", "%.3f"%np.nanmean(np.transpose(pts)[1]*sd_to_sfr), "$\pm$", "%.3f"%np.nanstd(np.transpose(pts)[1]*sd_to_sfr),"M$_\odot$/yr")
+print("Total star formation rate for region (SD):", "%.3f"%np.mean(SFR/(A*pix_to_parsec2)))#, "$\pm$", "%.3f"%np.nanstd(SIG_SFR),"M$_\odot$/yr")
+print("Total star formation rate for region (PRF):", "%.3f"%np.mean(SFR_PRF/(A*pix_to_parsec2)))#, "$\pm$", "%.3f"%np.nanstd(SIG_SFR_PRF),"M$_\odot$/yr")
+print("Star formation efficiency (PRF) ε = M*/Mgas = ", len(CC_Webb_Classified[CC_Webb_Classified.Class_PRF==0])*0.5/np.sum(M_GAS))
+print("Star formation efficiency (SD) ε = M*/Mgas = ", np.sum(N_PS)*0.5/np.sum(M_GAS))
+
+# ------------------------------------------------------------------------
+# Surface/Column Density Figure 3 - Pokhrel 2021 Figure 1c
+
+# Mgas = np.transpose(pts)[2]
+# Nps = np.transpose(pts)[1]
+NH2 = levels #np.transpose(pts)[0]
+
+fig, ax1 = plt.subplots()
+
+ax1.set_xlabel('N(H$_2$) contour [cm$^{-2}]$')
+ax1.set_ylabel('M$_{gas} [M_\odot]$', color=prf_col)
+ax1.scatter(NH2, M_GAS, c=prf_col)
+ax1.tick_params(axis='y', labelcolor=prf_col)
+ax1.set_yscale('log')
+ax1.set_xscale('log')
+ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+
+ax2.set_ylabel('N$_{PS}$', color=rf_col)  # we already handled the x-label with ax1
+ax2.scatter(NH2, N_PS, c=rf_col)
+ax2.tick_params(axis='y', labelcolor=rf_col)
+ax2.set_yscale('log')
+
+fig.tight_layout()  # otherwise the right y-label is slightly clipped
+plt.savefig('Figures/cd_trends.png',dpi=300)
+plt.close()
+
+
+#----------------------------------------------------
+# Spectral index
+# 0.9-4.44
+S0_090 = 2243.26
+S0_200 = 759.18
+S0_444 = 182.85
+
+log_S0 = np.log10(S0_090/S0_444)
+log_dv = np.log10((2.998*10**8)/(0.9*10**(-6)))-np.log10((2.998*10**8)/(4.44*10**(-6)))
+CC_Webb_Classified['alpha_09-44'] = -2-(log_S0-0.4*(CC_Webb_Classified['f090w']-CC_Webb_Classified['f444w']))/log_dv
+
+log_S0 = np.log10(S0_200/S0_444)
+log_dv = np.log10((2.998*10**8)/(2.0*10**(-6)))-np.log10((2.998*10**8)/(4.44*10**(-6)))
+CC_Webb_Classified['alpha_20-44'] = -2-(log_S0-0.4*(CC_Webb_Classified['f200w']-CC_Webb_Classified['f444w']))/log_dv
+
+plt.hist(CC_Webb_Classified.loc[CC_Webb_Classified.Class_PRF==1,'alpha_09-44'].dropna(),label='Cont',bins=np.arange(-6,10,0.5))
+plt.hist(CC_Webb_Classified.loc[(CC_Webb_Classified.Class_PRF==0)&(CC_Webb_Classified['alpha_09-44']>0.3),'alpha_09-44'].dropna(),density=False,bins=np.arange(-4,6,0.5),label='CI',hatch='/',alpha=0.5)
+plt.hist(CC_Webb_Classified.loc[(CC_Webb_Classified.Class_PRF==0)&(abs(CC_Webb_Classified['alpha_09-44'])<=0.3),'alpha_09-44'].dropna(),density=False,bins=np.arange(-4,6,0.5),label='CFS',hatch='|',alpha=0.5)
+plt.hist(CC_Webb_Classified.loc[(CC_Webb_Classified.Class_PRF==0)&(CC_Webb_Classified['alpha_09-44']<-0.3)&(CC_Webb_Classified['alpha_09-44']>-1.6),'alpha_09-44'].dropna(),density=False,bins=np.arange(-4,6,0.5),label='CII',hatch='/',alpha=0.5)
+plt.hist(CC_Webb_Classified.loc[(CC_Webb_Classified.Class_PRF==0)&(CC_Webb_Classified['alpha_09-44']<=-1.6),'alpha_09-44'].dropna(),density=False,bins=np.arange(-4,6,0.5),label='CIII',hatch='|',alpha=0.5)
+# plt.hist(CC_Webb_Classified.loc[CC_Webb_Classified.Class_PRF==0,'alpha_20-44'].dropna(),density=False,bins=np.arange(-4,6,0.5),label='ysos')
+plt.legend()
+plt.ylim(0,35)
+plt.savefig('Figures/spec_ind_approx_'+date+'.png',dpi=300)
