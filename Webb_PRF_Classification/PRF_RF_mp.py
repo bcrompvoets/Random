@@ -18,7 +18,7 @@ dao_IR = pd.read_csv(f'DAOPHOT_Catalog_{date}_IR.csv')
 dao_aug = pd.read_csv(f"Augmented_data_prob_{date}.csv")#
 # dao_aug = pd.read_csv("Test_Delta_fitted_class.csv")
 
-date = 'DAOPHOT_'+ date + '_nof444w'
+date = 'DAOPHOT_'+ date + '_nof200w'
 cont = True
 amounts_te = []
 
@@ -71,7 +71,7 @@ dao_aug = add_fcds(dao_aug.copy(),dao.copy(),filters)
 
 
 #------------------------------------------------------
-fcd_columns = [c for c in dao_aug.columns if (((c[0] == "f") and ('-' in c))  or c[0]=='(' or c[0]=='s')and ('f187n' not in c) and ('f444w'not in c)]# and ('f187n' not in c) and ('f470n' not in c)]
+fcd_columns = [c for c in dao_aug.columns if (((c[0] == "f") and ('-' in c))  or c[0]=='(' or c[0]=='δ' or c[0]=='s')and ('f187n' not in c) and ('f200w'not in c)]# and ('f187n' not in c) and ('f470n' not in c)]
 print(fcd_columns)
 errs = ["e_"+f for f in fcd_columns]
 bands = fcd_columns+errs
@@ -169,7 +169,7 @@ print("Starting bootstrapping!")
 import multiprocess as mp
 import time
 tic = time.perf_counter()
-n = 100
+n = 10
 
 with mp.Pool(6) as pool:
     ans_prf = pool.starmap(get_best_prf,[prf_inds] * n)
