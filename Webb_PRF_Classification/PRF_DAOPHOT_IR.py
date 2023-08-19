@@ -11,7 +11,7 @@ import astropy.units as u
 from astropy.io import fits
 from astropy.wcs import WCS
 
-from sklearn.metrics import ConfusionMatrixDisplay,accuracy_score,f1_score,classification_report,f1_score,recall_score,precision_score, RocCurveDisplay
+from sklearn.metrics import ConfusionMatrixDisplay,accuracy_score,f1_score,classification_report,f1_score,recall_score,precision_score, RocCurveDisplay, roc_curve,precision_recall_curve,PrecisionRecallDisplay
 
 import time
 import warnings
@@ -31,12 +31,15 @@ errs = ["e_"+f for f in fcd_columns]
 bands = fcd_columns+errs
 
 # ----------------------------------------------------------------------------
-# Update threshold
-thresh = 0.9
+# Update threshold, add in column density data per point
+thresh = 0.5
 CC_Webb_Classified.loc[CC_Webb_Classified.Prob_RF<=thresh,'Class_RF'] = 1
 CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF<=thresh,'Class_PRF'] = 1
 CC_Webb_Classified.loc[CC_Webb_Classified.Prob_RF>thresh,'Class_RF'] = 0
 CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF>thresh,'Class_PRF'] = 0
+
+col_dens = fits.open("Gum31_new.fits")
+CC_Webb_Classified['N(H2)'] = col_dens[0].data.byteswap().newbyteorder()[round(CC_Webb_Classified.y).values.astype(int),round(CC_Webb_Classified.x).values.astype(int)]
 
 print("Total objects in catalogue: ", len(CC_Webb_Classified))
 print("Total YSOs in catalogue (PRF > 0.9): ", len(CC_Webb_Classified[CC_Webb_Classified.Class_PRF==0]))
@@ -128,10 +131,10 @@ prf_col = 'maroon'
 rf_col = 'salmon'
 colormap = 'Greys'
 
-remake_figs = input("Remake all previous figures? (y) or (n) ")
-rerun_contours = input("Re-run SFR/MGAS/NPS within contour calculations? (y) or (n) ")
-rerun_sd = input('Re-run Surface density computation? (y) or (n)')
-calc_prf_sd = input("Calculate SFR for PRF results? (y) or (n) ")
+remake_figs = 'y' #input("Remake all previous figures? (y) or (n) ")
+rerun_contours = 'n' #input("Re-run SFR/MGAS/NPS within contour calculations? (y) or (n) ")
+rerun_sd = 'n'#input('Re-run Surface density computation? (y) or (n)')
+calc_prf_sd = 'n'#input("Calculate SFR for PRF results? (y) or (n) ")
 
 
 if remake_figs == 'y':
@@ -203,10 +206,13 @@ if remake_figs == 'y':
 
     # #----------------------------------------------------------------------------
     # AUC Curve
-    prf_roc = RocCurveDisplay.from_predictions(CC_Webb_Classified.dropna(subset='Init_Class')['Init_Class'],CC_Webb_Classified.dropna(subset='Init_Class')['Prob_PRF'],pos_label=0,name='PRF')
+    roc_class = abs(CC_Webb_Classified.dropna(subset='Init_Class')['Init_Class'].copy().values -1)
+    roc_class_rf = abs(CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns)['Init_Class'].values -1)
+    print("Number of contaminants:",len(roc_class[roc_class==0])," number of YSOs: ",len(roc_class[roc_class==1]))
+    prf_roc = RocCurveDisplay.from_predictions(roc_class,CC_Webb_Classified.dropna(subset='Init_Class')['Prob_PRF'],pos_label=1,name='PRF')
     plt.close()
     ax = plt.gca()
-    rf_roc = RocCurveDisplay.from_predictions(CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns)['Init_Class'],CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns)['Prob_RF'],pos_label=0,name='RF')
+    rf_roc = RocCurveDisplay.from_predictions(roc_class_rf,CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns)['Prob_RF'],pos_label=1,name='RF')
     plt.close()
     rf_roc.plot(ax=ax,c=rf_col)
     prf_roc.plot(ax=ax,c=prf_col,alpha=0.8)
@@ -214,7 +220,33 @@ if remake_figs == 'y':
     plt.savefig('Figures/ROC_Curve_'+date+'.png',dpi=300)
     plt.close()
 
+    fpr, tpr, thresholds = roc_curve(roc_class,CC_Webb_Classified.dropna(subset='Init_Class')['Prob_PRF'],pos_label=1)
+    gmeans = np.sqrt(tpr * (1-fpr))
+    # locate the index of the largest g-mean
+    ix = np.argmax(gmeans)
+    print('Best Threshold=%f, G-Mean=%.3f' % (thresholds[ix], gmeans[ix]))
     print('ROC curves created!')
+
+    # -------------------------------------------
+    # PR- Curve
+
+    precision, recall, thresholds = precision_recall_curve(roc_class,CC_Webb_Classified.dropna(subset='Init_Class')['Prob_PRF'],pos_label=1)
+    prf_pr = PrecisionRecallDisplay.from_predictions(roc_class,CC_Webb_Classified.dropna(subset='Init_Class')['Prob_PRF'],pos_label=1,name='PRF')
+    plt.close()
+    ax = plt.gca()
+    rf_pr = PrecisionRecallDisplay.from_predictions(roc_class_rf,CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_columns)['Prob_PRF'],pos_label=1,name='RF')
+    plt.close()
+    rf_pr.plot(ax=ax,c=rf_col)
+    prf_pr.plot(ax=ax,c=prf_col,alpha=0.8)
+    plt.savefig('Figures/PR-curve_'+date+".png",dpi=300)
+    plt.close()
+
+    # convert to f score
+    fscore = (2 * precision * recall) / (precision + recall)
+    # locate the index of the largest f score
+    ix = np.argmax(fscore)
+    print('Best Threshold=%f, F-Score=%.3f' % (thresholds[ix], fscore[ix]))
+
     #----------------------------------------
     # JWST field image
     # Plot image
@@ -228,34 +260,46 @@ if remake_figs == 'y':
     ymax, ymin = ax.get_ylim()
     xmax, xmin = ax.get_xlim()
 
-    ra_1 = reit_df.RA
-    dec_1 = reit_df.DEC
+
+    matches_csv = pd.read_csv("matches_to_"+date+".csv")
+    x_inds = [i for i in matches_csv.index if 'X-RAY' in matches_csv.loc[i,'Name']] 
+    sp_inds = [i for i in matches_csv.index if 'SPICY' in matches_csv.loc[i,'Name']] 
+    o_inds = [i for i in matches_csv.index if 'OHL' in matches_csv.loc[i,'Name']] 
+    r_inds = [i for i in matches_csv.index if ('MHO' in matches_csv.loc[i,'Name']) or ('HH' in matches_csv.loc[i,'Name'])] 
+    # ra_1 = reit_df.RA
+    # dec_1 = reit_df.DEC
 
     ra_ir = CC_Webb_Classified.RA.values[CC_Webb_Classified['Init_Class']==0]
     dec_ir = CC_Webb_Classified.DEC.values[CC_Webb_Classified['Init_Class']==0]
 
 
-    ra_yso_rf = CC_Webb_Classified.RA.values[CC_Webb_Classified.Class_RF == 0]
-    dec_yso_rf = CC_Webb_Classified.DEC.values[CC_Webb_Classified.Class_RF == 0]
+    # ra_yso_rf = CC_Webb_Classified.RA.values[CC_Webb_Classified.Class_RF == 0]
+    # dec_yso_rf = CC_Webb_Classified.DEC.values[CC_Webb_Classified.Class_RF == 0]
     ra_yso_prf = CC_Webb_Classified.RA.values[CC_Webb_Classified.Class_PRF == 0]
     dec_yso_prf = CC_Webb_Classified.DEC.values[CC_Webb_Classified.Class_PRF == 0]
-    ra_yso_both = CC_Webb_Classified.RA.values[(CC_Webb_Classified.Class_PRF == 0)&(CC_Webb_Classified.Class_RF == 0)]
-    dec_yso_both = CC_Webb_Classified.DEC.values[(CC_Webb_Classified.Class_PRF == 0)&(CC_Webb_Classified.Class_RF == 0)]
+    # ra_yso_both = CC_Webb_Classified.RA.values[(CC_Webb_Classified.Class_PRF == 0)&(CC_Webb_Classified.Class_RF == 0)]
+    # dec_yso_both = CC_Webb_Classified.DEC.values[(CC_Webb_Classified.Class_PRF == 0)&(CC_Webb_Classified.Class_RF == 0)]
 
-    plt.plot(ra_yso_rf,dec_yso_rf, marker='*',linestyle='none', markersize=15,alpha=0.8,c=rf_col,transform=ax.get_transform('fk5'),label='Our YSOs (RF)')
-    plt.plot(ra_yso_prf,dec_yso_prf, marker='*', linestyle='none', markersize=15,alpha=0.8,c=prf_col,transform=ax.get_transform('fk5'),label='Our YSOs (PRF)')
-    plt.plot(ra_yso_both,dec_yso_both, marker='*',linestyle='none', markersize=15,alpha=0.8,fillstyle='left',c=rf_col,markerfacecoloralt=prf_col,markeredgecolor='none',transform=ax.get_transform('fk5'),label='Our YSOs (PRF)')
-    plt.plot(ra_ir,dec_ir, marker='s',linestyle='none', markersize=15, markeredgecolor='k',fillstyle='none',alpha=0.8,transform=ax.get_transform('fk5'),label='SPICY (2021) or Ohlendorf (2013) YSOs')
-    plt.plot(ra_1,dec_1, marker='o',linestyle='none', markersize=15,markeredgecolor='k',fillstyle='none', alpha=0.8,transform=ax.get_transform('fk5'),label='Reiter et al. 2022 YSOs')
+    # plt.plot(ra_yso_rf,dec_yso_rf, marker='*',linestyle='none', markersize=15,alpha=0.8,c=rf_col,transform=ax.get_transform('fk5'),label='Our YSOs (RF)')
+    plt.scatter(ra_yso_prf,dec_yso_prf,c=CC_Webb_Classified.Prob_PRF.values[CC_Webb_Classified.Class_PRF == 0],cmap='Reds', marker='*', s=80,alpha=0.8,transform=ax.get_transform('fk5'),label='Our YSOs (PRF)')
+    plt.colorbar(label='PRF Probability YSO')
+    # plt.plot(ra_yso_both,dec_yso_both, marker='*',linestyle='none', markersize=15,alpha=0.8,fillstyle='left',c=rf_col,markerfacecoloralt=prf_col,markeredgecolor='none',transform=ax.get_transform('fk5'),label='Our YSOs (PRF)')
+    # plt.plot(ra_ir,dec_ir, marker='s',linestyle='none', markersize=15, markeredgecolor='k',fillstyle='none',alpha=0.8,transform=ax.get_transform('fk5'),label='SPICY (2021) or Ohlendorf (2013) YSOs')
+    # plt.plot(ra_1,dec_1, marker='o',linestyle='none', markersize=15,markeredgecolor='k',fillstyle='none', alpha=0.8,transform=ax.get_transform('fk5'),label='Reiter et al. 2022 YSOs')
+    prev_work = ['Preibisch et al 2012 X-Ray', 'Ohlendorf et al. 2013 IR', 'Kuhn et al. 2021 IR', 'Reiter et al. 2022 Outflow Prog.']
+    m_prev = ['X','o','s','h']
+    for m_i, prev_inds in enumerate([x_inds,o_inds,sp_inds,r_inds]):
+        plt.scatter(matches_csv.loc[prev_inds,'RA'],matches_csv.loc[prev_inds,'DEC'],marker=m_prev[m_i],edgecolors='k',facecolors='none',transform=ax.get_transform('fk5'), s=80,label=prev_work[m_i])
+
     ax.set_ylim(ymax, ymin)
     ax.set_xlim(xmax, xmin)
     plt.legend(loc='lower left')
     ax.grid(False)
     plt.xticks()
     plt.yticks()
+    plt.tight_layout()
     plt.xlabel('RA')
     plt.ylabel('DEC')
-    plt.tight_layout()
     plt.savefig(f"Figures/field_image_{filter}_"+date+".png",dpi=300)
     plt.close()
 
@@ -395,6 +439,7 @@ if remake_figs == 'y':
     ax.plot(cuts,pres_prf,'--',c=prf_col,label='Precision (PRF)')
     ax.plot(cuts,recs_prf,'-.',c=prf_col,label='Recall (PRF)')
     # ax[0].set_xlabel('Probability YSO Cut')
+    ax.vlines(x=0.5, ymin = 0, ymax = max(recs_prf),colors=['grey'],linestyle='dotted',alpha=0.9)
     ax.set_xlabel('Probability YSO Cut')
     ax.set_ylabel('Metric Score')
     ax.set_xticks(np.arange(0,1.1,0.1))
@@ -407,10 +452,10 @@ if remake_figs == 'y':
 
     # ax2 = ax.twinx()
     fig, ax = plt.subplots(dpi=300,figsize=(5,5))
-    ax.hlines(y=380, xmin = 0, xmax = 1.0,colors=['grey'],linestyle='dotted',alpha=0.5)
-    ax.vlines(x=0.5, ymin = 0, ymax = max(nums_prf),colors=['grey'],linestyle='dotted',alpha=0.5)
-    ax.vlines(x=0.67, ymin = 0, ymax = max(nums_prf), colors=['grey'],linestyle='dotted',alpha=0.5)
-    ax.vlines(x=0.9, ymin = 0, ymax = max(nums_prf), colors=['grey'],linestyle='dotted',alpha=0.5)
+    ax.hlines(y=630, xmin = 0, xmax = 1.0,colors=['grey'],linestyle='dotted',alpha=0.5)
+    ax.vlines(x=0.5, ymin = 0, ymax = max(nums_prf),colors=['grey'],linestyle='dotted',alpha=0.9)
+    # ax.vlines(x=0.67, ymin = 0, ymax = max(nums_prf), colors=['grey'],linestyle='dotted',alpha=0.5)
+    # ax.vlines(x=0.9, ymin = 0, ymax = max(nums_prf), colors=['grey'],linestyle='dotted',alpha=0.5)
     ax.plot(cuts[:-1],nums_rf[:-1],c=rf_col,label='Number YSOs (RF)')
     ax.plot(cuts[:-1],nums_prf[:-1],linestyle='--',c=prf_col,label='Number YSOs (PRF)')
     ax.set_ylabel('Number of YSOs')
@@ -422,6 +467,25 @@ if remake_figs == 'y':
     # lns = [a1, a2, a3, a4]
     ax.legend(loc='lower left')
     plt.savefig('Figures/Prob_YSO_vs_number_'+date+'.png',dpi=300)
+    plt.close()
+
+
+
+    fig, ax = plt.subplots(dpi=300,figsize=(5,5))
+    # ax.plot(cuts[:-1],nums_rf[:-1],c=rf_col,label='Number YSOs (RF)')
+    rel_perf = (np.array(nums_prf[:-1])/np.array(nums_rf[:-1]))*(np.array(pres_prf[:-1])/np.array(pres_rf[:-1]))
+    ax.vlines(x=0.5, ymin = 0, ymax = max(rel_perf),colors=['grey'],linestyle='dotted',alpha=0.9)
+    ax.plot(cuts[:-1],rel_perf,linestyle='--',c=prf_col,label='Relative performance')
+    ax.set_ylabel('Relative Performance')
+    ax.set_xlabel('Probability YSO Cut')
+    ax.set_xticks(np.arange(0,1.1,0.1))
+    # ax[1].grid(False)  
+    # ax.set_yscale('log')
+    print((np.array(nums_prf[:-1])/np.array(nums_rf[:-1])*(np.array(pres_prf[:-1])/np.array(pres_rf[:-1])))[49])
+
+    # lns = [a1, a2, a3, a4]
+    ax.legend(loc='lower left')
+    plt.savefig('Figures/Prob_YSO_vs_rel_perf_'+date+'.png',dpi=300)
     plt.close()
 
 
@@ -454,6 +518,12 @@ if remake_figs == 'y':
         plt.scatter(CC_tmp['f090w-f444w'], CC_tmp[f],c=err[err<0.2],marker='.', s=1,cmap=colormap+'_r')
         plt.colorbar(label='Propogated Error')
 
+        plt.xlabel("F090W-F444W")
+        plt.ylabel(f.upper())
+        plt.gca().invert_yaxis()
+        plt.legend()
+        plt.savefig(f"Figures/CMD_{f}.png")
+
         CC_rf = CC_tmp.copy()
         CC_rf = CC_rf[CC_rf.Class_RF==0]
         plt.scatter(CC_rf['f090w-f444w'],CC_rf[f],marker='s',s=15,c=rf_col,label='RF YSOs')
@@ -461,11 +531,15 @@ if remake_figs == 'y':
         CC_prf = CC_prf[CC_prf.Class_PRF==0]
         plt.scatter(CC_prf['f090w-f444w'],CC_prf[f],marker='*',s=15,c=prf_col, label = 'PRF YSOs')
 
-        plt.xlabel("F090W-F444W")
-        plt.ylabel(f.upper())
-        plt.gca().invert_yaxis()
-        plt.legend()
-        plt.savefig(f"Figures/CMD_{f}.png")
+        # CC_sp = CC_tmp.copy()
+        # CC_sp = CC_sp[CC_sp.Init_Class==1]
+        # plt.scatter(CC_sp['f090w-f444w'],CC_sp[f],marker='o',s=25,c='lightblue', label = 'Spitzer Conts')
+
+        # CC_sp = CC_tmp.copy()
+        # CC_sp = CC_sp[CC_sp.Init_Class==0]
+        # plt.scatter(CC_sp['f090w-f444w'],CC_sp[f],marker='o',s=25,c='navy', label = 'Spitzer YSOs')
+
+        plt.savefig(f"Figures/CMD_{f}_{date}.png")
         plt.close()
 
 
@@ -551,6 +625,7 @@ if rerun_sd == 'y':
     grid_nnd_e = np.empty((len(xgrid),len(ygrid)))
     half_xcell = (xgrid[1]-xgrid[0])/2          
     half_ycell = (ygrid[1]-ygrid[0])/2
+    CC_yso_tmp = CC_Webb_Classified.loc[CC_Webb_Classified.Class_PRF==0]
     for xg in range(len(xgrid)):
         for yg in range(len(ygrid)):
             xx = xgrid[xg]+half_xcell
@@ -560,8 +635,8 @@ if rerun_sd == 'y':
             
             nnd_tmp = []
             for i in range(1,101):
-                random_ths = np.random.default_rng().random(len(CC_Webb_Classified))
-                CC_tmp_th = CC_Webb_Classified[CC_Webb_Classified.Prob_PRF>random_ths]
+                random_ths = np.random.default_rng().random(len(CC_yso_tmp))
+                CC_tmp_th = CC_yso_tmp[(CC_yso_tmp.Prob_PRF>random_ths)]
                 dN = np.sort(np.sqrt((xx-CC_tmp_th.x)**2+(yy-CC_tmp_th.y)**2),axis=None)[n-1]
                 nnd_tmp.append((n-1)/(np.pi*dN**2))
             grid_nnd[xg,yg] = np.mean(nnd_tmp)*(pix_to_parsec2_full/pix_to_parsec2)  
@@ -590,7 +665,7 @@ cd = ax2.contour(x_col,y_col,cdata,levels,locator=ticker.LogLocator(), cmap='gis
 cba = plt.colorbar(cd,label="Column Density",location="bottom", pad=0.05)
 sd = ax2.pcolormesh(xgrid,ygrid,grid_norm,cmap='Greys')
 cbb = plt.colorbar(sd,label="Normalized Surface Density of YSOs",location="bottom", pad=0.1)
-ax2.scatter(CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF>0.9,'x'],CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF>0.9,'y'],s=35,c='maroon',edgecolors='w',linewidth=0.1,marker='*',label='YSOs (Prob > 90%)')#, transform=tr_webb_wo)
+ax2.scatter(CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF>thresh,'x'],CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF>thresh,'y'],s=35,c='maroon',edgecolors='w',linewidth=0.1,marker='*',label=f'YSOs (Prob > {int(thresh*100)}%)')#, transform=tr_webb_wo)
 plt.legend()
 
 plt.savefig("Figures/Surf_col_dens_norm_"+date+".png",dpi=300)
@@ -614,17 +689,20 @@ if rerun_contours == 'y':
     for l in range(len(levels)):
         if l+1 < len(levels):
             mask = (col_dens_dat>(levels[l]))&((col_dens_dat<levels[l+1])) 
-            mask2 = (col_dens[0].data>(levels[l]))&((col_dens[0].data<levels[l+1])) 
+            # mask2 = (col_dens[0].data>(levels[l]))&((col_dens[0].data<levels[l+1])) 
+            mask2 = CC_Webb_Classified[(CC_Webb_Classified['N(H2)']>(levels[l]))&CC_Webb_Classified['N(H2)']<(levels[l+1])].index
         else: 
             mask = (col_dens_dat>(levels[l]))
-            mask2 = (col_dens[0].data>(levels[l]))
+            # mask2 = (col_dens[0].data>(levels[l]))
+            mask2 = CC_Webb_Classified[(CC_Webb_Classified['N(H2)']>(levels[l]))].index
 
         if calc_prf_sd.lower()=='y':
-            grid_of_pts_masked = [tuple(g) for g in np.array(grid_of_points)[mask2]]
-            nps2 = 0
-            for xy in xy_cyso:
-                if (round(xy[0]),round(xy[1])) in grid_of_pts_masked:
-                    nps2+=1
+            nps2 = len(CC_Webb_Classified.loc[mask2])
+            # grid_of_pts_masked = [tuple(g) for g in np.array(grid_of_points)[mask2]]
+            # nps2 = 0
+            # for xy in xy_cyso:
+            #     if (round(xy[0]),round(xy[1])) in grid_of_pts_masked:
+            #         nps2+=1
         else: nps2 = np.load("N_PS_PRF.npy")[l]
 
         nps = np.sum(grid.T[mask])
@@ -703,8 +781,8 @@ plt.savefig('Figures/surf_vs_col_dens_'+date+'.png',dpi=300)
 plt.close()
 print("Surface/Column density plot 2 saved!")
 
-print("Total star formation rate for region (SD):", "%.7f"%np.sum(SFR/1e6), "or ", np.sum(SFR/1e6)*2e6/0.5, "total stars in region.")#, "$\pm$", "%.3f"%np.nanstd(SIG_SFR),"M$_\odot$/yr")
-print("Total star formation rate for region (PRF):", "%.7f"%np.sum(SFR_PRF/1e6), "or ", np.sum(SFR_PRF/1e6)*2e6/0.5, "total stars in region.")#, "$\pm$", "%.3f"%np.nanstd(SIG_SFR_PRF),"M$_\odot$/yr")
+print("Total star formation rate for region (SD):", "%.7f"%np.sum(SFR/1e6), "or ", np.sum(N_PS), "\pm", np.sqrt(np.sum(N_PS_E**2)), "total stars in region.")#, "$\pm$", "%.3f"%np.nanstd(SIG_SFR),"M$_\odot$/yr")
+print("Total star formation rate for region (PRF):", "%.7f"%np.sum(SFR_PRF/1e6), "or ", np.sum(N_PS_PRF), "\pm", np.sqrt(np.sum(np.sqrt(N_PS_PRF)**2)), "total stars in region.")#, "$\pm$", "%.3f"%np.nanstd(SIG_SFR_PRF),"M$_\odot$/yr")
 print("Star formation efficiency (PRF) ε = M*/Mgas = ", len(CC_Webb_Classified[CC_Webb_Classified.Class_PRF==0])*0.5/np.sum(M_GAS))
 print("Star formation efficiency (SD) ε = M*/Mgas = ", np.sum(N_PS)*0.5/np.sum(M_GAS))
 
@@ -761,3 +839,8 @@ print("Number Class III: ", len(CC_Webb_Classified.loc[(CC_Webb_Classified.Class
 plt.legend()
 plt.ylim(0,35)
 plt.savefig('Figures/spec_ind_approx_'+date+'.png',dpi=300)
+
+print(len(CC_Webb_Classified.loc[(CC_Webb_Classified.Class_PRF==0)&(CC_Webb_Classified['f090w-f444w']<4),'f090w-f444w']),"blue cYSOs")
+print(len(CC_Webb_Classified.loc[(CC_Webb_Classified['f090w-f444w']<4),'f090w-f444w']),"blue objects")
+
+print(len(CC_Webb_Classified.loc[(CC_Webb_Classified.Class_PRF==0)&(CC_Webb_Classified['f090w-f444w']<4),'f090w-f444w'])/len(CC_Webb_Classified.loc[(CC_Webb_Classified['f090w-f444w']<4),'f090w-f444w'])," blue cYSOs/blue objects")
