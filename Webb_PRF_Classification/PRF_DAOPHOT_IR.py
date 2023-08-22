@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 
 from astropy.table import Table
 from astropy.io.votable import from_table, writeto
@@ -58,67 +59,67 @@ print(classification_report(CC_Webb_Classified.dropna(subset=['Init_Class']+fcd_
 print("PRF Classification Report")
 print(classification_report(CC_Webb_Classified.dropna(subset='Init_Class').Init_Class,CC_Webb_Classified.dropna(subset='Init_Class').Class_PRF))
 writeto(from_table(Table.from_pandas(CC_Webb_Classified,units={'RA':u.deg,'DEC':u.deg})), f"Data/XML Files/YSOs_IR.xml")
+mk_tables= False
+if mk_tables:
+    # ----------------------------------------------------------------------------
+    # Make table of Reiter, SPICY, and our own classifications
+    reit_df = pd.read_csv("Reiter2022_cYSOs.csv")
 
 
-# ----------------------------------------------------------------------------
-# Make table of Reiter, SPICY, and our own classifications
-reit_df = pd.read_csv("Reiter2022_cYSOs.csv")
+    tab_preds = open("Table_Reiter_SPICY_YSO"+date+".txt",'w')
+    tab_preds.write("\citet{Kuhn2021} & \citet{Reiter2022} & Our Work \\\ \hline \n")
 
+    r_inds, sep2d, _ = match_coordinates_sky(SkyCoord(reit_df.RA,reit_df.DEC,unit=u.deg), SkyCoord(CC_Webb_Classified.RA,CC_Webb_Classified.DEC,unit=u.deg), nthneighbor=1, storekdtree='kdtree_sky')
+    sp_inds = CC_Webb_Classified[CC_Webb_Classified.Init_Class==0].index
+    _, inds_of_match = np.unique(np.r_[r_inds,sp_inds], return_index=True)
+    matched_inds = np.r_[r_inds,sp_inds][np.sort(inds_of_match)]
 
-tab_preds = open("Table_Reiter_SPICY_YSO"+date+".txt",'w')
-tab_preds.write("\citet{Kuhn2021} & \citet{Reiter2022} & Our Work \\\ \hline \n")
-
-r_inds, sep2d, _ = match_coordinates_sky(SkyCoord(reit_df.RA,reit_df.DEC,unit=u.deg), SkyCoord(CC_Webb_Classified.RA,CC_Webb_Classified.DEC,unit=u.deg), nthneighbor=1, storekdtree='kdtree_sky')
-sp_inds = CC_Webb_Classified[CC_Webb_Classified.Init_Class==0].index
-_, inds_of_match = np.unique(np.r_[r_inds,sp_inds], return_index=True)
-matched_inds = np.r_[r_inds,sp_inds][np.sort(inds_of_match)]
-
-for i, m in enumerate(matched_inds):
-    df_tmp = CC_Webb_Classified.iloc[m]
-    # df_tmp_ir = dao_IR.iloc[i]
-    if df_tmp[['Class_RF']].values[0]==0 and df_tmp[['Class_PRF']].values[0]==0:
-        y_or_s = f'YSO {m} - PRF {"%.2f" %df_tmp.Prob_PRF} and RF {"%.2f" %df_tmp.Prob_RF}'
-    elif df_tmp[['Class_RF']].values[0]==0:
-        y_or_s = f'YSO {m} - RF {"%.2f" %df_tmp.Prob_RF}'
-    elif df_tmp[['Class_PRF']].values[0]==0:
-        y_or_s = f'YSO {m} - PRF {"%.2f" %df_tmp.Prob_PRF}'
-    else:
-        y_or_s = f'C {m} - PRF {"%.2f" %df_tmp.Prob_PRF}'
-    if m in r_inds:
-        if m in sp_inds:
-            tab_preds.write(f"{df_tmp.Survey} - SPICY {df_tmp.SPICY_ID} & {reit_df.loc[i,'Name']} & {y_or_s} \\\ \n")
+    for i, m in enumerate(matched_inds):
+        df_tmp = CC_Webb_Classified.iloc[m]
+        # df_tmp_ir = dao_IR.iloc[i]
+        if df_tmp[['Class_RF']].values[0]==0 and df_tmp[['Class_PRF']].values[0]==0:
+            y_or_s = f'YSO {m} - PRF {"%.2f" %df_tmp.Prob_PRF} and RF {"%.2f" %df_tmp.Prob_RF}'
+        elif df_tmp[['Class_RF']].values[0]==0:
+            y_or_s = f'YSO {m} - RF {"%.2f" %df_tmp.Prob_RF}'
+        elif df_tmp[['Class_PRF']].values[0]==0:
+            y_or_s = f'YSO {m} - PRF {"%.2f" %df_tmp.Prob_PRF}'
         else:
-            tab_preds.write(f"- & {reit_df.loc[i,'Name']} & {y_or_s} \\\ \n")
-    else:
-        tab_preds.write(f"{df_tmp.Survey} - SPICY {df_tmp.SPICY_ID} & - & {y_or_s} \\\ \n")
+            y_or_s = f'C {m} - PRF {"%.2f" %df_tmp.Prob_PRF}'
+        if m in r_inds:
+            if m in sp_inds:
+                tab_preds.write(f"{df_tmp.Survey} - SPICY {df_tmp.SPICY_ID} & {reit_df.loc[i,'Name']} & {y_or_s} \\\ \n")
+            else:
+                tab_preds.write(f"- & {reit_df.loc[i,'Name']} & {y_or_s} \\\ \n")
+        else:
+            tab_preds.write(f"{df_tmp.Survey} - SPICY {df_tmp.SPICY_ID} & - & {y_or_s} \\\ \n")
 
-tab_preds.close()
+    tab_preds.close()
 
-print("Table of comparison to other works completed!")
+    print("Table of comparison to other works completed!")
 
-# #----------------------------------------------------------------------------
-# Latex table of YSOs for paper
-columns = ['RA', 'DEC'] + filters + ['Prob_PRF','Prob_RF']
-new_cols = ['RA', 'DEC'] + [f.upper() for f in filters] + ['Prob YSO PRF', 'Prob YSO RF'] #'F770w', 'F1130w', 'F1280w', 'F1800w',
+    # #----------------------------------------------------------------------------
+    # Latex table of YSOs for paper
+    columns = ['RA', 'DEC'] + filters + ['Prob_PRF','Prob_RF']
+    new_cols = ['RA', 'DEC'] + [f.upper() for f in filters] + ['Prob YSO PRF', 'Prob YSO RF'] #'F770w', 'F1130w', 'F1280w', 'F1800w',
 
-csv_yso = CC_Webb_Classified[(CC_Webb_Classified.Class_RF==0)|(CC_Webb_Classified.Class_PRF==0)].reset_index()
-csv_yso = csv_yso.loc[csv_yso.isnull().sum(1).sort_values(ascending=1).index,columns]
+    csv_yso = CC_Webb_Classified[(CC_Webb_Classified.Class_RF==0)|(CC_Webb_Classified.Class_PRF==0)].reset_index()
+    csv_yso = csv_yso.loc[csv_yso.isnull().sum(1).sort_values(ascending=1).index,columns]
 
 
-file_out = 'CC_Classified_DAOPHOT_latex_ysos'+date+'.txt'
-print("Printing to ", file_out)
-f = open(file_out,'w')
+    file_out = 'CC_Classified_DAOPHOT_latex_ysos'+date+'.txt'
+    print("Printing to ", file_out)
+    f = open(file_out,'w')
 
-for j in range(0,len(columns)):
-    f.write(new_cols[j]+'&')
-f.write('\\hline \\\ \n')
-for i in range(0,len(csv_yso)):
     for j in range(0,len(columns)):
-        str_tmp = str("%.4f" %csv_yso[columns[j]].values[i])+"&"
-        f.write(str_tmp)
-    f.write('\\\ \n')
+        f.write(new_cols[j]+'&')
+    f.write('\\hline \\\ \n')
+    for i in range(0,len(csv_yso)):
+        for j in range(0,len(columns)):
+            str_tmp = str("%.4f" %csv_yso[columns[j]].values[i])+"&"
+            f.write(str_tmp)
+        f.write('\\\ \n')
 
-f.close()
+    f.close()
 # #----------------------------------------------------------------------------
 
 # Make Plots, define plot details
@@ -147,8 +148,7 @@ if remake_figs == 'y':
 
     # print('Mean number of YSOs:',np.mean(num_yso), 'Median number of YSOs:', np.median(num_yso))
     # print('Mean F1-Score:',np.mean(max_f1), 'Median F1-Score:', np.median(max_f1), 'Standard deviation F1-Score:', np.std(max_f1))
-    fig = plt.figure(figsize=(6, 6),dpi=300)
-    fig.tight_layout()
+    fig = plt.figure(figsize=(8, 6),dpi=300)
     # Add a gridspec with two rows and two columns and a ratio of 1 to 4 between
     # the size of the marginal axes and the main axes in both directions.
     # Also adjust the subplot parameters for a square plot.
@@ -166,7 +166,7 @@ if remake_figs == 'y':
     ax.scatter(num_yso_rf,max_f1_rf,c=rf_col,label='RF')
     ax.scatter(num_yso_prf,max_f1_prf,c=prf_col,label='PRF')
     xmin,xmax = ax.get_xlim()
-    ymin,ymax = ax.get_ylim()
+    ymin,ymax = 0.9, 1.0
     ax_histx.hist(num_yso_rf,bins=np.arange(xmin,xmax,5),color=rf_col,histtype='step')#
     ax_histx.hist(num_yso_prf,bins=np.arange(xmin,xmax,5),color=prf_col,histtype='step')#
     ax_histy.hist(max_f1_rf,bins=np.arange(ymin,ymax,0.005),color=rf_col, orientation='horizontal',histtype='step')
@@ -175,6 +175,7 @@ if remake_figs == 'y':
     ax.set_ylabel('F1-Score of YSOs')
     # ax.set_xscale('log')
     ax.legend(loc='upper right')
+    plt.tight_layout()
     plt.savefig("Figures/F1-Scoresvs_Num_YSOs_"+date+".png",dpi=300)
     plt.close()
     print("Plot of f1 scores vs number of YSOs created!")
@@ -269,8 +270,8 @@ if remake_figs == 'y':
     # ra_1 = reit_df.RA
     # dec_1 = reit_df.DEC
 
-    ra_ir = CC_Webb_Classified.RA.values[CC_Webb_Classified['Init_Class']==0]
-    dec_ir = CC_Webb_Classified.DEC.values[CC_Webb_Classified['Init_Class']==0]
+    # ra_ir = CC_Webb_Classified.RA.values[CC_Webb_Classified['Init_Class']==0]
+    # dec_ir = CC_Webb_Classified.DEC.values[CC_Webb_Classified['Init_Class']==0]
 
 
     # ra_yso_rf = CC_Webb_Classified.RA.values[CC_Webb_Classified.Class_RF == 0]
@@ -281,12 +282,12 @@ if remake_figs == 'y':
     # dec_yso_both = CC_Webb_Classified.DEC.values[(CC_Webb_Classified.Class_PRF == 0)&(CC_Webb_Classified.Class_RF == 0)]
 
     # plt.plot(ra_yso_rf,dec_yso_rf, marker='*',linestyle='none', markersize=15,alpha=0.8,c=rf_col,transform=ax.get_transform('fk5'),label='Our YSOs (RF)')
-    plt.scatter(ra_yso_prf,dec_yso_prf,c=CC_Webb_Classified.Prob_PRF.values[CC_Webb_Classified.Class_PRF == 0],cmap='Reds', marker='*', s=80,alpha=0.8,transform=ax.get_transform('fk5'),label='Our YSOs (PRF)')
+    plt.scatter(ra_yso_prf,dec_yso_prf,c=CC_Webb_Classified.Prob_PRF.values[CC_Webb_Classified.Class_PRF == 0],cmap='Reds', marker='*', s=100,alpha=0.8,transform=ax.get_transform('fk5'),label='Our YSOs (PRF)')
     plt.colorbar(label='PRF Probability YSO')
     # plt.plot(ra_yso_both,dec_yso_both, marker='*',linestyle='none', markersize=15,alpha=0.8,fillstyle='left',c=rf_col,markerfacecoloralt=prf_col,markeredgecolor='none',transform=ax.get_transform('fk5'),label='Our YSOs (PRF)')
     # plt.plot(ra_ir,dec_ir, marker='s',linestyle='none', markersize=15, markeredgecolor='k',fillstyle='none',alpha=0.8,transform=ax.get_transform('fk5'),label='SPICY (2021) or Ohlendorf (2013) YSOs')
     # plt.plot(ra_1,dec_1, marker='o',linestyle='none', markersize=15,markeredgecolor='k',fillstyle='none', alpha=0.8,transform=ax.get_transform('fk5'),label='Reiter et al. 2022 YSOs')
-    prev_work = ['Preibisch et al 2012 X-Ray', 'Ohlendorf et al. 2013 IR', 'Kuhn et al. 2021 IR', 'Reiter et al. 2022 Outflow Prog.']
+    prev_work = ['Preibisch et al 2014 X-Ray', 'Ohlendorf et al. 2013 IR', 'Kuhn et al. 2021 IR', 'Reiter et al. 2022 Outflow Prog.']
     m_prev = ['X','o','s','h']
     for m_i, prev_inds in enumerate([x_inds,o_inds,sp_inds,r_inds]):
         plt.scatter(matches_csv.loc[prev_inds,'RA'],matches_csv.loc[prev_inds,'DEC'],marker=m_prev[m_i],edgecolors='k',facecolors='none',transform=ax.get_transform('fk5'), s=80,label=prev_work[m_i])
@@ -295,6 +296,17 @@ if remake_figs == 'y':
     ax.set_xlim(xmax, xmin)
     plt.legend(loc='lower left')
     ax.grid(False)
+    
+    scalebar = AnchoredSizeBar(ax.transData,
+                            1321, '0.5 pc', 'lower right', 
+                            pad=0.5,
+                            color='k',
+                            frameon=False)#,
+                            # size_vertical=1,
+                            # fontproperties=fontprops)
+
+    ax.add_artist(scalebar)
+
     plt.xticks()
     plt.yticks()
     plt.tight_layout()
@@ -521,15 +533,14 @@ if remake_figs == 'y':
         plt.xlabel("F090W-F444W")
         plt.ylabel(f.upper())
         plt.gca().invert_yaxis()
-        plt.legend()
         plt.savefig(f"Figures/CMD_{f}.png")
 
-        CC_rf = CC_tmp.copy()
-        CC_rf = CC_rf[CC_rf.Class_RF==0]
-        plt.scatter(CC_rf['f090w-f444w'],CC_rf[f],marker='s',s=15,c=rf_col,label='RF YSOs')
+        # CC_rf = CC_tmp.copy()
+        # CC_rf = CC_rf[CC_rf.Class_RF==0]
+        # plt.scatter(CC_rf['f090w-f444w'],CC_rf[f],marker='s',s=15,c=rf_col,label='RF YSOs')
         CC_prf = CC_tmp.copy()
         CC_prf = CC_prf[CC_prf.Class_PRF==0]
-        plt.scatter(CC_prf['f090w-f444w'],CC_prf[f],marker='*',s=15,c=prf_col, label = 'PRF YSOs')
+        plt.scatter(CC_prf['f090w-f444w'],CC_prf[f],marker='*',s=55,c=prf_col,edgecolors=rf_col,linewidths=0.3, label = 'PRF YSOs')
 
         # CC_sp = CC_tmp.copy()
         # CC_sp = CC_sp[CC_sp.Init_Class==1]
@@ -539,6 +550,7 @@ if remake_figs == 'y':
         # CC_sp = CC_sp[CC_sp.Init_Class==0]
         # plt.scatter(CC_sp['f090w-f444w'],CC_sp[f],marker='o',s=25,c='navy', label = 'Spitzer YSOs')
 
+        plt.legend(loc='upper right')
         plt.savefig(f"Figures/CMD_{f}_{date}.png")
         plt.close()
 
@@ -660,14 +672,25 @@ else:
 grid_norm = grid.T/grid_to_norm.T # Normalize, transpose due to inversion of x and y
 
 
-fig, ax2 = plt.subplots(figsize=(8,9))
+fig, ax2 = plt.subplots(figsize=(8,7))
 cd = ax2.contour(x_col,y_col,cdata,levels,locator=ticker.LogLocator(), cmap='gist_heat_r',alpha=0.5)
 cba = plt.colorbar(cd,label="Column Density",location="bottom", pad=0.05)
 sd = ax2.pcolormesh(xgrid,ygrid,grid_norm,cmap='Greys')
-cbb = plt.colorbar(sd,label="Normalized Surface Density of YSOs",location="bottom", pad=0.1)
-ax2.scatter(CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF>thresh,'x'],CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF>thresh,'y'],s=35,c='maroon',edgecolors='w',linewidth=0.1,marker='*',label=f'YSOs (Prob > {int(thresh*100)}%)')#, transform=tr_webb_wo)
-plt.legend()
+cbb = plt.colorbar(sd,label="Normalized Surface Density of YSOs",location="bottom", pad=0.05)
+# ax2.scatter(CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF>thresh,'x'],CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF>thresh,'y'],s=55,c='maroon',edgecolors='w',linewidth=0.1,marker='*',label=f'YSOs (Prob > {int(thresh*100)}%)')#, transform=tr_webb_wo)
+# plt.legend()
+plt.axis('off')
 
+scalebar = AnchoredSizeBar(ax2.transData,
+                        1321, '0.5 pc', 'lower right', 
+                        pad=0.5,
+                        color='k',
+                        frameon=False)#,
+                        # size_vertical=1,
+                        # fontproperties=fontprops)
+
+ax2.add_artist(scalebar)
+plt.tight_layout()
 plt.savefig("Figures/Surf_col_dens_norm_"+date+".png",dpi=300)
 plt.close()
 
@@ -747,33 +770,33 @@ RHO = (3*np.sqrt(np.pi)*M_GAS/(4*(A**1.5)))*2e30*((3.24078e-17)**3)
 T_FF = np.sqrt(3*np.pi/(32*(6.6743e-11)*RHO))/(3.15576e13)
 
 
-fig, axs = plt.subplots(1,2,sharey=True,figsize=(8,4))
+fig, axs = plt.subplots(1,1,sharey=True,figsize=(6,6))
 # axs[0].scatter(np.log10(col_dens_dat.ravel()*cm2_to_pix*nh2_to_m_gas/(1/pix_to_parsec2)),np.log10(grid.T.ravel()*sd_to_sfr/(1/pix_to_parsec2)),c=rf_col)
-axs[0].fill_between(np.log10(SIG_GAS),2*np.log10(SIG_GAS)-4.11-0.3,2*np.log10(SIG_GAS)-4.11+0.3,alpha=0.3)
-axs[0].plot(np.log10(SIG_GAS),2*np.log10(SIG_GAS)-4.11,ls=':',alpha=0.6,label='Pokhrel et al. 2021 relation')
-axs[0].errorbar(np.log10(SIG_GAS),np.log10(SIG_SFR),yerr=(SIG_SFR_E/(SIG_SFR*np.log(10))),marker='o',c=prf_col,label = 'Via Surface density')
-axs[0].errorbar(np.log10(SIG_GAS),np.log10(SIG_SFR_PRF),yerr=(SIG_SFR_PRF_E/(SIG_SFR_PRF*np.log(10))),marker='s',c=prf_col, label='Via YSO Count')
-axs[0].set_ylabel('$\log \Sigma_{\mathrm{SFR}}~ \mathrm{M_\odot/Myr}/\mathrm{pc}^2$')
-axs[0].set_xlabel('$\log \Sigma_{gas}$ $\mathrm{M_\odot/pc}^2$')
+p5 = axs.fill_between(np.log10(SIG_GAS),2*np.log10(SIG_GAS)-4.11-0.3,2*np.log10(SIG_GAS)-4.11+0.3,alpha=0.3)
+p6, = axs.plot(np.log10(SIG_GAS),2*np.log10(SIG_GAS)-4.11,ls=':',alpha=0.6,label='Pokhrel et al. 2021 relation')
+p1, _, _  = axs.errorbar(np.log10(SIG_GAS),np.log10(SIG_SFR),yerr=(SIG_SFR_E/(SIG_SFR*np.log(10))),ls='None',mec='k',marker='o',c=prf_col,label = 'Via Surface Density')
+p2, _, _  = axs.errorbar(np.log10(SIG_GAS),np.log10(SIG_SFR_PRF),yerr=(SIG_SFR_PRF_E/(SIG_SFR_PRF*np.log(10))),ls='None',mec='k',marker='s',c=prf_col, label='Via YSO Count')
+axs.set_ylabel('$\log \Sigma_{\mathrm{SFR}}~ \mathrm{M_\odot/Myr}/\mathrm{pc}^2$')
+axs.set_xlabel('$\log \Sigma_{gas}$ $\mathrm{M_\odot/pc}^2$')
 lin_fit = np.polyfit(np.log10(SIG_GAS)[~np.isinf(np.log10(SIG_SFR))][np.log10(SIG_GAS)[~np.isinf(np.log10(SIG_SFR))]<2.3], np.log10(SIG_SFR)[~np.isinf(np.log10(SIG_SFR))][np.log10(SIG_GAS)[~np.isinf(np.log10(SIG_SFR))]<2.3], 1)
-axs[0].plot(np.log10(SIG_GAS),lin_fit[0]*np.array(np.log10(SIG_GAS))+lin_fit[1],c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1])
+p3, = axs.plot(np.log10(SIG_GAS),lin_fit[0]*np.array(np.log10(SIG_GAS))+lin_fit[1],c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1]+" Via Surface Density")
 lin_fit = np.polyfit(np.log10(SIG_GAS[~np.isinf(np.log10(SIG_SFR_PRF))]), np.log10(SIG_SFR_PRF[~np.isinf(np.log10(SIG_SFR_PRF))]), 1)
-axs[0].plot(np.log10(SIG_GAS),lin_fit[0]*np.array(np.log10(SIG_GAS))+lin_fit[1],ls='--',c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1])
-axs[0].legend()
+p4, = axs.plot(np.log10(SIG_GAS),lin_fit[0]*np.array(np.log10(SIG_GAS))+lin_fit[1],ls='--',c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1]+" Via YSO Count")
+axs.legend([(p1, p3), (p2, p4), (p5, p6)], ['Surface Density', 'YSO Count', 'Pokhrel et al. 2021'])
 
-ymin, ymax = axs[0].get_ylim()
-axs[1].set_ylim(ymin,ymax)
-axs[1].fill_between(np.log10(SIG_GAS/T_FF),2*np.log10(SIG_GAS/T_FF)-4.11-0.3,2*np.log10(SIG_GAS/T_FF)-4.11+0.3,alpha=0.3)
-axs[1].plot(np.log10(SIG_GAS/T_FF),2*np.log10(SIG_GAS/T_FF)-4.11,ls=':',alpha=0.6,label='Pokhrel et al. 2021 relation')
-axs[1].errorbar(np.log10(SIG_GAS/T_FF),np.log10(SIG_SFR),yerr=(SIG_SFR_E/(SIG_SFR*np.log(10))),marker='o',c=prf_col,label = 'Via Surface density')
-axs[1].errorbar(np.log10(SIG_GAS/T_FF),np.log10(SIG_SFR_PRF),yerr=(SIG_SFR_PRF_E/(SIG_SFR_PRF*np.log(10))),marker='s',c=prf_col, label='Via YSO Count')
-# axs[1].set_ylabel('$\log \Sigma_{\mathrm{SFR}}~ \mathrm{M_\odot/Myr}/\mathrm{pc}^2$')
-axs[1].set_xlabel('$\log \Sigma_{gas}/t_{ff}$ $\mathrm{M_\odot/pc}^2$')
-lin_fit = np.polyfit(np.log10(SIG_GAS/T_FF)[~np.isinf(np.log10(SIG_SFR))][np.log10(SIG_GAS)[~np.isinf(np.log10(SIG_SFR))]<2.3], np.log10(SIG_SFR)[~np.isinf(np.log10(SIG_SFR))][np.log10(SIG_GAS)[~np.isinf(np.log10(SIG_SFR))]<2.3], 1)
-axs[1].plot(np.log10(SIG_GAS/T_FF),lin_fit[0]*np.array(np.log10(SIG_GAS/T_FF))+lin_fit[1],c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1])
-lin_fit = np.polyfit(np.log10(SIG_GAS/T_FF)[~np.isinf(np.log10(SIG_SFR_PRF))], np.log10(SIG_SFR_PRF[~np.isinf(np.log10(SIG_SFR_PRF))]), 1)
-axs[1].plot(np.log10(SIG_GAS/T_FF),lin_fit[0]*np.array(np.log10(SIG_GAS/T_FF))+lin_fit[1],ls='--',c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1])
-axs[1].legend()
+# ymin, ymax = axs[0].get_ylim()
+# axs[1].set_ylim(ymin,ymax)
+# p5 = axs[1].fill_between(np.log10(SIG_GAS/T_FF),np.log10(SIG_GAS/T_FF)-1.64-0.18,np.log10(SIG_GAS/T_FF)-1.64+0.18,alpha=0.3)
+# p6, = axs[1].plot(np.log10(SIG_GAS/T_FF),np.log10(SIG_GAS/T_FF)-1.64,ls=':',alpha=0.6,label='Pokhrel et al. 2021 relation')
+# p1, _, _ = axs[1].errorbar(np.log10(SIG_GAS/T_FF),np.log10(SIG_SFR),yerr=(SIG_SFR_E/(SIG_SFR*np.log(10))),ls='None',mec='k',marker='o',c=prf_col,label = 'Via Surface Density')
+# p2, _, _ = axs[1].errorbar(np.log10(SIG_GAS/T_FF),np.log10(SIG_SFR_PRF),yerr=(SIG_SFR_PRF_E/(SIG_SFR_PRF*np.log(10))),ls='None',mec='k',marker='s',c=prf_col, label='Via YSO Count')
+# # axs[1].set_ylabel('$\log \Sigma_{\mathrm{SFR}}~ \mathrm{M_\odot/Myr}/\mathrm{pc}^2$')
+# axs[1].set_xlabel('$\log \Sigma_{gas}/t_{ff}$ $\mathrm{M_\odot/pc}^2$')
+# lin_fit = np.polyfit(np.log10(SIG_GAS/T_FF)[~np.isinf(np.log10(SIG_SFR))][np.log10(SIG_GAS)[~np.isinf(np.log10(SIG_SFR))]<2.3], np.log10(SIG_SFR)[~np.isinf(np.log10(SIG_SFR))][np.log10(SIG_GAS)[~np.isinf(np.log10(SIG_SFR))]<2.3], 1)
+# p3, = axs[1].plot(np.log10(SIG_GAS/T_FF),lin_fit[0]*np.array(np.log10(SIG_GAS/T_FF))+lin_fit[1],c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1]+" Via Surface Density")
+# lin_fit = np.polyfit(np.log10(SIG_GAS/T_FF)[~np.isinf(np.log10(SIG_SFR_PRF))], np.log10(SIG_SFR_PRF[~np.isinf(np.log10(SIG_SFR_PRF))]), 1)
+# p4, = axs[1].plot(np.log10(SIG_GAS/T_FF),lin_fit[0]*np.array(np.log10(SIG_GAS/T_FF))+lin_fit[1],ls='--',c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1]+" YSO Count")
+# axs[1].legend([(p1, p3), (p2, p4), (p5, p6)], ['Surface Density', 'YSO Count', 'Pokhrel et al. 2021'])
 
 fig.tight_layout()
 
