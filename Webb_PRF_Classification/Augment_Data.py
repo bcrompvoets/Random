@@ -2,6 +2,7 @@ import pandas as pd     # similar to Excel
 import numpy as np      # suitable for working with arrays
 import matplotlib.pyplot as plt  # suitable for plotting
 from sklearn.model_selection import train_test_split
+from astropy.io import fits
 print('Loading from repository, Done!')
 
 date = 'July242023'
@@ -13,6 +14,26 @@ cols = ['f090w', 'e_f090w', 'f187n', 'e_f187n',
 inp_df = pd.read_csv(f"DAOPHOT_Catalog_{date}_IR.csv").dropna(subset=cols)#['f090w','f200w','f335m','f444w','f470n'])
 # inp_df = pd.read_csv(f"Test_Delta_fitted_class.csv").dropna(subset=cols)
 print('loading data, Done!')
+inp_df = inp_df.loc[abs(inp_df.f444w-inp_df.mag4_5)<=1.5]
+# # Correct for extinction - comment out for uncorrected.
+# # Column density file
+# filters = ['f090w','f200w','f335m','f444w','f470n']#'f187n',
+# col_dens = fits.open("Gum31_new.fits")
+
+# # Define extinction law
+# def ext_cor(av,wv):
+#     rv = 5.5
+#     return av*(0.574*(wv**(-1.61))-0.527*(wv**(-1.61))/rv)
+
+# inp_df['Av'] = col_dens[0].data[round(inp_df.y).values.astype(int),round(inp_df.x).values.astype(int)]/(10**21)
+# i=0
+# for f in filters:
+#     print(f,int(f[1:-1])/100)
+#     inp_df[f] = inp_df[f]-ext_cor(av = inp_df.Av, wv=int(f[1:-1])/100)
+#     i+=1
+
+# # End of extinction correction
+# #----------------------------------------
 
 inp_df, val_df = train_test_split(inp_df,train_size=.9,random_state=0)
 inp_df = inp_df[cols].copy()

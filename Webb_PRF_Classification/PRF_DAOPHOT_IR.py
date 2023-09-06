@@ -21,7 +21,7 @@ warnings.filterwarnings('ignore')
 date = 'July242023'
 dao_IR = pd.read_csv(f'DAOPHOT_Catalog_{date}_IR.csv')
 
-date = 'DAOPHOT_'+ date 
+date = 'DAOPHOT_Aug312023'#+ date #+ '_cor'
 CC_Webb_Classified = pd.read_csv(f'CC_Classified_{date}.csv')
 
 filters = [c for c in CC_Webb_Classified.columns if c[0] == "f"]
@@ -43,7 +43,7 @@ col_dens = fits.open("Gum31_new.fits")
 CC_Webb_Classified['N(H2)'] = col_dens[0].data.byteswap().newbyteorder()[round(CC_Webb_Classified.y).values.astype(int),round(CC_Webb_Classified.x).values.astype(int)]
 
 print("Total objects in catalogue: ", len(CC_Webb_Classified))
-print("Total YSOs in catalogue (PRF > 0.9): ", len(CC_Webb_Classified[CC_Webb_Classified.Class_PRF==0]))
+print("Total YSOs in catalogue (PRF > 0.9): ", len(CC_Webb_Classified[CC_Webb_Classified.Prob_PRF>0.9]))
 print("Total YSOs in catalogue (PRF >0.67): ", len(CC_Webb_Classified[CC_Webb_Classified.Prob_PRF>0.67]))
 print("Total YSOs in catalogue (PRF >0.5): ", len(CC_Webb_Classified[CC_Webb_Classified.Prob_PRF>0.5]))
 print("Total new YSOs in catalogue (PRF): ", len(CC_Webb_Classified[(CC_Webb_Classified.Class_PRF==0)&(CC_Webb_Classified.Init_Class.isna())]))
@@ -132,13 +132,14 @@ prf_col = 'maroon'
 rf_col = 'salmon'
 colormap = 'Greys'
 
-remake_figs = 'y' #input("Remake all previous figures? (y) or (n) ")
+remake_figs = 'n' #input("Remake all previous figures? (y) or (n) ")
 rerun_contours = 'n' #input("Re-run SFR/MGAS/NPS within contour calculations? (y) or (n) ")
 rerun_sd = 'n'#input('Re-run Surface density computation? (y) or (n)')
 calc_prf_sd = 'n'#input("Calculate SFR for PRF results? (y) or (n) ")
 
 
 if remake_figs == 'y':
+    print('Making f1-scores...')
     # #----------------------------------------------------------------------------
     # Scatter plot with hists for number of YSOs vs F1-Score
     num_yso_rf = np.loadtxt(f"Data/Num_YSOs_RF{date}")
@@ -166,7 +167,7 @@ if remake_figs == 'y':
     ax.scatter(num_yso_rf,max_f1_rf,c=rf_col,label='RF')
     ax.scatter(num_yso_prf,max_f1_prf,c=prf_col,label='PRF')
     xmin,xmax = ax.get_xlim()
-    ymin,ymax = 0.9, 1.0
+    ymin,ymax = 0.95, 1.0
     ax_histx.hist(num_yso_rf,bins=np.arange(xmin,xmax,5),color=rf_col,histtype='step')#
     ax_histx.hist(num_yso_prf,bins=np.arange(xmin,xmax,5),color=prf_col,histtype='step')#
     ax_histy.hist(max_f1_rf,bins=np.arange(ymin,ymax,0.005),color=rf_col, orientation='horizontal',histtype='step')
@@ -262,7 +263,7 @@ if remake_figs == 'y':
     xmax, xmin = ax.get_xlim()
 
 
-    matches_csv = pd.read_csv("matches_to_"+date+".csv")
+    matches_csv = pd.read_csv("matches_to_"+'DAOPHOT_July242023'+".csv")#date
     x_inds = [i for i in matches_csv.index if 'X-RAY' in matches_csv.loc[i,'Name']] 
     sp_inds = [i for i in matches_csv.index if 'SPICY' in matches_csv.loc[i,'Name']] 
     o_inds = [i for i in matches_csv.index if 'OHL' in matches_csv.loc[i,'Name']] 
@@ -506,14 +507,14 @@ if remake_figs == 'y':
     # Histogram of brightnesses with wavelength
 
     fig, axs = plt.subplots(3,2,figsize=(6,8),dpi=300)
-    fig.tight_layout()
     bins =np.arange(6,24,2)
     f = 0
     for i in range(0,3):
         for j in range(0,2):
-            axs[i][j].hist(CC_Webb_Classified.loc[CC_Webb_Classified.Class_RF==0,filters[f]],bins=bins,label=filters[f])
+            axs[i][j].hist(CC_Webb_Classified.loc[CC_Webb_Classified.Class_PRF==0,filters[f]],bins=bins,label=filters[f])
             axs[i][j].set_title(filters[f])
             f += 1
+    fig.tight_layout()
     plt.savefig("Figures/Brightness_Band_YSO_"+date+".png",dpi=300)
     plt.close()
 
@@ -532,7 +533,8 @@ if remake_figs == 'y':
 
         plt.xlabel("F090W-F444W")
         plt.ylabel(f.upper())
-        plt.gca().invert_yaxis()
+        if len(f) < 6:
+            plt.gca().invert_yaxis()
         plt.savefig(f"Figures/CMD_{f}.png")
 
         # CC_rf = CC_tmp.copy()
@@ -561,17 +563,19 @@ if remake_figs == 'y':
 
 
     from mpl_toolkits.axes_grid1 import make_axes_locatable
-    cc_match = dao_IR
+    cc_match = dao_IR.copy().loc[abs(dao_IR.f444w-dao_IR.mag4_5)<0.5]
     cc_match.where(cc_match!=99.999,np.nan,inplace=True)
 
     fig, ax = plt.subplots(2,1,dpi=300)
     lims = np.arange(8.5,16)
     print(len(cc_match[['mag3_6']].values))
     err = (cc_match[['d3_6m']].values**2+cc_match[['e_f335m']].values**2)**0.5
-    c = ax[0].scatter(cc_match[['mag3_6']].values,cc_match[['f335m']].values,s=5,c=err,cmap=colormap)
+    c = ax[0].scatter(cc_match[['mag3_6']].values,cc_match[['f335m']].values,s=5,c=cc_match.Class,cmap=colormap+'_r')
     divider = make_axes_locatable(ax[0])
     cax = divider.append_axes('right', size='5%', pad=0.05)
     ax[0].plot(lims,lims,'k',lw=0.3)
+    ax[0].plot(lims,lims+0.5,'k',lw=0.3)
+    ax[0].plot(lims,lims-0.5,'k',lw=0.3)
     ax[0].set_xlabel('IRAC1')
     ax[0].set_ylabel('F335M')
     ax[0].invert_xaxis()
@@ -580,8 +584,10 @@ if remake_figs == 'y':
     plt.colorbar(mappable=c,cax=cax)
 
     err = (cc_match[['d4_5m']].values**2+cc_match[['e_f444w']].values**2)**0.5
-    c2 = ax[1].scatter(cc_match[['mag4_5']].values,cc_match[['f444w']].values,s=5,c=err,cmap=colormap)
+    c2 = ax[1].scatter(cc_match[['mag4_5']].values,cc_match[['f444w']].values,s=5,c=cc_match.Class,cmap=colormap+'_r')
     ax[1].plot(lims,lims,'k',lw=0.3)
+    ax[1].plot(lims,lims+0.5,'k',lw=0.3)
+    ax[1].plot(lims,lims-0.5,'k',lw=0.3)
     ax[1].set_ylim(9,16.5)
     ax[1].set_xlabel('IRAC2')
     ax[1].set_ylabel('F444W')
@@ -605,17 +611,17 @@ col_dens = fits.open("Gum31_new.fits")
 cdata = col_dens[0].data
 w=80
 col_dens_dat = col_dens[0].data[::w,::w]
-levels = np.arange(min(col_dens_dat.ravel()),max(col_dens_dat.ravel()),5e20)
+levels = np.arange(min(col_dens_dat.ravel()),max(col_dens_dat.ravel()),5e20) # Approximately 5e20 to 1.4e22, steps of 5e20 or 0.5 mag Av
 levels[:-10] # Keep only layers until there are no longer anymore YSOs within them
 x_col = np.arange(np.shape(cdata)[1])
 y_col = np.arange(np.shape(cdata)[0])
 
 # Various conversion factors
-pix_to_parsec_x = 178/(2*2500*np.tan(7.4/120*np.pi/180)) # pixels/pc in the x direction (Herscehl res)
-pix_to_parsec_y = 106/(2*2500*np.tan(4.4/120*np.pi/180)) # pixels/pc in the y direction (Herscehl res)
+pix_to_parsec_x = 178/(2*2350*np.tan(7.4/120*np.pi/180)) # pixels/pc in the x direction (Herscehl res)
+pix_to_parsec_y = 106/(2*2350*np.tan(4.4/120*np.pi/180)) # pixels/pc in the y direction (Herscehl res)
 pix_to_parsec2 = pix_to_parsec_x*pix_to_parsec_y
-pix_to_parsec_x_full = 14125/(2*2500*np.tan(7.4/120*np.pi/180)) # pixels/pc in the x direction (JWST res)
-pix_to_parsec_y_full = 8421/(2*2500*np.tan(4.4/120*np.pi/180)) # pixels/pc in the y direction (JWST res)
+pix_to_parsec_x_full = 14125/(2*2350*np.tan(7.4/120*np.pi/180)) # pixels/pc in the x direction (JWST res)
+pix_to_parsec_y_full = 8421/(2*2350*np.tan(4.4/120*np.pi/180)) # pixels/pc in the y direction (JWST res)
 pix_to_parsec2_full = pix_to_parsec_x_full*pix_to_parsec_y_full
 cm2_to_pix = (3.086e18)**2/pix_to_parsec2
 nh2_to_m_gas = 2*(1.67e-24/1.98847e33)/0.71
@@ -699,7 +705,7 @@ print("Surface/Column density plot saved!")
 
 # ------------------------------------------------------------------------
 # Surface/Column Density Figure 2 - per contour level
-
+CC_yso_tmp = CC_Webb_Classified[CC_Webb_Classified.Prob_PRF>0.5].copy()
 
 mask_cd = ~np.isnan(col_dens_dat.ravel())
 
@@ -707,20 +713,20 @@ tic = time.perf_counter()
 if rerun_contours == 'y':
     # Collect average surface density and column density from within each contour
     pts = []
-    xy_cyso = [(CC_Webb_Classified.iloc[q].x, CC_Webb_Classified.iloc[q].y) for q in CC_Webb_Classified[CC_Webb_Classified.Class_PRF==0].index]
-    grid_of_points = [[(i,j) for i in range(len(x_col))] for j in range(len(y_col))]
+    # xy_cyso = [(CC_Webb_Classified.iloc[q].x, CC_Webb_Classified.iloc[q].y) for q in CC_Webb_Classified[CC_Webb_Classified.Class_PRF==0].index]
+    # grid_of_points = [[(i,j) for i in range(len(x_col))] for j in range(len(y_col))]
     for l in range(len(levels)):
         if l+1 < len(levels):
             mask = (col_dens_dat>(levels[l]))&((col_dens_dat<levels[l+1])) 
             # mask2 = (col_dens[0].data>(levels[l]))&((col_dens[0].data<levels[l+1])) 
-            mask2 = CC_Webb_Classified[(CC_Webb_Classified['N(H2)']>(levels[l]))&CC_Webb_Classified['N(H2)']<(levels[l+1])].index
+            mask2 = CC_yso_tmp[(CC_yso_tmp['N(H2)']>(levels[l]))&(CC_yso_tmp['N(H2)']<levels[l+1])].index
         else: 
             mask = (col_dens_dat>(levels[l]))
             # mask2 = (col_dens[0].data>(levels[l]))
-            mask2 = CC_Webb_Classified[(CC_Webb_Classified['N(H2)']>(levels[l]))].index
+            mask2 = CC_yso_tmp[(CC_yso_tmp['N(H2)']>(levels[l]))].index
 
         if calc_prf_sd.lower()=='y':
-            nps2 = len(CC_Webb_Classified.loc[mask2])
+            nps2 = len(CC_yso_tmp.loc[mask2])
             # grid_of_pts_masked = [tuple(g) for g in np.array(grid_of_points)[mask2]]
             # nps2 = 0
             # for xy in xy_cyso:
@@ -780,9 +786,12 @@ axs.set_ylabel('$\log \Sigma_{\mathrm{SFR}}~ \mathrm{M_\odot/Myr}/\mathrm{pc}^2$
 axs.set_xlabel('$\log \Sigma_{gas}$ $\mathrm{M_\odot/pc}^2$')
 lin_fit = np.polyfit(np.log10(SIG_GAS)[~np.isinf(np.log10(SIG_SFR))][np.log10(SIG_GAS)[~np.isinf(np.log10(SIG_SFR))]<2.3], np.log10(SIG_SFR)[~np.isinf(np.log10(SIG_SFR))][np.log10(SIG_GAS)[~np.isinf(np.log10(SIG_SFR))]<2.3], 1)
 p3, = axs.plot(np.log10(SIG_GAS),lin_fit[0]*np.array(np.log10(SIG_GAS))+lin_fit[1],c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1]+" Via Surface Density")
+print("%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1]+" Via Surface Density")
 lin_fit = np.polyfit(np.log10(SIG_GAS[~np.isinf(np.log10(SIG_SFR_PRF))]), np.log10(SIG_SFR_PRF[~np.isinf(np.log10(SIG_SFR_PRF))]), 1)
 p4, = axs.plot(np.log10(SIG_GAS),lin_fit[0]*np.array(np.log10(SIG_GAS))+lin_fit[1],ls='--',c=prf_col,label="%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1]+" Via YSO Count")
+print("%.2f" %lin_fit[0]+' * x + '+"%.2f" %lin_fit[1]+" Via YSO Count")
 axs.legend([(p1, p3), (p2, p4), (p5, p6)], ['Surface Density', 'YSO Count', 'Pokhrel et al. 2021'])
+
 
 # ymin, ymax = axs[0].get_ylim()
 # axs[1].set_ylim(ymin,ymax)
@@ -806,8 +815,10 @@ print("Surface/Column density plot 2 saved!")
 
 print("Total star formation rate for region (SD):", "%.7f"%np.sum(SFR/1e6), "or ", np.sum(N_PS), "\pm", np.sqrt(np.sum(N_PS_E**2)), "total stars in region.")#, "$\pm$", "%.3f"%np.nanstd(SIG_SFR),"M$_\odot$/yr")
 print("Total star formation rate for region (PRF):", "%.7f"%np.sum(SFR_PRF/1e6), "or ", np.sum(N_PS_PRF), "\pm", np.sqrt(np.sum(np.sqrt(N_PS_PRF)**2)), "total stars in region.")#, "$\pm$", "%.3f"%np.nanstd(SIG_SFR_PRF),"M$_\odot$/yr")
-print("Star formation efficiency (PRF) ε = M*/Mgas = ", len(CC_Webb_Classified[CC_Webb_Classified.Class_PRF==0])*0.5/np.sum(M_GAS))
-print("Star formation efficiency (SD) ε = M*/Mgas = ", np.sum(N_PS)*0.5/np.sum(M_GAS))
+print("Star formation efficiency (PRF) ε = M*/(M*+Mgas) = ", len(CC_Webb_Classified[CC_Webb_Classified.Class_PRF==0])*0.5/(np.sum(M_GAS)+len(CC_Webb_Classified[CC_Webb_Classified.Class_PRF==0])*0.5))
+print("Star formation efficiency (SD) ε = M*/(M*+Mgas) = ", np.sum(N_PS)*0.5/(np.sum(M_GAS)+np.sum(N_PS)*0.5))
+print("Star formation efficiency (PRF) ε = M*/(Mgas) = ", len(CC_Webb_Classified[CC_Webb_Classified.Class_PRF==0])*0.5/(np.sum(M_GAS)))
+print("Star formation efficiency (SD) ε = M*/(Mgas) = ", np.sum(N_PS)*0.5/(np.sum(M_GAS)))
 
 # ------------------------------------------------------------------------
 # Surface/Column Density Figure 3 - Pokhrel 2021 Figure 1c
@@ -832,6 +843,42 @@ fig.tight_layout()  # otherwise the right y-label is slightly clipped
 plt.savefig('Figures/cd_trends_'+date+'.png',dpi=300)
 plt.close()
 
+#--------------------------------------------------------------------------------------------------------
+# Isochrones plot
+parsec = pd.read_csv('~/Downloads/output622966404146.dat.txt',comment='#',delim_whitespace=True) # tot av = 0, jwst_mags (not nv 22), parsec 2.0, ωi = 0.0
+p_tmp = parsec.copy()[(parsec.logAge==6.32222)&(parsec.label==0)]
+
+def ext_cor(av,wv):
+    rv = 5.5
+    return av*(0.574*(wv**(-1.61))-0.527*(wv**(-1.61))/rv)
+
+
+filt = 'f444w'
+
+err = np.sqrt(CC_Webb_Classified['e_f090w-f444w'].values**2+CC_Webb_Classified['e_'+filt].values**2)
+# CC_tmp = CC_Webb_Classified[err<0.2]
+plt.scatter(CC_Webb_Classified['f090w-f444w'], CC_Webb_Classified[filt],c=err,marker='.', s=1,cmap=colormap+'_r')
+plt.colorbar(label='Propogated Error')
+plt.scatter(CC_Webb_Classified[CC_Webb_Classified.Prob_PRF>0.5].f090w-CC_Webb_Classified[CC_Webb_Classified.Prob_PRF>0.5].f444w, CC_Webb_Classified.loc[CC_Webb_Classified.Prob_PRF>0.5,filt],s=5,marker='*',c=prf_col,label='PRF cYSOs')
+
+cols = ['lightcoral','indianred','firebrick','maroon']
+i=0
+m = []
+for av in np.arange(0.5,14.5,4):
+    plt.plot(p_tmp['F090W_fSBmag']+ext_cor(av,0.90)-p_tmp['F444W_fSBmag']-ext_cor(av,4.44),p_tmp[filt.upper()+'_fSBmag']+5*np.log10(2350)-5+ext_cor(av,int(filt[1:-1])/100),label='$A_V$ = '+str(av)+' mag',c=cols[i])
+    i+=1
+    m.append([np.array(p_tmp['F090W_fSBmag']+ext_cor(av,0.90)-p_tmp['F444W_fSBmag']-ext_cor(av,4.44))[0],np.array(p_tmp[filt.upper()+'_fSBmag']+5*np.log10(2350)-5+ext_cor(av,int(filt[1:-1])/100))[0]])
+    # plt.plot(p_tmp['F090W_fSBmag']-p_tmp['F444W_fSBmag'],p_tmp[filt.upper()+'_fSBmag']+5*np.log10(2800)-5,)
+# plt.colorbar()
+# plt.plot(p_tmp.loc[p_tmp.Mass==0.09,'F090W_fSBmag']-p_tmp.loc[p_tmp.Mass==0.09,'F444W_fSBmag'],p_tmp.loc[p_tmp.Mass==0.09,filt.upper()+'_fSBmag']+5*np.log10(2350)-5)
+# plt.plot(np.transpose(m)[0],np.transpose(m)[1])
+plt.arrow(m[0][0],m[0][1],m[-1][0]-m[0][0],m[-1][1]-m[0][1],width=0.1,color='r',label='M = 0.09 $M_\odot$',fc='w',ec='k',lw=0.35)
+plt.legend()
+plt.xlabel('F090W-F444W')
+plt.ylabel(filt.upper())
+plt.gca().invert_yaxis()
+plt.savefig('Figures/isochrones_'+date+'.png',dpi=300)
+plt.close()
 
 #----------------------------------------------------
 # Spectral index
@@ -842,13 +889,17 @@ S0_444 = 182.85
 
 log_S0 = np.log10(S0_090/S0_444)
 log_dv = np.log10((2.998*10**8)/(0.9*10**(-6)))-np.log10((2.998*10**8)/(4.44*10**(-6)))
-CC_Webb_Classified['alpha_09-44'] = -2-(log_S0-0.4*(CC_Webb_Classified['f090w']-CC_Webb_Classified['f444w']))/log_dv
+
+CC_Webb_Classified['Av'] = col_dens[0].data.byteswap().newbyteorder()[round(CC_Webb_Classified.y).values.astype(int),round(CC_Webb_Classified.x).values.astype(int)]/1e21
+
+
+CC_Webb_Classified['alpha_09-44'] = -2-(log_S0-0.4*(CC_Webb_Classified['f090w']-ext_cor(CC_Webb_Classified.Av,0.9)-CC_Webb_Classified['f444w']-ext_cor(CC_Webb_Classified.Av,4.44)))/log_dv
 
 log_S0 = np.log10(S0_200/S0_444)
 log_dv = np.log10((2.998*10**8)/(2.0*10**(-6)))-np.log10((2.998*10**8)/(4.44*10**(-6)))
-CC_Webb_Classified['alpha_20-44'] = -2-(log_S0-0.4*(CC_Webb_Classified['f200w']-CC_Webb_Classified['f444w']))/log_dv
+CC_Webb_Classified['alpha_20-44'] = -2-(log_S0-0.4*(CC_Webb_Classified['f200w']-ext_cor(CC_Webb_Classified.Av,2.0)-CC_Webb_Classified['f444w']-ext_cor(CC_Webb_Classified.Av,4.44)))/log_dv
 
-# plt.hist(CC_Webb_Classified.loc[CC_Webb_Classified.Class_PRF==1,'alpha_09-44'].dropna(),label='Cont',bins=np.arange(-6,10,0.5))
+plt.hist(CC_Webb_Classified.loc[CC_Webb_Classified.Class_PRF==1,'alpha_09-44'].dropna(),label='Cont',bins=np.arange(-6,10,0.5))
 plt.hist(CC_Webb_Classified.loc[(CC_Webb_Classified.Class_PRF==0)&(CC_Webb_Classified['alpha_09-44']>0.3),'alpha_09-44'].dropna(),density=False,bins=np.arange(-4,6,0.5),label='CI',hatch='/',alpha=0.5,histtype='step')
 plt.hist(CC_Webb_Classified.loc[(CC_Webb_Classified.Class_PRF==0)&(abs(CC_Webb_Classified['alpha_09-44'])<=0.3),'alpha_09-44'].dropna(),density=False,bins=np.arange(-4,6,0.5),label='CFS',hatch='|',alpha=0.5,histtype='step')
 plt.hist(CC_Webb_Classified.loc[(CC_Webb_Classified.Class_PRF==0)&(CC_Webb_Classified['alpha_09-44']<-0.3)&(CC_Webb_Classified['alpha_09-44']>-1.6),'alpha_09-44'].dropna(),density=False,bins=np.arange(-4,6,0.5),label='CII',hatch='/',alpha=0.5,histtype='step')
@@ -860,7 +911,7 @@ print("Number Class II: ", len(CC_Webb_Classified.loc[(CC_Webb_Classified.Class_
 print("Number Class III: ", len(CC_Webb_Classified.loc[(CC_Webb_Classified.Class_PRF==0)&(CC_Webb_Classified['alpha_09-44']<=-1.6),'alpha_09-44']))
 # print(CC_Webb_Classified.loc[CC_Webb_Classified.Init_Class==0,['alpha_09-44', 'SPICY_ID']])
 plt.legend()
-plt.ylim(0,35)
+plt.ylim(0,50)
 plt.savefig('Figures/spec_ind_approx_'+date+'.png',dpi=300)
 
 print(len(CC_Webb_Classified.loc[(CC_Webb_Classified.Class_PRF==0)&(CC_Webb_Classified['f090w-f444w']<4),'f090w-f444w']),"blue cYSOs")

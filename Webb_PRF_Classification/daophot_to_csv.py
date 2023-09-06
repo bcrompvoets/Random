@@ -127,6 +127,7 @@ dao_IR.loc[dao_IR.Prob>0.5,'Class'] = 0
 dao_IR['Survey'] = IR.loc[sep<tol*u.deg,'Survey'].values
 dao_IR['SPICY_ID'] = IR.loc[sep<tol*u.deg,'SPICY_ID'].values
 dao_IR[sp_bands] = IR.loc[sep<tol*u.deg,sp_bands].values
+dao_IR = dao_IR.loc[abs(dao_IR.f444w-dao_IR.mag4_5)<0.5]
 print("Number of YSOs matched to Spitzer data: ",len(dao_IR[dao_IR['Class']==0]))
 print("Number of Conts matched to Spitzer data: ",len(dao_IR[dao_IR['Class']==1]))
 

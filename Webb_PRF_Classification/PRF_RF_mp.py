@@ -9,22 +9,51 @@ import astropy.units as u
 from sklearn.metrics import f1_score,classification_report
 from sklearn.model_selection import train_test_split
 
+from astropy.io import fits
 import warnings
 warnings.filterwarnings('ignore')
 
 date = 'July242023'
 dao = pd.read_csv(f'DAOPHOT_Catalog_{date}.csv')
 dao_IR = pd.read_csv(f'DAOPHOT_Catalog_{date}_IR.csv')
+dao_IR = dao_IR.loc[abs(dao_IR.f444w-dao_IR.mag4_5)<1]
 dao_aug = pd.read_csv(f"Augmented_data_prob_{date}.csv")#
 # dao_aug = pd.read_csv("Test_Delta_fitted_class.csv")
 
-date = 'DAOPHOT_'+ date + '_nof200w'
+date = 'DAOPHOT_'+ date + '_spitz_go'
 cont = True
 amounts_te = []
 
 print(dao.info())
 
 filters = [c for c in dao_aug.columns if ((c[0] == "f") and ('-' not in c)) and ('f187n' not in c)]
+# # Correct data for extinction
+# # Column density file
+# col_dens = fits.open("Gum31_new.fits")
+
+# # Define extinction law
+# def ext_cor(av,wv):
+#     rv = 5.5
+#     return av*(0.574*(wv**(-1.61))-0.527*(wv**(-1.61))/rv)
+
+# # Add in visual extinctions for each source
+# dao['Av'] = col_dens[0].data[round(dao.y).values.astype(int),round(dao.x).values.astype(int)]/(10**21)
+# dao_IR['Av'] = col_dens[0].data[round(dao_IR.y).values.astype(int),round(dao_IR.x).values.astype(int)]/(10**21)
+
+# # Correct for both files
+# i = 0
+# for f in filters:
+#     print(f,int(f[1:-1])/100)
+#     dao[f] = (dao[f]-ext_cor(av = dao.Av, wv=int(f[1:-1])/100)).astype(np.float)
+#     i+=1
+# i = 0
+# for f in filters:
+#     print(f,int(f[1:-1])/100)
+#     dao_IR[f] = (dao_IR[f]-ext_cor(av = dao_IR.Av, wv=int(f[1:-1])/100)).astype(np.float)
+#     i+=1
+
+# dao_aug = pd.read_csv(f"Augmented_data_prob_{'July242023'+'_cor'}.csv")#
+
 # Data processing:
 # Add in colours and deltas and slopes
 def add_fcds(dao_fcd,dao,filters):
@@ -71,7 +100,7 @@ dao_aug = add_fcds(dao_aug.copy(),dao.copy(),filters)
 
 
 #------------------------------------------------------
-fcd_columns = [c for c in dao_aug.columns if (((c[0] == "f") and ('-' in c))  or c[0]=='(' or c[0]=='δ' or c[0]=='s')and ('f187n' not in c) and ('f200w'not in c)]# and ('f187n' not in c) and ('f470n' not in c)]
+fcd_columns = [c for c in dao_aug.columns if (((c[0] == "f") and ('-' in c))  or c[0]=='(' or c[0]=='δ' or c[0]=='s')and ('f187n' not in c)]# and ('f187n' not in c) and ('f470n' not in c)]
 print(fcd_columns)
 errs = ["e_"+f for f in fcd_columns]
 bands = fcd_columns+errs
@@ -118,7 +147,7 @@ def get_best_prf(tr, va, te):
     max_f1 = f1_score(tar_va,pred_va,average=None)[0]
 
     pred_te = prf_cls.predict_proba(X=te[:,inds], dX=te[:,e_inds]) 
-    num_yso = len(np.array(pred_te)[np.transpose(pred_te)[0]>0.9])
+    num_yso = len(np.array(pred_te)[np.transpose(pred_te)[0]>0.5])
 
     # print("F1-Scores:\n Training is ",f1_score(tar_tr,pred_tr,average=None)[0],"\n Validation (SPICY) is ",f1_score(tar_va,pred_va,average=None)[0])
 
@@ -146,7 +175,7 @@ def get_best_rf(tr, va, te):
     max_f1 = f1_score(tar_va,pred_va,average=None)[0]
 
     pred_te = rf_cls.predict_proba(te) 
-    num_yso = len(pred_te[pred_te[:,0]>0.9])
+    num_yso = len(pred_te[pred_te[:,0]>0.5])
 
     # print("F1-Scores:\n Training is ",f1_score(tar_tr,pred_tr,average=None)[0],"\n Validation (SPICY) is ",f1_score(tar_va,pred_va,average=None)[0])
 
@@ -169,7 +198,7 @@ print("Starting bootstrapping!")
 import multiprocess as mp
 import time
 tic = time.perf_counter()
-n = 10
+n = 100
 
 with mp.Pool(6) as pool:
     ans_prf = pool.starmap(get_best_prf,[prf_inds] * n)
@@ -202,12 +231,12 @@ np.savetxt("Data/Max_f1s_PRF"+date, max_f1_prf)
 # Make two columns: final class, and probability of being that class
 p_yso_rf = np.nanmean(pred_tes_rf,axis=0)
 preds_rf = np.zeros(len(p_yso_rf))
-preds_rf[p_yso_rf<0.9] = 1 
-print("Number of YSOs with prob>90\% (rf):",len(preds_rf[p_yso_rf>0.9]))
+preds_rf[p_yso_rf<0.5] = 1 
+print("Number of YSOs with prob>90\% (rf):",len(preds_rf[p_yso_rf>0.5]))
 p_yso_prf = np.nanmean(pred_tes_prf,axis=0)
 preds_prf = np.zeros(len(p_yso_prf))
-preds_prf[p_yso_prf<0.9] = 1 
-print("Number of YSOs with prob>90\% (prf):",len(preds_prf[p_yso_prf>0.9]))
+preds_prf[p_yso_prf<0.5] = 1 
+print("Number of YSOs with prob>90\% (prf):",len(preds_prf[p_yso_prf>0.5]))
 
 
 # Make and save predictions/probabilities in csv
